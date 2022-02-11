@@ -31,4 +31,26 @@
         <tag>test</tag>
       </tags>
   </entry>
+  <entry>
+    <title>多模态情感分析综述</title>
+    <url>/2022/02/11/%E5%A4%9A%E6%A8%A1%E6%80%81%E6%83%85%E6%84%9F%E5%88%86%E6%9E%90%E7%BB%BC%E8%BF%B0/</url>
+    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="\assets\css\APlayer.min.css"><script src="\assets\js\APlayer.min.js" class="aplayer-secondary-script-marker"></script><p>多模态情感分析是一个越来越受欢迎的研究领域，它将传统的基于文本的情感分析任务扩展到多模态的情景下，多模态包括文本、视频和语音模态，以往的情感分析任务通常聚焦于单个模态，但在某些情况下，仅仅通过文本模态来分析说话人的情感是不够的，如以下语句</p>
+<span id="more"></span>
+<blockquote>
+<p>The movie is sick.</p>
+</blockquote>
+<p>这句话本身所要表达的意思是模棱两可的，但如果说话者在说这句话的同时也在微笑，那么它就会被认为是积极的（positive），反过来说，如果说话者在说这句话的同时皱着眉头，则这句话被认为是消极的（negative），以上例子说明了双模态信息之间的互动，其中微笑和皱着眉头等信息能够在视频模态中体现出来。然后我们可以继续加入语音模态从而考虑三模态的情况，当说话声音较大时，这句话的积极情感会进一步增强，但加入使用fair替换掉sick这个单词，虽然同样是大声说话的情景，但考虑到fair这个词的强烈影响，这句话的情感并没有因为大声说话而产生巨大变化。以上例子说明了模态间信息交互的复杂性，但不可置疑的是，视频和语音模态中可能包含文本模态中的互补信息，因此，在多模态场景下进行情感分析任务更具有可信性。</p>
+<div align="center">
+    <img src="/2022/02/11/%E5%A4%9A%E6%A8%A1%E6%80%81%E6%83%85%E6%84%9F%E5%88%86%E6%9E%90%E7%BB%BC%E8%BF%B0/001.png" width="400px">
+</div>
+
+<p>现阶段的多模态情感分析任务，大多站在如何有效地将多模态的特征信息进行融合这一角度考虑问题，目的是排除与情感分析任务无关的噪声数据，最大化利用与情感分析任务相关的多模态数据，包括单模态内的数据交互与模态间的数据交互，最终达到分析情感极性的目标。本文主要就多模态数据集和多模态特征的融合方法进行介绍。</p>
+<h3 id="数据集"><a href="#数据集" class="headerlink" title="数据集"></a>数据集</h3><h3 id="多模态特征融合方法"><a href="#多模态特征融合方法" class="headerlink" title="多模态特征融合方法"></a>多模态特征融合方法</h3>]]></content>
+      <categories>
+        <category>多模态情感分析</category>
+      </categories>
+      <tags>
+        <tag>论文阅读</tag>
+      </tags>
+  </entry>
 </search>
