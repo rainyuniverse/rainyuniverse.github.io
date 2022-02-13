@@ -30,8 +30,13 @@
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="http://example.com/2022/02/11/%E5%A4%9A%E6%A8%A1%E6%80%81%E6%83%85%E6%84%9F%E5%88%86%E6%9E%90%E7%BB%BC%E8%BF%B0/001.png">
 <meta property="og:image" content="http://example.com/2022/02/11/%E5%A4%9A%E6%A8%A1%E6%80%81%E6%83%85%E6%84%9F%E5%88%86%E6%9E%90%E7%BB%BC%E8%BF%B0/002.png">
+<meta property="og:image" content="http://example.com/2022/02/11/%E5%A4%9A%E6%A8%A1%E6%80%81%E6%83%85%E6%84%9F%E5%88%86%E6%9E%90%E7%BB%BC%E8%BF%B0/003.png">
+<meta property="og:image" content="http://example.com/2022/02/11/%E5%A4%9A%E6%A8%A1%E6%80%81%E6%83%85%E6%84%9F%E5%88%86%E6%9E%90%E7%BB%BC%E8%BF%B0/004.png">
+<meta property="og:image" content="http://example.com/2022/02/11/%E5%A4%9A%E6%A8%A1%E6%80%81%E6%83%85%E6%84%9F%E5%88%86%E6%9E%90%E7%BB%BC%E8%BF%B0/005.png">
+<meta property="og:image" content="http://example.com/2022/02/11/%E5%A4%9A%E6%A8%A1%E6%80%81%E6%83%85%E6%84%9F%E5%88%86%E6%9E%90%E7%BB%BC%E8%BF%B0/006.png">
+<meta property="og:image" content="http://example.com/2022/02/11/%E5%A4%9A%E6%A8%A1%E6%80%81%E6%83%85%E6%84%9F%E5%88%86%E6%9E%90%E7%BB%BC%E8%BF%B0/007.png">
 <meta property="article:published_time" content="2022-02-11T11:57:28.000Z">
-<meta property="article:modified_time" content="2022-02-12T12:28:26.735Z">
+<meta property="article:modified_time" content="2022-02-13T12:16:13.678Z">
 <meta property="article:author" content="Rainy Universe">
 <meta property="article:tag" content="论文阅读">
 <meta name="twitter:card" content="summary">
@@ -160,7 +165,7 @@
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%90%8E%E6%9C%9F%E8%9E%8D%E5%90%88"><span class="nav-number">1.</span> <span class="nav-text">后期融合</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%9F%BA%E4%BA%8E%E5%BC%A0%E9%87%8F%E7%9A%84%E8%9E%8D%E5%90%88"><span class="nav-number">2.</span> <span class="nav-text">基于张量的融合</span></a></li></ol></div>
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E9%9B%86"><span class="nav-number">1.</span> <span class="nav-text">数据集</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A4%9A%E6%A8%A1%E6%80%81%E7%89%B9%E5%BE%81%E8%9E%8D%E5%90%88%E6%96%B9%E6%B3%95"><span class="nav-number">2.</span> <span class="nav-text">多模态特征融合方法</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%97%A9%E6%9C%9F%E8%9E%8D%E5%90%88"><span class="nav-number">2.1.</span> <span class="nav-text">早期融合</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%90%8E%E6%9C%9F%E8%9E%8D%E5%90%88"><span class="nav-number">2.2.</span> <span class="nav-text">后期融合</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%9F%BA%E4%BA%8E%E5%BC%A0%E9%87%8F%E7%9A%84%E8%9E%8D%E5%90%88"><span class="nav-number">2.3.</span> <span class="nav-text">基于张量的融合</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%BD%8E%E7%A7%A9%E5%A4%9A%E6%A8%A1%E6%80%81%E8%9E%8D%E5%90%88%E6%96%B9%E6%B3%95"><span class="nav-number">2.4.</span> <span class="nav-text">低秩多模态融合方法</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%9F%BA%E4%BA%8E%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C%E7%9A%84%E8%9E%8D%E5%90%88%E6%96%B9%E6%B3%95"><span class="nav-number">2.5.</span> <span class="nav-text">基于神经网络的融合方法</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E5%A4%9A%E6%A8%A1%E6%80%81transformer%E8%9E%8D%E5%90%88%E6%96%B9%E6%B3%95"><span class="nav-number">2.5.1.</span> <span class="nav-text">多模态Transformer融合方法</span></a></li></ol></li></ol></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -265,7 +270,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2022-02-12 20:28:26" itemprop="dateModified" datetime="2022-02-12T20:28:26+08:00">2022-02-12</time>
+      <time title="修改时间：2022-02-13 20:16:13" itemprop="dateModified" datetime="2022-02-13T20:16:13+08:00">2022-02-13</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -301,21 +306,111 @@
 <p>这句话本身所要表达的意思是模棱两可的，但如果说话者在说这句话的同时也在微笑，那么它就会被认为是积极的（positive），反过来说，如果说话者在说这句话的同时皱着眉头，则这句话被认为是消极的（negative），以上例子说明了双模态信息之间的互动，其中微笑和皱着眉头等信息能够在视频模态中体现出来。然后我们可以继续加入语音模态从而考虑三模态的情况，当说话声音较大时，这句话的积极情感会进一步增强，但加入使用fair替换掉sick这个单词，虽然同样是大声说话的情景，但考虑到fair这个词的强烈影响，这句话的情感并没有因为大声说话而产生巨大变化。以上例子说明了模态间信息交互的复杂性，但不可置疑的是，视频和语音模态中可能包含文本模态中的互补信息，因此，在多模态场景下进行情感分析任务更具有可信性。</p>
 <center>
 <img src="/2022/02/11/%E5%A4%9A%E6%A8%A1%E6%80%81%E6%83%85%E6%84%9F%E5%88%86%E6%9E%90%E7%BB%BC%E8%BF%B0/001.png" width="400px">
+<p style="font-family:KaiTi">
+图1：模态之间信息的互动
+</p>
 </center>
-<p>现阶段的多模态情感分析任务，大多站在如何有效地将多模态的特征信息进行融合这一角度考虑问题，目的是排除与情感分析任务无关的噪声数据，最大化利用与情感分析任务相关的多模态数据，包括单模态内的数据交互与模态间的数据交互，最终达到分析情感极性的目标。本文主要就多模态数据集和多模态特征的融合方法进行介绍。 ### 数据集 ### 多模态特征融合方法 #### 早期融合 早期融合，也被称为特征级别的融合，直接将来自不同模式的特征表示连接成一个单一的表示，这是一种最直观的方法。下图展示了早期融合的具体操作。</p>
+<p>现阶段的多模态情感分析任务，大多站在如何有效地将多模态的特征信息进行融合这一角度考虑问题，目的是排除与情感分析任务无关的噪声数据，最大化利用与情感分析任务相关的多模态数据，包括单模态内的数据交互与模态间的数据交互，最终达到分析情感极性的目标。本文主要就多模态数据集和多模态特征的融合方法进行介绍。</p>
+<h3 id="数据集">数据集</h3>
+<h3 id="多模态特征融合方法">多模态特征融合方法</h3>
+<h4 id="早期融合">早期融合</h4>
+<p>早期融合，也被称为特征级别的融合，直接将来自不同模式的特征表示连接成一个单一的表示，这是一种最直观的方法。下图展示了早期融合的具体操作。</p>
 <center>
 <img src="/2022/02/11/%E5%A4%9A%E6%A8%A1%E6%80%81%E6%83%85%E6%84%9F%E5%88%86%E6%9E%90%E7%BB%BC%E8%BF%B0/002.png" width="200px">
+<p style="font-family:KaiTi">
+图2：早期融合具体操作
+</p>
 </center>
 <p>但是，由于来自不同模态的特征表示可能存在巨大差异，我们必须考虑时间同步问题，即不同模态的特征表示必须在时间层面上进行对齐，以便在融合前将这些特征表示转化为相同的格式，所以在某一个模态或某几个模态有信息缺失的情况下，早期融合的方法不能对模态间的互动进行有效建模。 另外，因为早期融合直接将不同模态的特征表示进行连接，可能会造成融合特征表示较为复杂的情况，最终会导致过拟合的发生。</p>
 <h4 id="后期融合">后期融合</h4>
-<p>后期融合，也被称为决策级别的融合，通常是整合来自每一个单一模态的预测结果，即首先利用每一个模态的数据信息进行预测，再将每一个模态的预测结果进行整合，流行的整合方法包括平均法、投票法和信号差异法。 后期融合的优点包括： 1. 灵活性，可以为每个模态的数据选择最佳的分类器。 2. 鲁棒性，当某些模态的数据有缺失时，后期融合的方法依然可以工作。</p>
+<p>后期融合，也被称为决策级别的融合，通常是整合来自每一个单一模态的预测结果，即首先利用每一个模态的数据信息进行预测，再将每一个模态的预测结果进行整合，流行的整合方法包括平均法、投票法和信号差异法。</p>
+<p>后期融合的优点包括：</p>
+<ol type="1">
+<li>灵活性，可以为每个模态的数据选择最佳的分类器。</li>
+<li>鲁棒性，当某些模态的数据有缺失时，后期融合的方法依然可以工作。</li>
+</ol>
 <p>但是后期融合的方法也有相当大的缺点，即不能够有效学习模态间的信息交互，不同模态数据之间的相关性和差异性被忽略。</p>
 <h4 id="基于张量的融合">基于张量的融合</h4>
-<p>公式 <span class="math display">\[
-i\hbar\frac{\partial} {\partial t}\psi=-\frac{\hbar^2} {2m}\nabla^2\psi+V\psi
-\]</span> <span class="math inline">\(z\)</span> <span class="math display">\[
-lim_{1\to+\infty}P(|\frac{1}{n}\sum_i^nX_i-\mu|&lt;\epsilon)=1, i=1,...,n
+<p>基于张量的融合方法建立了一个融合层，具体融合方法为在三维向量场中将每种模态的向量表示进行外积操作得到融合向量表示，操作方法如图所示，</p>
+<center>
+<img src="/2022/02/11/%E5%A4%9A%E6%A8%A1%E6%80%81%E6%83%85%E6%84%9F%E5%88%86%E6%9E%90%E7%BB%BC%E8%BF%B0/003.png" width="350px">
+<p style="font-family:KaiTi">
+图3：基于张量的融合方法
+</p>
+</center>
+<p>需要注意的是，不同模态的特征在进行融合时还需要保留原模态的特征，这样可以更好地利用单模态内的信息，基于张量的融合方法也考虑到这一点，在每一个模态的向量末尾连接1，这样在进行外积的同时还能够保留原有模态的特征，下图以视频模态和文本模态的特征融合为例说明了这一点，</p>
+<center>
+<img src="/2022/02/11/%E5%A4%9A%E6%A8%A1%E6%80%81%E6%83%85%E6%84%9F%E5%88%86%E6%9E%90%E7%BB%BC%E8%BF%B0/004.png" width="300px">
+<p style="font-family:KaiTi">
+图4：视频模态和文本模态的特征融合
+</p>
+</center>
+<p>可以使用如下公式来表示文本模态、语音模态和视频模态的融合过程，其中<span class="math inline">\(\mathbf{z}^{m}\)</span>表示融合特征向量，<span class="math inline">\(\mathbf{z}^{l}\)</span>表示文本模态特征向量，<span class="math inline">\(\mathbf{z}^{v}\)</span>表示视频模态特征向量，<span class="math inline">\(\mathbf{z}^{a}\)</span>表示语音模态特征向量，可以结合图4来理解以下公式，其中<span class="math inline">\(\mathbf{z}^{l} \otimes \mathbf{z}^{v}\)</span>、<span class="math inline">\(\mathbf{z}^{a} \otimes \mathbf{z}^{v}\)</span>和<span class="math inline">\(\mathbf{z}^{l} \otimes \mathbf{z}^{a}\)</span>表示双模态之间的信息互动，<span class="math inline">\(\mathbf{z}^{l} \otimes \mathbf{z}^{v} \otimes \mathbf{z}^{a}\)</span>表示三模态之间的信息互动。</p>
+<p><span class="math display">\[
+\mathbf{z}^{m}=\left[\begin{array}{c}
+\mathbf{z}^{l} \\
+1
+\end{array}\right] \otimes\left[\begin{array}{c}
+\mathbf{z}^{v} \\
+1
+\end{array}\right] \otimes\left[\begin{array}{c}
+\mathbf{z}^{a} \\
+1
+\end{array}\right]
 \]</span></p>
+<p>基于张量的融合方法显式地建模了单模态、双模态、三模态之间的信息互动，并且虽然融合特征向量是高维向量，但由于单模态特征之间是通过外积操作来进行融合的，没有可学习的参数，所以不用考虑过拟合的问题。</p>
+<h4 id="低秩多模态融合方法">低秩多模态融合方法</h4>
+<p>以上我们已经介绍了基于张量的融合方法，但这种方法往往会因为将单模态向量转化为融合张量而导致维度和计算复杂性的指数级增长（外积操作所致），为了解决基于张量的多模态融合方法计算效率差的问题，提出了一种低秩多模态融合的方法，主要是利用了将张量和权重并行分解的思想。</p>
+<p>首先我们需要明确输出<span class="math inline">\(h\)</span>的计算方法，如以下公式所示，</p>
+<p><span class="math display">\[
+h=g(\mathcal{Z} ; \mathcal{W}, b)=\mathcal{W} \cdot \mathcal{Z}+b, h, b \in \mathbb{R}^{d_{y}}
+\]</span></p>
+<p>其中<span class="math inline">\(\mathcal{Z}\)</span>为融合张量，低秩多模态融合方法首先将权重<span class="math inline">\(\mathcal{W}\)</span>进行分解为如下形式,</p>
+<p><span class="math display">\[
+\mathcal{W}=\sum_{i=1}^{r} \bigotimes_{m=1}^{M} \mathbf{w}_{m}^{(i)}
+\]</span></p>
+<p>可以首先尝试理解一下作者这样分解的目的，即为了利用类似于分配律的原理让外积操作变为对应元素的乘积，最终达到每种模态数据乘以对应权重，然后再进行element wise（对应元素乘积）的操作的目标，以下我们可以尝试证明一下，</p>
+<p><span class="math display">\[
+\begin{aligned}
+h &amp;=\left(\sum_{i=1}^{r} \bigotimes_{m=1}^{M} \mathbf{w}_{m}^{(i)}\right) \cdot \mathcal{Z} \\
+&amp;=\sum_{i=1}^{r}\left(\bigotimes_{m=1}^{M} \mathbf{w}_{m}^{(i)} \cdot \mathcal{Z}\right) \\
+&amp;=\sum_{i=1}^{r}\left(\bigotimes_{m=1}^{M} \mathbf{w}_{m}^{(i)} \cdot \bigotimes_{m=1}^{M} z_{m}\right) \\
+&amp;=\Lambda_{m=1}^{M}\left[\sum_{i=1}^{r} \mathbf{w}_{m}^{(i)} \cdot z_{m}\right]
+\end{aligned}
+\]</span></p>
+<p>其中公式中的<span class="math inline">\(\Lambda\)</span>符号表示对应元素乘积的操作，特别地，有以下记法：<span class="math inline">\(\Lambda_{t=1}^{3} x_{t}=x_{1} \circ x_{2} \circ x_{3}\)</span>，最终可以使用下图来表示低秩多模态融合方法，</p>
+<center>
+<img src="/2022/02/11/%E5%A4%9A%E6%A8%A1%E6%80%81%E6%83%85%E6%84%9F%E5%88%86%E6%9E%90%E7%BB%BC%E8%BF%B0/005.png" width="550px">
+<p style="font-family:KaiTi">
+图5：低秩多模态融合方法
+</p>
+</center>
+<h4 id="基于神经网络的融合方法">基于神经网络的融合方法</h4>
+<p>基于神经网络的融合采用了一种直接和直观的策略，通过神经网络融合不同模态的特征表示。基于注意力的融合使用注意力机制来获得一组具有标量权重的特征表示的加权和，这些标量权重是由一个注意力模块动态学习的。还有一些融合方法参考了当前比较流行的Transformer和BERT结构的思想，这些使用深度模型的融合方法能够以端到端的方式从大量的数据中学习，具有良好的性能，但也存在可解释性低的问题。</p>
+<h5 id="多模态transformer融合方法">多模态Transformer融合方法</h5>
+<p>这里介绍的多模态Transformer融合方法出自<em>Multimodal Transformer for Unaligned Multimodal Language Sequences</em>一文，文章提出了MulT结构，主要应用于非对齐多模态语言序列场景。相关研究表明，在对多模态的语言时间序列数据进行建模时主要存在两个挑战：</p>
+<ol type="1">
+<li>由于每种模态序列的采样率不同，导致数据没有在时间层面上对齐。</li>
+<li>不同模态的元素之间存在长距离依赖的现象。</li>
+</ol>
+<p>文章中提出的MulT结构以端到端的方法解决了上述问题。MulT结构以跨模态的Transformer作为主要结构来建模模态与模态（双模态）之间的关系，具体来说，每个跨模态Transformer通过学习两个模态之间的注意力，用另一个源模态的低级特征反复强化目标模态，以视频模态和文本模态为例，第一种情况下，以视频模态为源模态，以文本模态为目标模态，在每一个跨模态的注意力机制块中，将源模态特征向量作为注意力机制的<span class="math inline">\(Q\)</span>，将目标模态特征向量作为注意力机制的<span class="math inline">\(K\)</span>、<span class="math inline">\(V\)</span>，经过注意力机制计算得到注意力权重，将权重乘以目标模态特征向量得到强化后的目标模态特征向量，计算公式如下所示，</p>
+<p><span class="math display">\[
+\text { Attention }(\mathrm{Q}, \mathrm{K}, \mathrm{V})=\operatorname{softmax}\left(\frac{\mathrm{QK}^{\mathrm{T}}}{\sqrt{\mathrm{d}_{\mathrm{k}}}}\right) \mathrm{V}
+\]</span></p>
+<p>实际情况下采用的多为多头注意力机制；第二种情况下，以文本模态为源模态，以视频模态为目标模态，其他计算过程相同。跨模态的注意力机制块的堆叠组成了跨模态的Transformer结构，另外，这里只着重强调了跨模态的注意力机制块中的跨模态的注意力机制计算细节，跨模态的注意力机制块除了交叉注意力结构，还包括前馈神经网络等结构。跨模态的注意力机制块结构如下所示，</p>
+<center>
+<img src="/2022/02/11/%E5%A4%9A%E6%A8%A1%E6%80%81%E6%83%85%E6%84%9F%E5%88%86%E6%9E%90%E7%BB%BC%E8%BF%B0/006.png" width="300px">
+<p style="font-family:KaiTi">
+图6：跨模态注意力机制块结构
+</p>
+</center>
+<p>MulT的整体架构如下图所示，在这里我们只关注模态信息融合的部分，即架构的中间部分，可以从图中看到，在完成特征向量的处理之后，将两个模态的特征向量分别作为源模态和目标模态输入到跨模态的Transformer结构中，两个Transformer的输出进行连接，再输入到Transformer结构中，不同的是，跨模态的Transformer中进行的主要是交叉注意力计算，而上部的Transformer中进行的主要是自注意计算。架构的底部和顶部在这里不作主要关注，只需要明确架构的底部为特征向量的处理，架构的顶部为下游任务的适应。</p>
+<center>
+<img src="/2022/02/11/%E5%A4%9A%E6%A8%A1%E6%80%81%E6%83%85%E6%84%9F%E5%88%86%E6%9E%90%E7%BB%BC%E8%BF%B0/007.png" width="350px">
+<p style="font-family:KaiTi">
+图7：MulT的整体架构
+</p>
+</center>
 
     </div>
 
