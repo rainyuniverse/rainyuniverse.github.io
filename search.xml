@@ -123,6 +123,30 @@ h &amp;=\left(\sum_{i=1}^{r} \bigotimes_{m=1}^{M} \mathbf{w}_{m}^{(i)}\right) \c
 </center>
 <h4 id="基于神经网络的融合方法">基于神经网络的融合方法</h4>
 <p>基于神经网络的融合采用了一种直接和直观的策略，通过神经网络融合不同模态的特征表示。基于注意力的融合使用注意力机制来获得一组具有标量权重的特征表示的加权和，这些标量权重是由一个注意力模块动态学习的。还有一些融合方法参考了当前比较流行的Transformer和BERT结构的思想，这些使用深度模型的融合方法能够以端到端的方式从大量的数据中学习，具有良好的性能，但也存在可解释性低的问题。</p>
+<h5 id="基于注意力机制的融合方法">基于注意力机制的融合方法</h5>
+<p>注意力机制被用于多模态融合是很容易想到的操作，注意力机制天然地能够发掘源模态和目标模态的联系，从而生成注意力权重，通过乘积进一步加强目标模态的特征表示，注意力机制很适用于发掘模态之间的共同特征，但对于发掘模态的特有特征就显得有些力不从心。这里我们以记忆融合网络（MFN）为例来探索注意力机制在多模态融合方面的应用。</p>
+<p>注意力机制通常不会单独应用在多模态特征融合中，可能还会结合其他结构，如MFN由三个主要部分组成，分别是LSTM系统、Delta-Memory注意力网络、多模态门控记忆，其中LSTM系统有多个长短期记忆网络（LSTM）组成，每个模态对应一个LSTM网络，LSTM对模态内的信息的交互进行建模，或者说对每个时间步的模态信息进行记忆；Delta-Memory注意力网络是一种特殊的注意力机制，旨在发现LSTM系统中不同模态记忆间的横向交互关系；多模态门控记忆结构是一种统一的记忆存储，存储随着时间步推移的跨模态信息交互，总结下来，LSTM结构致力于模态内信息的建模，Delta-Memory注意力网络和多模态门控记忆结构致力于模态间信息的建模，模型总体结构如下所示，</p>
+<center>
+<img src="/2022/02/11/%E5%A4%9A%E6%A8%A1%E6%80%81%E6%83%85%E6%84%9F%E5%88%86%E6%9E%90%E7%BB%BC%E8%BF%B0/008.png" width="500px">
+<p style="font-family:KaiTi">
+图6：记忆融合网络（MFN）的整体架构
+</p>
+</center>
+<p>Delta-Memory注意力网络截取<span class="math inline">\(t-1\)</span>和<span class="math inline">\(t\)</span>两个时间步的LSTM系统输出信息，目的是为了防止重复的跨模态交互信息被赋高权重的情况，如果有了两个时间步的模态信息之后，就可以将两个时间步的信息进行比较从而将高系数分配给那些将要变化的模态信息，文中指出，理想情况下，在LSTM系统的记忆状态发生变化之前，每个跨模态交互只分配一次高系数。Delta-Memory注意力网络中的计算公式如下所示，首先计算出注意力权重系数，再将系数乘以原模态特征表示。</p>
+<p><span class="math display">\[
+\begin{gather*}
+a^{[t-1, t]}=\mathcal{D}_{a}\left(c^{[t-1, t]}\right) \\
+\hat{c}^{[t-1, t]}=c^{[t-1, t]} \odot a^{[t-1, t]}
+\end{gather*}
+\]</span></p>
+<p>多模态门控记忆结构存储了一段时间内跨模态信息交互的历史，包括两个门，分别是保持门和更新门，其中保持门分配上一个时间步的记忆，更新门根据更新建议（或称为当前时间步状态）来进行更新，计算公式如下所示，</p>
+<p><span class="math display">\[
+\begin{gather*}
+\hat{u}^{t}=\mathcal{D}_{u}\left(\hat{c}^{[t-1, t]}\right) \\
+\gamma_{1}^{t}=\mathcal{D}_{\gamma_{1}}\left(\hat{c}^{[t-1, t]}\right), \gamma_{2}^{t}=\mathcal{D}_{\gamma_{2}}\left(\hat{c}^{[t-1, t]}\right) \\
+u^{t}=\gamma_{1}^{t} \odot u^{t-1}+\gamma_{2}^{t} \odot \tanh \left(\hat{u}^{t}\right)
+\end{gather*}
+\]</span></p>
 <h5 id="多模态transformer融合方法">多模态Transformer融合方法</h5>
 <p>这里介绍的多模态Transformer融合方法出自<em>Multimodal Transformer for Unaligned Multimodal Language Sequences</em>一文，文章提出了MulT结构，主要应用于非对齐多模态语言序列场景。相关研究表明，在对多模态的语言时间序列数据进行建模时主要存在两个挑战：</p>
 <ol type="1">
@@ -137,16 +161,17 @@ h &amp;=\left(\sum_{i=1}^{r} \bigotimes_{m=1}^{M} \mathbf{w}_{m}^{(i)}\right) \c
 <center>
 <img src="/2022/02/11/%E5%A4%9A%E6%A8%A1%E6%80%81%E6%83%85%E6%84%9F%E5%88%86%E6%9E%90%E7%BB%BC%E8%BF%B0/006.png" width="300px">
 <p style="font-family:KaiTi">
-图6：跨模态注意力机制块结构
+图7：跨模态注意力机制块结构
 </p>
 </center>
 <p>MulT的整体架构如下图所示，在这里我们只关注模态信息融合的部分，即架构的中间部分，可以从图中看到，在完成特征向量的处理之后，将两个模态的特征向量分别作为源模态和目标模态输入到跨模态的Transformer结构中，两个Transformer的输出进行连接，再输入到Transformer结构中，不同的是，跨模态的Transformer中进行的主要是交叉注意力计算，而上部的Transformer中进行的主要是自注意计算。架构的底部和顶部在这里不作主要关注，只需要明确架构的底部为特征向量的处理，架构的顶部为下游任务的适应。</p>
 <center>
 <img src="/2022/02/11/%E5%A4%9A%E6%A8%A1%E6%80%81%E6%83%85%E6%84%9F%E5%88%86%E6%9E%90%E7%BB%BC%E8%BF%B0/007.png" width="350px">
 <p style="font-family:KaiTi">
-图7：MulT的整体架构
+图8：MulT的整体架构
 </p>
 </center>
+<h5 id="基于神经网络的融合方法在可解释性方面的改进">基于神经网络的融合方法在可解释性方面的改进</h5>
 ]]></content>
       <categories>
         <category>多模态情感分析</category>
