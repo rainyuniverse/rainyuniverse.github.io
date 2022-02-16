@@ -36,8 +36,9 @@
 <meta property="og:image" content="http://example.com/2022/02/11/%E5%A4%9A%E6%A8%A1%E6%80%81%E6%83%85%E6%84%9F%E5%88%86%E6%9E%90%E7%BB%BC%E8%BF%B0/008.png">
 <meta property="og:image" content="http://example.com/2022/02/11/%E5%A4%9A%E6%A8%A1%E6%80%81%E6%83%85%E6%84%9F%E5%88%86%E6%9E%90%E7%BB%BC%E8%BF%B0/006.png">
 <meta property="og:image" content="http://example.com/2022/02/11/%E5%A4%9A%E6%A8%A1%E6%80%81%E6%83%85%E6%84%9F%E5%88%86%E6%9E%90%E7%BB%BC%E8%BF%B0/007.png">
+<meta property="og:image" content="http://example.com/2022/02/11/%E5%A4%9A%E6%A8%A1%E6%80%81%E6%83%85%E6%84%9F%E5%88%86%E6%9E%90%E7%BB%BC%E8%BF%B0/009.png">
 <meta property="article:published_time" content="2022-02-11T11:57:28.000Z">
-<meta property="article:modified_time" content="2022-02-15T14:33:32.300Z">
+<meta property="article:modified_time" content="2022-02-16T02:18:15.902Z">
 <meta property="article:author" content="Rainy Universe">
 <meta property="article:tag" content="论文阅读">
 <meta name="twitter:card" content="summary">
@@ -271,7 +272,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2022-02-15 22:33:32" itemprop="dateModified" datetime="2022-02-15T22:33:32+08:00">2022-02-15</time>
+      <time title="修改时间：2022-02-16 10:18:15" itemprop="dateModified" datetime="2022-02-16T10:18:15+08:00">2022-02-16</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -437,6 +438,20 @@ u^{t}=\gamma_{1}^{t} \odot u^{t-1}+\gamma_{2}^{t} \odot \tanh \left(\hat{u}^{t}\
 </p>
 </center>
 <h5 id="基于神经网络的融合方法在可解释性方面的改进">基于神经网络的融合方法在可解释性方面的改进</h5>
+<p>一般的基于神经网络的融合方法在可解释性方面都表现较差，所以出现了一些提高可解释性的尝试，现有大多数的尝试是在挖掘共同和独特信息方面的改进。一些框架可以从多模态特征表示中提取公共信息，同时获取一些独特信息，这里的独特信息通常是指特定于模态的信息，最后再通过融合层将共同信息和独特信息进行整合。</p>
+<p>将DeepCU结构作为示例进行说明，DeepCU包括两个子网络，包括可以获取模态特性的独特子网络，以及由深度卷积张量网络组成的共同子网络。DeepCU可以通过两个子网络获取到互补的信息，进而通过融合层进行信息整合。DeepCU框架示意图如下所示，</p>
+<center>
+<img src="/2022/02/11/%E5%A4%9A%E6%A8%A1%E6%80%81%E6%83%85%E6%84%9F%E5%88%86%E6%9E%90%E7%BB%BC%E8%BF%B0/009.png" width="500px">
+<p style="font-family:KaiTi">
+图9：DeepCU的整体架构
+</p>
+</center>
+<p>框架示意图左边是TFN和LMF架构的示意图，DeepCU相较于TFN和LMF更具表现力，因为它在共同子网络中捕获了非线性的多模态交互关系，在独特子网络中不会了分解的非线性特征关系，缓解了缺失值场景，增强了模型的泛化能力。</p>
+<p>首先介绍独特子网络获得特定于模态信息的方法，从三个模态提取潜在特征之后，为了能对单模态中信息与信息的交互进行建模，这里采取的是分解机的方法，采用分解机的另一个好处是可以缓解缺失值场景，分解机公式如下所示，</p>
+<p><span class="math display">\[
+\hat{y}_{F M(\boldsymbol{x})}=w_{0}+\sum_{i=1}^{n} \boldsymbol{w}_{i} \boldsymbol{x}_{i}+\sum_{i=1}^{n} \sum_{j=i+1}^{n} \boldsymbol{v}_{i}^{T} \boldsymbol{v}_{j} \cdot \boldsymbol{x}_{i} \boldsymbol{x}_{j}
+\]</span></p>
+<p>然后我们对共同子网络进行介绍。共同子网络首先将三个模态的潜在特征进行外积，得到联合表示张量，类似于TFN的做法，其中张量的每个元素代表融合模态元素之间的相互作用强度，然后我们在这些张量上运用卷积操作，因为卷积核是非线性的特征提取器，所以比前馈层的泛化效果更好，并且能够有效降低复杂度，最后再将卷积操作输出输入到全连接层中。融合层的操作较为简单，只采取了简单的连接和转置操作。</p>
 
     </div>
 
@@ -471,8 +486,8 @@ u^{t}=\gamma_{1}^{t} \odot u^{t-1}+\gamma_{2}^{t} \odot \tanh \left(\hat{u}^{t}\
 
           <div class="post-nav">
             <div class="post-nav-item">
-                <a href="/2020/09/06/test/" rel="prev" title="test">
-                  <i class="fa fa-chevron-left"></i> test
+                <a href="/2020/09/06/hello-world/" rel="prev" title="Hello World">
+                  <i class="fa fa-chevron-left"></i> Hello World
                 </a>
             </div>
             <div class="post-nav-item">
