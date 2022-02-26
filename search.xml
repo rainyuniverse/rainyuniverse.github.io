@@ -1,6 +1,174 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>Transformer综述论文阅读</title>
+    <url>/2022/02/26/Transformer%E7%BB%BC%E8%BF%B0%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/</url>
+    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="\assets\css\APlayer.min.css"><script src="\assets\js\APlayer.min.js" class="aplayer-secondary-script-marker"></script><p>最近想要研读一下关于transformer变体结构在多模态特征融合时的操作的论文，首先需要广泛地了解一下transformer结构及其变体，于是阅读了复旦大学邱老师组里的transformer综述论文，本篇博客详细记录了综述论文中的重点以及本文作者对于这篇论文的理解。 <span id="more"></span></p>
+<h3 id="介绍">介绍</h3>
+<p>Transformer结构在许多人工智能领域都取得了巨大成功，如自然语言处理、计算机视觉和音频处理领域，到目前，已经提出了大量Transformer结构的变体（又称X-formers），综述论文从三个角度介绍了各种X-former：X-former对于传统Transformer架构的修改、基于Transformer变体的预训练模型以及Transformer变体模型在领域上的应用。</p>
+<p>Transformer结构最初是作为一个用于机器翻译的序列到序列模型提出的，后来的工作表明，基于Transformer的预训练模型（PTMs）可以在各种任务上达到最先进的性能。由于Transformer取得的成功，在过去几年内，又有人陆续提出Transformer的变体，主要是在以下几个角度作出改进：</p>
+<ol type="1">
+<li>模型效率。应用Transformer的一个关键挑战是它在处理长序列时效率低下，这主要是自注意模块中的计算和记忆复杂性导致的，改进方法包括轻量级注意力（如稀疏注意力变体）和采用递归和分层的注意力机制。</li>
+<li>模型泛化。由于Transformer是一个灵活的架构，对输入数据的结构偏差几乎不作假设，所以很难在小规模的数据上进行训练，改进方法包括引入结构偏差或正则化，以及在大规模未标记数据上进行预训练。</li>
+<li>模型适应性。这项工作的目的是使Transformer适应特定的下游任务和应用。</li>
+</ol>
+<h3 id="背景">背景</h3>
+<h4 id="传统transformer">传统Transformer</h4>
+<p>传统的Transformer是一个序列到序列的模型，由一个编码器和一个解码器组成，每个编码器是由<span class="math inline">\(L\)</span>个相同的块堆叠而成。每个编码器块主要是由一个多头注意力模块和一个前馈神经网络组成，为了建立更深层次的模型，在每个块周围采用了残差连接，然后是层归一化操作。与编码器块相比，解码器块在多头自注意力模块和前馈神经网络这件额外插入交叉主义模块。</p>
+<blockquote>
+<p><strong>需要注意的是，与编码器中的自注意模块不同的是，解码器中的自注意模块被调整为每个位置防止关注后续位置。</strong></p>
+</blockquote>
+<p>传统Transformer的架构如下图所示，</p>
+<center>
+<img src="/2022/02/26/Transformer%E7%BB%BC%E8%BF%B0%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/001.png" width="500px">
+<p style="font-family:KaiTi">
+图1：传统Transformer架构图
+</p>
+</center>
+<h5 id="注意力模块">注意力模块</h5>
+<p>Transformer的注意力机制采用QKV模型，计算公式如下，</p>
+<p><span class="math display">\[
+\text { Attention }(Q, K, V)=\operatorname{softmax}\left(\frac{Q K^{\top}}{\sqrt{D_{k}}}\right) V=A V
+\]</span></p>
+<p>在计算过程中需要注意QKV矩阵的维度，<span class="math inline">\(\mathbf{Q} \in \mathbb{R}^{N \times D_{k}}\)</span>，<span class="math inline">\(\mathrm{K} \in \mathbb{R}^{M \times D_{k}}\)</span>，<span class="math inline">\(\mathrm{V} \in \mathbb{R}^{M \times D_{v}}\)</span>，其中<span class="math inline">\(N\)</span>和<span class="math inline">\(M\)</span>代表queries和keys(values)的长度，<span class="math inline">\(D_{k}\)</span>和<span class="math inline">\(D_{v}\)</span>代表keys(queries)和values的维度，</p>
+<blockquote>
+<p><strong>1. softmax归一化操作按行进行</strong><br> <strong>2. 点积缩放（除以<span class="math inline">\(\sqrt{D_{k}}\)</span>）减轻softmax函数的梯度消失问题</strong></p>
+</blockquote>
+<p>传统的Transformer模型采用多头注意力机制，将原本的<span class="math inline">\(D_{m}\)</span>维度的queries、keys和values分别映射成<span class="math inline">\(D_{k}\)</span>、<span class="math inline">\(D_{k}\)</span>、<span class="math inline">\(D_{v}\)</span>维，并使用<span class="math inline">\(H\)</span>组学习的投影集。对于每一个投影的query、key和value，根据QKV模型计算公式计算输出，然后，将所有的输出连接起来，并将它们投射到<span class="math inline">\(D_{m}\)</span>的维度表示，多头注意力机制计算公式如下，</p>
+<p><span class="math display">\[
+\begin{array}{r}
+\text { MultiHeadAttn }(\mathbf{Q}, \mathbf{K}, \mathbf{V})=\text { Concat }\left(\text { head }_{1}, \cdots, \text { head }_{H}\right) \mathbf{W}^{O}, \\
+\text { where head }_{i}=\text { Attention }\left(\mathbf{Q W}_{i}^{Q}, \mathbf{K W}_{i}^{K}, \mathbf{V W}_{i}^{V}\right) .
+\end{array}
+\]</span></p>
+<p><strong>在Transformer中，有三种注意力机制方式：</strong></p>
+<ol type="1">
+<li><strong>自注意力机制</strong>。在transformer的编码器中，设置<span class="math inline">\(Q=K=V=X\)</span>，其中<span class="math inline">\(X\)</span>是上一层的输出。<br></li>
+<li><strong>掩码自注意力机制</strong>。在transformer解码器中，自注意是受限制的，即每个位置的查询只能注意到该位置之前的所有键值对。为了实现并行训练，通常对非标准化注意力矩阵<span class="math inline">\(\hat{A}=\exp \left(\frac{Q K^{\top}}{\sqrt{D_{k}}}\right)\)</span>应用屏蔽函数，其中非法位置通过设置<span class="math inline">\(\hat{A}_{i j}=-\infty \text { if } i&lt;j\)</span>来进行实现。这种注意方式也被称为自回归注意或因果注意。</li>
+<li><strong>交叉注意机制</strong>。交叉注意记住的query是由前一个解码层的输出投影出来的，而key和value是由编码器的输出投影出来的。</li>
+</ol>
+<h5 id="position-wise前馈神经网络">position-wise前馈神经网络</h5>
+<blockquote>
+<p><strong>在position-wise前馈神经网络中，参数在不同的位置上是共享的，因此position-wise前馈神经网络也可以理解为两个卷积层，核大小为1。</strong></p>
+</blockquote>
+<p>position-wise前馈神经网络的计算公式如下所示，</p>
+<p><span class="math display">\[
+\operatorname{FFN}\left(\mathbf{H}^{\prime}\right)=\operatorname{ReLU}\left(\mathbf{H}^{\prime} \mathbf{W}^{1}+\mathbf{b}^{1}\right) \mathbf{W}^{2}+\mathbf{b}^{2}
+\]</span></p>
+<p>其中，<span class="math inline">\(\mathbf{H}^{\prime}\)</span>是上一层输出，<span class="math inline">\(\mathbf{W}^{1} \in \mathbb{R}^{D_{m} \times D_{f}}, \mathbf{W}^{2} \in \mathbb{R}^{D_{f} \times D_{m}}, \mathbf{b}^{1} \in \mathbb{R}^{D_{f}}, \mathbf{b}^{2} \in \mathbb{R}^{D_{m}}\)</span>，需要额外注意的是，<strong>一般设置<span class="math inline">\({D_{f}}\)</span>大于<span class="math inline">\({D_{m}}\)</span></strong>。</p>
+<h5 id="残差连接和标准化">残差连接和标准化</h5>
+<p>为了建立一个深层次模型，transformer在每个模块周围采用了一个残差连接，然后进行层级标准化处理。例如，每一个transformer编码器模块可以表示为如下公式，</p>
+<p><span class="math display">\[
+\begin{aligned}
+\mathbf{H}^{\prime} &amp;=\text { LayerNorm }(\text { SelfAttention }(\mathbf{X})+\mathbf{X}) \\
+\mathbf{H} &amp;=\text { LayerNorm }\left(\text { FFN }\left(\mathbf{H}^{\prime}\right)+\mathbf{H}^{\prime}\right)
+\end{aligned}
+\]</span></p>
+<h5 id="位置编码">位置编码</h5>
+<p>由于transformer没有引入递归或卷积操作，因此对位置信息一无所知（尤其是对于编码器而言），因此需要额外的位置表示来模拟token的排序。</p>
+<h4 id="模型用途">模型用途</h4>
+<ol type="1">
+<li>使用编码器-解码器结构，通常用于序列到序列的建模。</li>
+<li>只使用编码器结构，编码器的输出被用作输入序列的表示，通常用于分类或序列标记问题。</li>
+<li>只使用解码器结构，其中编码器-解码器交叉注意模块也被移除，通常用于序列生成问题，如语言建模。</li>
+</ol>
+<h4 id="模型复杂度和参数量分析">模型复杂度和参数量分析</h4>
+<p>在假设序列长度为<span class="math inline">\(T\)</span>，维度为<span class="math inline">\(D\)</span>，FFN全连接层维度为<span class="math inline">\(4D\)</span>的情况下，自注意模块和position-wise前馈神经网络模块的复杂度和参数量如下表所示，</p>
+<center>
+<img src="/2022/02/26/Transformer%E7%BB%BC%E8%BF%B0%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/002.png" width="600px">
+</center>
+<p>对于transformer结构中自注意模块和前馈神经网络复杂度和参数量的推导，可以参考以下博客：</p>
+<p><a href="https://0809zheng.github.io/2021/07/12/efficienttransformer.html" target="_blank">传送门1：https://0809zheng.github.io/2021/07/12/efficienttransformer.html</a> <a href="https://zhuanlan.zhihu.com/p/264749298" target="_blank">传送门2：https://zhuanlan.zhihu.com/p/264749298</a></p>
+<h4 id="transformer与其他模型的比较">transformer与其他模型的比较</h4>
+<h5 id="对自注意操作的分析">对自注意操作的分析</h5>
+<ol type="1">
+<li>它具有与全连接层相同的最大路径长度，使其适合于长距离的依赖关系建模，与全连接层相比，它的参数效率更高，在处理可变长度的输入时更加灵活。</li>
+<li>由于卷积层的感受野有限，人们通常需要堆叠一个深度网络来拥有一个全局感受野，另一方面，恒定的最大路径长度使自注意能够以恒定的层数来模拟长距离的依赖关系。</li>
+<li>相比于循环层，自注意的并行度更高，更擅长长距离建模。</li>
+</ol>
+<p>下表展示了不同类型层的复杂度分析、最小序列操作数和最大路径长度。</p>
+<center>
+<img src="/2022/02/26/Transformer%E7%BB%BC%E8%BF%B0%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/003.png" width="600px">
+</center>
+<h5 id="关于归纳偏置">关于归纳偏置</h5>
+<blockquote>
+<p>在机器学习中，很多学习算法经常会对学习的问题做一些关于目标函数的必要假设，称为归纳偏置 (Inductive Bias)</p>
+</blockquote>
+<p>卷积网络通过共享的局部核函数施加了平移不变性和局部性的归纳偏置，循环神经网络通过其马尔科夫结构带来了时间不变性和位置性的归纳偏置，而transformer架构对数据的结构信息几乎不作假设，这使得transformer成为一个通用和灵活的架构，带来的副作用是<strong>容易对小规模的数据进行过度拟合</strong>。另外，transformer可以看作是一个带有完整有向图上所定义的GNN，其中每个输入都可视为图中的一个节点，然而，transformer和GNN之间的主要区别在于transformer没有引入关于如何构造输入数据的先验知识，transformer中的信息传递过程完全依赖于内容的相似性度量。</p>
+<blockquote>
+<p>卷积网络的平移不变性体现在卷积核共享权重，局部性体现在卷积核大小是有限的；RNN的时间不变性体现在序列顺序中的每个时间步之间都是有关联的。</p>
+</blockquote>
+<h3 id="对transformer变体的分类">对transformer变体的分类</h3>
+<p>到目前为止，人们已经从三个方面改进传统的transformer模型：架构修改、预训练和应用，其中架构修改又分为模块级别的改进和体系级别的改进，下图给出了transformer变体分类说明，</p>
+<center>
+<img src="/2022/02/26/Transformer%E7%BB%BC%E8%BF%B0%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/004.png" width="600px">
+<p style="font-family:KaiTi">
+图2：Transformer变体分类
+</p>
+</center>
+<p>详细transformer变体分类如下图所示，</p>
+<center>
+<img src="/2022/02/26/Transformer%E7%BB%BC%E8%BF%B0%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/005.png" width="600px">
+<p style="font-family:KaiTi">
+图3：详细Transformer变体分类
+</p>
+</center>
+<h3 id="模块级别改进">模块级别改进</h3>
+<h4 id="attention机制">attention机制</h4>
+<p>self-attention在实际应用中存在两大挑战：</p>
+<ol type="1">
+<li>复杂性。在处理长序列时，注意力模块称为瓶颈。</li>
+<li>结构性先验。自注意对输入的数据不存在任何结构性偏向，甚至顺序信息也需要从训练数据中学习，因此，不含预训练的transformer在小规模或中等规模的数据上通常容易过拟合。</li>
+</ol>
+<p>attention机制的改进方向：</p>
+<ol type="1">
+<li>稀疏注意力机制，将稀疏偏置引入到注意力计算。</li>
+<li>线性化注意，将注意力矩阵和特征映射分离，降低至线性复杂度。</li>
+<li>原型和显存压缩，减少了查询或键值对的数量，从而减小注意力矩阵大小。</li>
+<li>低秩自注意，主要抓住自注意力的低秩性。</li>
+<li>带有先验的注意力，主要使用先验注意力分布来补充或替代标准注意力。</li>
+<li>改进的多头机制。</li>
+</ol>
+<h5 id="稀疏注意力机制">稀疏注意力机制</h5>
+<p>在标准的自注意机制中，每个token都需要注意其他所有token，但事实上，所学习到的注意力矩阵大多是非常稀疏的，因此，可以通过加入结构性偏差来限制每个query所关注的query-key对的数量，从而降低计算的复杂性。计算公式如下所示，</p>
+<p><span class="math display">\[
+\hat{\mathbf{A}}_{i j}=\left\{\begin{array}{ll}
+\mathbf{q}_{i} \mathbf{k}_{j}^{\top} &amp; \text { if token } i \text { attends to token } j \\
+-\infty &amp; \text { if token } i \text { does not attend to token } j
+\end{array}\right.
+\]</span></p>
+<p>根据确定稀疏连接的指标，可以将这些方法分为两类，基于位置的稀疏注意和基于内容的稀疏注意。</p>
+<h6 id="基于位置信息的稀疏化注意力">基于位置信息的稀疏化注意力</h6>
+<p>在基于位置信息的稀疏化注意力中，注意力矩阵是根据一些预先定义的模式来限制的，尽管这些稀疏模式有不同的形式，但有些可以分解为一些原子的稀疏模式，如下图所示，</p>
+<center>
+<img src="/2022/02/26/Transformer%E7%BB%BC%E8%BF%B0%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/006.png" width="650px">
+<p style="font-family:KaiTi">
+图4：原子稀疏注意力模式
+</p>
+</center>
+<ol type="1">
+<li>global attention：增加一些全局节点作为节点间信息传播的枢纽，这些全局节点可以注意序列中的所有节点，整个序列也注意这些全局节点。</li>
+<li>band attention：利用数据具有很强局部性的特点，限制了每个query对其邻居节点的关注。</li>
+<li>dilated attention：通过扩大扩张空隙来获得更大的感受野。</li>
+<li>random attention：为了提高非局部信息互动的能力，对每个query随机抽取几条边。</li>
+<li>block local attention：这类注意将输入序列分割成几个不重叠的query块，每个query块都与一个本地记忆块相关，一个query块中的所有query都只关注相应记忆块中的key，图4(e)描述了一种常见的情况，即记忆块与相应的query块是相同的。</li>
+</ol>
+<p>下图展示一些复合稀疏注意力模式，</p>
+<center>
+<img src="/2022/02/26/Transformer%E7%BB%BC%E8%BF%B0%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/007.png" width="550px">
+<p style="font-family:KaiTi">
+图5：复合稀疏注意力模式
+</p>
+</center>
+]]></content>
+      <categories>
+        <category>深度学习论文阅读</category>
+      </categories>
+      <tags>
+        <tag>Transformer</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Hello World</title>
     <url>/2020/09/06/hello-world/</url>
     <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="\assets\css\APlayer.min.css"><script src="\assets\js\APlayer.min.js" class="aplayer-secondary-script-marker"></script><p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
@@ -196,10 +364,10 @@ u^{t}=\gamma_{1}^{t} \odot u^{t-1}+\gamma_{2}^{t} \odot \tanh \left(\hat{u}^{t}\
 <p>Deep-HOSeq处理独特子网络的方法是，将每个时间步的各个模态的向量进行外积操作，再进行卷积操作，得到每个时间步的独特信息，经过sum-pooling进行相加，得到独特向量。Deep-HOSeq处理共同子网络和DeepCU处理共同子网络的方法类似。</p>
 ]]></content>
       <categories>
-        <category>多模态情感分析</category>
+        <category>深度学习论文阅读</category>
       </categories>
       <tags>
-        <tag>论文阅读</tag>
+        <tag>多模态情感分析</tag>
       </tags>
   </entry>
 </search>
