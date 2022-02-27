@@ -3,7 +3,7 @@
   <entry>
     <title>Transformer综述论文阅读</title>
     <url>/2022/02/26/Transformer%E7%BB%BC%E8%BF%B0%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/</url>
-    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="\assets\css\APlayer.min.css"><script src="\assets\js\APlayer.min.js" class="aplayer-secondary-script-marker"></script><p>最近想要研读一下关于transformer变体结构在多模态特征融合时的操作的论文，首先需要广泛地了解一下transformer结构及其变体，于是阅读了复旦大学邱老师组里的transformer综述论文，本篇博客详细记录了综述论文中的重点以及本文作者对于这篇论文的理解。 <span id="more"></span></p>
+    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="\assets\css\APlayer.min.css"><script src="\assets\js\APlayer.min.js" class="aplayer-secondary-script-marker"></script><p>最近想要研读一下关于transformer变体结构在多模态特征融合时的操作的论文，首先需要广泛地了解一下transformer结构及其变体，于是阅读了复旦大学邱锡鹏教授组里的transformer综述论文，本篇博客详细记录了综述论文中的重点以及本文作者对于这篇论文的理解。 <span id="more"></span></p>
 <h3 id="介绍">介绍</h3>
 <p>Transformer结构在许多人工智能领域都取得了巨大成功，如自然语言处理、计算机视觉和音频处理领域，到目前，已经提出了大量Transformer结构的变体（又称X-formers），综述论文从三个角度介绍了各种X-former：X-former对于传统Transformer架构的修改、基于Transformer变体的预训练模型以及Transformer变体模型在领域上的应用。</p>
 <p>Transformer结构最初是作为一个用于机器翻译的序列到序列模型提出的，后来的工作表明，基于Transformer的预训练模型（PTMs）可以在各种任务上达到最先进的性能。由于Transformer取得的成功，在过去几年内，又有人陆续提出Transformer的变体，主要是在以下几个角度作出改进：</p>
@@ -153,13 +153,33 @@
 <li>random attention：为了提高非局部信息互动的能力，对每个query随机抽取几条边。</li>
 <li>block local attention：这类注意将输入序列分割成几个不重叠的query块，每个query块都与一个本地记忆块相关，一个query块中的所有query都只关注相应记忆块中的key，图4(e)描述了一种常见的情况，即记忆块与相应的query块是相同的。</li>
 </ol>
-<p>下图展示一些复合稀疏注意力模式，</p>
+<p>下图展示一些复合稀疏注意力模式，复合稀疏注意力模式通常是原子稀疏注意力模式组合而成的，</p>
 <center>
 <img src="/2022/02/26/Transformer%E7%BB%BC%E8%BF%B0%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/007.png" width="550px">
 <p style="font-family:KaiTi">
 图5：复合稀疏注意力模式
 </p>
 </center>
+<p>除了上述模式外，一些现有的研究还探索了针对特定数据类型的扩展稀疏模式。对于文本数据，BP-Transformer构建了一个二叉树，其中所有的token是叶子节点，内部节点是包含许多token的跨度节点，是分层组织的；对于视觉数据，有Image Transformer和Axial Transformer。三种transformer变体的扩展稀疏注意力模式如下图所示，</p>
+<center>
+<img src="/2022/02/26/Transformer%E7%BB%BC%E8%BF%B0%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/008.png" width="550px">
+<p style="font-family:KaiTi">
+图6：扩展稀疏注意力模式
+</p>
+</center>
+<h6 id="基于内容的稀疏注意力">基于内容的稀疏注意力</h6>
+<p>构建基于内容的稀疏图的一个直接方法是选择那些可能与给定query有较大相似性分数的key。Routing Transformer使用K-means聚类算法，将query和key都集中在同一组中心点向量上，每个query只与其处在相同cluster下的key进行交互。Reformer采用LSH哈希方法来为每个query选择key-value，其主要思想是对query和key哈希，分到多个桶内，在同一个桶内的query、key参与交互。SAC将输入序列视为一个图，并学习构建注意力边，以使用自适应稀疏连接改善特定任务的性能，其中边预测器是通过强化学习来训练的。Sparse Sinkhorn Attention首先将query和key通过排序网络控制分为几个块，并为每个query块分配一个key块，每个query只允许关注被分配给其相应块中的key。</p>
+<h5 id="线性注意力">线性注意力</h5>
+<p>线性化注意力是一类用<span class="math inline">\(\phi(Q) \phi(K)^{\top}\)</span>近似或替换非标准化注意力矩阵<span class="math inline">\(\exp \left(Q K^{\top}\right)\)</span>的方法，其中<span class="math inline">\(\phi\)</span>是按行方式应用的特征图，因此，非归一化注意力矩阵的计算可以通过计算<span class="math inline">\(\phi(Q)\left(\phi(K)^{\top} V\right)\)</span>来线性化，如下图所示，</p>
+<center>
+<img src="/2022/02/26/Transformer%E7%BB%BC%E8%BF%B0%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/009.png" width="600px">
+<p style="font-family:KaiTi">
+图7：标准注意力和线性注意力对比
+</p>
+</center>
+<p>该模型通过聚合(由特征映射的)key和value的外积表示的关联来维护内存矩阵，然后通过将内存矩阵与具有适当归一化的特征映射查询相乘来检索值，这种方法有两个关键组件，包括特征图和聚合规则。</p>
+<h5 id="query原型和显存压缩">query原型和显存压缩</h5>
+<p>除了使用稀疏注意和基于内核的线性化注意，人们还可以通过减少query或键值对的数量来降低注意的复杂性。</p>
 ]]></content>
       <categories>
         <category>深度学习论文阅读</category>
