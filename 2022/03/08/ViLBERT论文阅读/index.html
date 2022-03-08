@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 5.4.1">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/themes/blue/pace-theme-barber-shop.css">
+  <script src="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/pace.min.js" integrity="sha256-gqd7YTjg/BtfqWSwsJOvndl0Bxc8gFImLEkXQT8+qj0=" crossorigin="anonymous"></script>
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Pisces","darkmode":false,"version":"8.9.0","exturl":false,"sidebar":{"position":"left","width":300,"display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<meta name="description" content="BERT模型的提出使得大规模的预训练成为可能，与BERT模型仅仅处理文本模态不同，ViLBERT模型结合了图片和文本信息的特征，使用two-stream结构，基于大型的图像标题数据库训练与下游任务无关的通用模型，基于该模型通过少量调整即可实现通过标题检索图片、视觉问答等具体任务，最近在学习多模态特征有效的融合和对齐方法，于是对这篇文章进行了研读。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ViLBERT论文阅读">
+<meta property="og:url" content="http://example.com/2022/03/08/ViLBERT%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/index.html">
+<meta property="og:site_name" content="雨宙的个人博客">
+<meta property="og:description" content="BERT模型的提出使得大规模的预训练成为可能，与BERT模型仅仅处理文本模态不同，ViLBERT模型结合了图片和文本信息的特征，使用two-stream结构，基于大型的图像标题数据库训练与下游任务无关的通用模型，基于该模型通过少量调整即可实现通过标题检索图片、视觉问答等具体任务，最近在学习多模态特征有效的融合和对齐方法，于是对这篇文章进行了研读。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/2022/03/08/ViLBERT%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/001.png">
+<meta property="og:image" content="http://example.com/2022/03/08/ViLBERT%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/002.png">
+<meta property="og:image" content="http://example.com/2022/03/08/ViLBERT%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/003.png">
+<meta property="og:image" content="http://example.com/2022/03/08/ViLBERT%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/004.png">
+<meta property="article:published_time" content="2022-03-08T06:07:47.000Z">
+<meta property="article:modified_time" content="2022-03-08T11:54:48.873Z">
+<meta property="article:author" content="Rainy Universe">
+<meta property="article:tag" content="多模态模型">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2022/03/08/ViLBERT%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/001.png">
+
+
+<link rel="canonical" href="http://example.com/2022/03/08/ViLBERT%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"http://example.com/2022/03/08/ViLBERT%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/","path":"2022/03/08/ViLBERT论文阅读/","title":"ViLBERT论文阅读"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>ViLBERT论文阅读 | 雨宙的个人博客</title>
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+
+  <script src="https://cdn.jsdelivr.net/npm/jquery/dist/jquery.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome/css/font-awesome.min.css"/>
+  
+</head>
+
+
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <script src="/live2d-widget/autoload.js"></script>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">雨宙的个人博客</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%91%98%E8%A6%81"><span class="nav-number">1.</span> <span class="nav-text">摘要</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%8B%E7%BB%8D"><span class="nav-number">2.</span> <span class="nav-text">介绍</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%96%B9%E6%B3%95"><span class="nav-number">3.</span> <span class="nav-text">方法</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#bert"><span class="nav-number">3.1.</span> <span class="nav-text">BERT</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#vilbert%E6%89%A9%E5%B1%95bert%E4%BB%A5%E8%81%94%E5%90%88%E8%A1%A8%E7%A4%BA%E5%9B%BE%E5%83%8F%E5%92%8C%E6%96%87%E6%9C%AC"><span class="nav-number">3.2.</span> <span class="nav-text">ViLBERT：扩展BERT以联合表示图像和文本</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E5%85%B1%E5%90%8C%E6%B3%A8%E6%84%8F%E7%9A%84transformer%E5%B1%82"><span class="nav-number">3.2.1.</span> <span class="nav-text">共同注意的transformer层</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E5%9B%BE%E5%83%8F%E8%A1%A8%E7%A4%BA"><span class="nav-number">3.2.2.</span> <span class="nav-text">图像表示</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E9%A2%84%E8%AE%AD%E7%BB%83%E4%BB%BB%E5%8A%A1"><span class="nav-number">3.2.3.</span> <span class="nav-text">预训练任务</span></a></li></ol></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Rainy Universe"
+      src="/images/avatar.gif">
+  <p class="site-author-name" itemprop="name">Rainy Universe</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">5</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/rainyuniverse" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;rainyuniverse" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+  </div>
+
+
+
+        </div>
+      </div>
+      <div id="music163player">
+        <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=300 src="//music.163.com/outchain/player?type=0&id=7267179044&auto=1&height=430">
+        </iframe>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/03/08/ViLBERT%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Rainy Universe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="雨宙的个人博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          ViLBERT论文阅读
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2022-03-08 14:07:47 / 修改时间：19:54:48" itemprop="dateCreated datePublished" datetime="2022-03-08T14:07:47+08:00">2022-03-08</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/" itemprop="url" rel="index"><span itemprop="name">深度学习论文阅读</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>BERT模型的提出使得大规模的预训练成为可能，与BERT模型仅仅处理文本模态不同，ViLBERT模型结合了图片和文本信息的特征，使用two-stream结构，基于大型的图像标题数据库训练与下游任务无关的通用模型，基于该模型通过少量调整即可实现通过标题检索图片、视觉问答等具体任务，最近在学习多模态特征有效的融合和对齐方法，于是对这篇文章进行了研读。</p>
+<center>
+<img src="/2022/03/08/ViLBERT%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/001.png" width="600px">
+</center>
+<span id="more"></span>
+<p>论文地址和相关源码链接如下，</p>
+<p><a href="https://arxiv.org/pdf/1908.02265.pdf" target="_blank">论文地址：https://arxiv.org/pdf/1908.02265.pdf</a> <br> <a href="https://github.com/facebookresearch/vilbert-multi-task" target="_blank">相关源码：https://github.com/facebookresearch/vilbert-multi-task</a></p>
+<h3 id="摘要">摘要</h3>
+<p>ViLBERT模型是一个学习与任务无关的图像文本特征联合表示的模型，文章将流行的针对文本模态的BERT架构扩展到一个多模态的two-stream模型架构，在不同的流中处理视觉和文本输入，并通过共同注意的transformer层进行信息交互。文章通过自动收集的大型概念性标题数据集上定义两个代理任务，来对模型进行预训练，然后将其转移到多个既定的下游视觉和语言任务中，包括视觉问题回答、视觉常识推理、指代表达和基于标题的图像检索任务，在进行下游任务时只对基础架构做少量的补充。文章观察到，与现有的特定任务模型相比，在所有的四个下游任务上都实现了最先进的改进。文章认为，其工作代表了一种转变，即不再把学习视觉和语言之间的grounding作为任务训练的一部分，而是将visual grounding作为一种可预训练和可转移的能力。</p>
+<blockquote>
+<p>PS: visual grounding涉及视觉和文本两个模态，输入是图片和对应的物体描述，输出是描述物体的box，与目标检测不同的是，输入多了语言信息，在对物体进行定位时，要先对语言模态的输入进行理解，并且和视觉模态的信息进行融合，最后利用得到的特征进行定位预测。</p>
+</blockquote>
+<h3 id="介绍">介绍</h3>
+<p>近年来，通过图像、视频等生成文本的研究已有了很多丰硕的成果，这些方法和任务可归结为“vision-and-language”。虽然这些任务都需要将自然语言和视觉特征结合，但是“vision-and-language”任务还没有一个统一的基础来提升这种结合能力。“vision-and-language”现在通常的做法是先分别预训练语言和视觉模型，然后通过任务进行基础知识的学习。通过这种方法学到的基础知识并不可靠，如果数据量不足或者是有bias的，那么模型的泛化能力会很差。</p>
+<p>首先对模型进行预训练，然后再在目标任务上进行微调的手段已经被广泛使用，ViLBERT也采用了这种先预训练后转移的方案，并在预训练时尽可能地学习视觉和文本之间的关系。</p>
+<p>为了学习这些联合的视觉-语言表征，我们借鉴了自监督学习方面的成功经验，这些成功通过训练模型来执行代理任务，从大量的无标签数据源中获取丰富的语义和结构信息，这些代理任务包括预测掩蔽词等等。为了通过类似的方法学习visual grounding，必须确定一个视觉和语言能够对齐的数据源来学习模态之间的关系，文章采用了概念性标题数据集。</p>
+<p>文章提出了一个联合模型ViLBERT，用于从成对的视觉语言数据中学习与目标任务无关的visual grounding。文章的方法扩展了最近的BERT语言模型来共同推理文本和图像，关键技术创新是为视觉和语言处理引入单独的流，通过共同注意的transformer层进行信息交互，这种结构可以适应每种模态的不同处理需求，并在不同深度的模态之间提供互动，文章在实验中证明，two-stream结构优于single-stream结构。模型结构如下图所示，</p>
+<center>
+<img src="/2022/03/08/ViLBERT%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/002.png" width="700px">
+<p style="font-family:KaiTi">
+图1：ViLBERT模型结构
+</p>
+</center>
+<p>文章使用两种代理任务来训练模型：</p>
+<ol type="1">
+<li>遮蔽部分图片区域和文本单词，根据上下文内容预测被遮蔽部分。</li>
+<li>预测文字和图片是否匹配。</li>
+</ol>
+<p>将预训练模型作为基础，用于四个目标视觉语言任务，分别是视觉问题回答、视觉常识推理、指代表达和基于标题的图像检索。</p>
+<h3 id="方法">方法</h3>
+<h4 id="bert">BERT</h4>
+<p>BERT模型时一个基于注意力机制的双向语言模型，当在大型语言语料库上进行预训练时，BERT已被证明对多种自然语言处理任务的迁移学习非常有效。</p>
+<p>ViLBERT修改了BERT的键值注意机制，开发了一个多模态的共同注意transformer模块，通过在多头注意中交换键值对，这种结构使视觉注意到的文本特征被纳入到视觉表征中，同时将文本注意大的视觉特征纳入到文本表征中，BERT结构的标准transformer模块和ViLBERT结构的共同注意transformer模块对比图如下所示，</p>
+<center>
+<img src="/2022/03/08/ViLBERT%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/003.png" width="600px">
+<p style="font-family:KaiTi">
+图2：标准transformer模块和共同注意transformer模块对比
+</p>
+</center>
+<p>下面简单地介绍BERT的输入文本表示和预训练任务。BERT的输入文本表示由三部分构成，分别是位置嵌入(position embedding)、段嵌入(segment embedding)和目标词嵌入(token embedding)。BERT的预训练任务包括掩蔽语言建模和下一句预测。具体的对于BERT模型的介绍可以参考原论文，传送门如下，</p>
+<p><a href="https://arxiv.org/pdf/1810.04805.pdf" target="_blank">传送门：https://arxiv.org/pdf/1810.04805.pdf</a></p>
+<h4 id="vilbert扩展bert以联合表示图像和文本">ViLBERT：扩展BERT以联合表示图像和文本</h4>
+<p>受BERT模型在语言建模方面的成功启发，我们希望开发类似的模型和训练任务，从成对的数据中学习语言和视觉内容的联合表示，具体来说，文章考虑联合表示静态图像和相应的描述性文本。</p>
+<p>文章首先叙述了一些直观的想法。可以首先将视觉输入的空间离散化，将这些视觉标记完全视为文本输入，并输入到预训练的BERT模型中，这种方法为single-stream方法。文章说明了single-stream方法的一些缺点：</p>
+<ol type="1">
+<li>最初的聚类可能会导致离散化错误，并失去重要的视觉细节。</li>
+<li>以上方法对两种模态的输入进行了相同的处理，忽略了它们可能由于其固有的复杂性或其输入表征的初始抽象水平而需要不同的处理水平。</li>
+<li>强迫预训练的权重去适应大量额外的视觉标记，可能会损害学到的BERT语言模型。</li>
+</ol>
+<p>基于以上缺点，文章开发了一个two-stream架构，分别对每个模态进行建模，然后通过基于注意力的互动来融合它们，这种方法允许每个模态的网络深度不同，并能在不同的深度上实现跨模态连接。</p>
+<p>如图1所示，ViLBERT学习的是静态图像及其对应描述文本的联合表征，分别对两种模态进行建模，然后通过一组基于注意力机制的信息交互将它们融合在一起。对每种模态都可使用不同深度的网络，并支持不同深度的跨模态交互。双流架构中的每个流都是由一系列的TRM(transformer block)和Co-TRM组成，可以观察到，流之间的信息交互被限制在特定层，文本特征需要先经过TRM模块处理才能进行信息交互，文章给出的解释是所选择的视觉特征已经相对高级，与句子中的单词相比，视觉特征需要有限的上下文聚合。</p>
+<h5 id="共同注意的transformer层">共同注意的transformer层</h5>
+<p>ViLBERT中引入了共同注意的transformer层，该模块为每个模态产生以其他模态为条件的注意力集合特征，实际上是在视觉流中执行以图像为条件的语言注意力，在语言流中执行以语言为条件的图像注意力。</p>
+<h5 id="图像表示">图像表示</h5>
+<p>从预先训练好的物体检测网络中提取边界框和它们的视觉特征来生成图像区域特征，与文本中的文字不同，图像区域缺乏自然排序，文章采用一个5维的向量对区域进行位置编码，五个维度的元素分别为归一化后的bounding boxes的左上角和右下角的坐标以及图像区域覆盖占比，然后使用映射将位置编码与视觉特征维数匹配，进行相加后得到图像区域特征。使用一个特定的IMG token作为图像序列的开始，并用它的输出表征整个图像。</p>
+<h5 id="预训练任务">预训练任务</h5>
+<p>训练ViLBERT模型时采用了两个预训练任务，分别是掩蔽多模态建模和多模态对齐预测，如下图所示，</p>
+<center>
+<img src="/2022/03/08/ViLBERT%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/004.png" width="600px">
+<p style="font-family:KaiTi">
+图3：ViLBERT预训练任务
+</p>
+</center>
+<p>掩蔽多模态建模任务来自于标准BERT中的掩蔽语言建模任务，屏蔽大约15%的单词和图像区域输入，并要求模型在剩余输入的情况下对屏蔽进行预测。在对图像进行掩蔽时，90%的概率是直接遮挡，另外10%的概率保持不变，文本的掩蔽方案与BERT一致。ViLBERT并不直接预测被掩蔽区域的图像区域特征值（原因：语言往往只能识别视觉内容的高级语义，而不太可能重建准确的图像特征），而是预测对应区域在语义类别上的分布（不预测位置信息），为了监督这一点，文章从用于特征提取的同一预训练检测模型中获取该区域的特征分布，训练模型以最小化这两个分布之间的KL散度。</p>
+<p>多模态对齐预测任务必须预测图像和文本是否对齐，即文本是否描述了图像，文章把输出的<span class="math inline">\(h_{IMG}\)</span>和<span class="math inline">\(h_{CLS}\)</span>作为视觉和语言输入的整体表示，借用视觉和语言模型的另一个常见结构，文章将整体表征计算为<span class="math inline">\(h_{IMG}\)</span>和<span class="math inline">\(h_{CLS}\)</span>之间的元素乘积，并添加一个线性层来进行图像和文字是否对齐的二元预测。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="reward-container">
+  <div></div>
+  <button>
+    赞赏
+  </button>
+  <div class="post-reward">
+      <div>
+        <img src="/images/wechatpay.png" alt="Rainy Universe 微信">
+        <span>微信</span>
+      </div>
+      <div>
+        <img src="/images/alipay.png" alt="Rainy Universe 支付宝">
+        <span>支付宝</span>
+      </div>
+
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/%E5%A4%9A%E6%A8%A1%E6%80%81%E6%A8%A1%E5%9E%8B/" rel="tag"># 多模态模型</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2022/02/26/Transformer%E7%BB%BC%E8%BF%B0%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/" rel="prev" title="Transformer综述论文阅读">
+                  <i class="fa fa-chevron-left"></i> Transformer综述论文阅读
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments gitalk-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Rainy Universe</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/pisces/" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+  <script src="/js/third-party/pace.js"></script>
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">true</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.0/es5/tex-mml-chtml.js","integrity":"sha256-r+3itOMtGGjap0x+10hu6jW/gZCzxHsoKrOd7gyRSGY="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
+
+<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"rainyuniverse","repo":"blog-comment","client_id":"dd3ab568cf554224b60c","client_secret":"d377ea691384ea1e236e98cb932bd8e090b2d863","admin_user":"rainyuniverse","distraction_free_mode":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token","language":"zh-CN","js":{"url":"https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.min.js","integrity":"sha256-Pmj85ojLaPOWwRtlMJwmezB/Qg8BzvJp5eTzvXaYAfA="},"path_md5":"47b566f806cad8af13612ada6960cf1c"}</script>
+<script src="/js/third-party/comments/gitalk.js"></script>
+
+  
+</body>
+</html>
