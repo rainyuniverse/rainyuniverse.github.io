@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 5.4.1">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/themes/blue/pace-theme-barber-shop.css">
+  <script src="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/pace.min.js" integrity="sha256-gqd7YTjg/BtfqWSwsJOvndl0Bxc8gFImLEkXQT8+qj0=" crossorigin="anonymous"></script>
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Pisces","darkmode":false,"version":"8.9.0","exturl":false,"sidebar":{"position":"left","width":300,"display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<meta name="description" content="上一篇ViLBERT模型提出了使用two-stream的结构来分别处理图片和文本信息，然后再进行融合，在“vision-and-language”任务上还有其他模型使用了这种双流结构，因为其架构比单流结构更为复杂，所以架构的种类更加丰富，为了更深入地了解这种处理不同层次信息（图片和文本）的架构方式，我阅读了Seeing Out of tHe bOx:End-to-End Pre-training">
+<meta property="og:type" content="article">
+<meta property="og:title" content="SOHO论文阅读">
+<meta property="og:url" content="http://example.com/2022/03/09/SOHO%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/index.html">
+<meta property="og:site_name" content="雨宙的个人博客">
+<meta property="og:description" content="上一篇ViLBERT模型提出了使用two-stream的结构来分别处理图片和文本信息，然后再进行融合，在“vision-and-language”任务上还有其他模型使用了这种双流结构，因为其架构比单流结构更为复杂，所以架构的种类更加丰富，为了更深入地了解这种处理不同层次信息（图片和文本）的架构方式，我阅读了Seeing Out of tHe bOx:End-to-End Pre-training">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/2022/03/09/SOHO%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/001.png">
+<meta property="og:image" content="http://example.com/2022/03/09/SOHO%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/002.png">
+<meta property="og:image" content="http://example.com/2022/03/09/SOHO%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/003.png">
+<meta property="article:published_time" content="2022-03-09T07:42:57.000Z">
+<meta property="article:modified_time" content="2022-03-09T13:51:05.029Z">
+<meta property="article:author" content="Rainy Universe">
+<meta property="article:tag" content="多模态模型">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2022/03/09/SOHO%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/001.png">
+
+
+<link rel="canonical" href="http://example.com/2022/03/09/SOHO%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"http://example.com/2022/03/09/SOHO%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/","path":"2022/03/09/SOHO论文阅读/","title":"SOHO论文阅读"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>SOHO论文阅读 | 雨宙的个人博客</title>
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+
+  <script src="https://cdn.jsdelivr.net/npm/jquery/dist/jquery.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome/css/font-awesome.min.css"/>
+  
+</head>
+
+
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <script src="/live2d-widget/autoload.js"></script>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">雨宙的个人博客</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%91%98%E8%A6%81"><span class="nav-number">1.</span> <span class="nav-text">摘要</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%8B%E7%BB%8D"><span class="nav-number">2.</span> <span class="nav-text">介绍</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%B8%E5%85%B3%E5%B7%A5%E4%BD%9C"><span class="nav-number">3.</span> <span class="nav-text">相关工作</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#vision-language%E4%B8%AD%E7%9A%84%E8%A7%86%E8%A7%89%E8%A1%A8%E7%A4%BA"><span class="nav-number">3.1.</span> <span class="nav-text">Vision-Language中的视觉表示</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#vision-language%E7%9A%84%E9%A2%84%E8%AE%AD%E7%BB%83"><span class="nav-number">3.2.</span> <span class="nav-text">Vision-Language的预训练</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%96%B9%E6%B3%95"><span class="nav-number">4.</span> <span class="nav-text">方法</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%8F%AF%E8%AE%AD%E7%BB%83%E7%9A%84%E8%A7%86%E8%A7%89%E7%BC%96%E7%A0%81%E5%99%A8"><span class="nav-number">4.1.</span> <span class="nav-text">可训练的视觉编码器</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%A7%86%E8%A7%89%E5%AD%97%E5%85%B8"><span class="nav-number">4.2.</span> <span class="nav-text">视觉字典</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E8%A7%86%E8%A7%89%E5%AD%97%E5%85%B8%E5%B5%8C%E5%85%A5"><span class="nav-number">4.2.1.</span> <span class="nav-text">视觉字典嵌入</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E8%A7%86%E8%A7%89%E5%AD%97%E5%85%B8%E7%9A%84%E5%AD%A6%E4%B9%A0%E6%9B%B4%E6%96%B0"><span class="nav-number">4.2.2.</span> <span class="nav-text">视觉字典的学习更新</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E6%A2%AF%E5%BA%A6%E5%8F%8D%E5%90%91%E4%BC%A0%E6%92%AD"><span class="nav-number">4.2.3.</span> <span class="nav-text">梯度反向传播</span></a></li></ol></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Rainy Universe"
+      src="/images/avatar.gif">
+  <p class="site-author-name" itemprop="name">Rainy Universe</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">6</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/rainyuniverse" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;rainyuniverse" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+  </div>
+
+
+
+        </div>
+      </div>
+      <div id="music163player">
+        <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=300 src="//music.163.com/outchain/player?type=0&id=7267179044&auto=1&height=430">
+        </iframe>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/03/09/SOHO%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Rainy Universe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="雨宙的个人博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          SOHO论文阅读
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2022-03-09 15:42:57 / 修改时间：21:51:05" itemprop="dateCreated datePublished" datetime="2022-03-09T15:42:57+08:00">2022-03-09</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/" itemprop="url" rel="index"><span itemprop="name">深度学习论文阅读</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>上一篇ViLBERT模型提出了使用two-stream的结构来分别处理图片和文本信息，然后再进行融合，在“vision-and-language”任务上还有其他模型使用了这种双流结构，因为其架构比单流结构更为复杂，所以架构的种类更加丰富，为了更深入地了解这种处理不同层次信息（图片和文本）的架构方式，我阅读了Seeing Out of tHe bOx:End-to-End Pre-training for Vision-Language Representation Learning这篇论文。特别地，这篇论文提出的视觉特征的提取方法也有其独到之处，能够不受目标特征局限性的影响。</p>
+<center>
+<img src="/2022/03/09/SOHO%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/001.png" width="600px">
+</center>
+<span id="more"></span>
+<p>论文地址和相关源码链接如下：</p>
+<p><a href="https://arxiv.org/abs/2104.03135" target="_blank">论文地址：https://arxiv.org/abs/2104.03135</a> <br> <a href="https://github.com/researchmm/soho" target="_blank">相关源码：https://github.com/researchmm/soho</a></p>
+<h3 id="摘要">摘要</h3>
+<p>文章研究了用于视觉语言预训练的卷积神经网络和transformer的联合学习，旨在从数百万的图像-文本对中学习跨模态对齐，截止文章发表，最先进的方法是提取突出的图像区域并逐步将区域与文字对齐，但是由于提取出的图像区域仅仅代表图像的一部分，所以理解对应的自然语言是有难度的。文章提出了SOHO模型，将整个图像作为输入，并以端到端方式学习视觉语言的联合表示，SOHO模型不需要边界框标注，这使得其推理的速度比基于区域的方法块10倍。特别地，SOHO通过视觉字典(VD)学习提取全面而紧凑的图像特征，以促进跨模态的理解。最终，文章将SOHO模型在四个视觉语言任务上进行实验，并得到不错的性能和准确率提升。</p>
+<h3 id="介绍">介绍</h3>
+<p>最近跨模态学习的研究工作不断增加，特别是在视觉语言预训练(VLPT)领域。显而易见地，视觉表示在VLPT模型中起着重要作用，有一些模型利用了基于区域的图像特征并取得了不错的效果，这些特征是由在视觉基因组数据集上预训练的目标检测器提取出来的，但是这种方法也有一些缺点：</p>
+<ol type="1">
+<li>区域专注于边界框内的物体，而忽略了边界框外的上下文信息。这些信息对于区域与区域之间的关系理解和推理非常重要。文章以下图为例说明了这个事实，图中可以很容易地检测到男人、女人和船目标，但是如果缺少边框外的上下文信息，就会误以为人们在划船，从而导致模型在下游任务应用时的错误。</li>
+</ol>
+<center>
+<img src="/2022/03/09/SOHO%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/002.png" width="500px">
+<p style="font-family:KaiTi">
+图1：模型在下游任务上的结果对比
+</p>
+</center>
+<ol start="2" type="1">
+<li>对图像的视觉理解被限制在预先定义的区域类别中。</li>
+<li>大多数区域特征是由检测模型提取的，存在质量低、噪声大、过采样等问题，并且依赖于大规模的box标注数据。</li>
+</ol>
+<p>除了区域图像特征提取方法外，一些工作也研究了采用弱监督的目标检测的方法、或是通过基于网格的卷积特征来学习视觉表征的方法，但存在性能不高、只针对单个任务设计等问题。</p>
+<p>为了克服基于区域的图像特征的局限性，更好地利用图像文本数据对进行跨模态理解，文章提出了一个端到端的视觉语言预训练框架SOHO，直接学习图像和文本的嵌入及其语义对齐。与现有的VLPT模型相比，SOHO采取了一个简单的管道，不需要复杂的视觉骨干进行预训练。相比于现有的基于区域的图像特征的方法，SOHO不需要标注类别或边界框，可以通过更广泛的图像-文本数据直接优化视觉表示来丰富视觉语义。</p>
+<p>文章选择采用像素级的视觉表征，但像素级的视觉表征比语言的嵌入更加多样化和密集化，并且缺乏明确的监督，给对齐学习增加了难度。为了解决上述问题，文章引入了<strong>视觉字典</strong>，它代表了视觉领域中更全面和紧凑的语义。为了学习视觉字典，文中设计了一个移动平均编码器，将具有类似视觉语义的像素进行分组。</p>
+<p>在预训练过程中，文章采用了Masked Vision Modeling (MVM) ，Masked Language Modeling（MLM），Image-Text Matching （ITM）三个任务来优化模型。</p>
+<p>文章的贡献可以总结如下：</p>
+<ol type="1">
+<li>文章提出了SOHO模型，这是第一个直接用图像-文本对学习跨模态表示的端到端VLPT模型之一。在不需要提取边界框的情况下，模型可以实现至少10倍的推理速度。</li>
+<li>为了更好地对齐图像和文本数据，我们提出了一个新的动态更新的视觉字典，它代表了图像中类似语义的视觉抽象。</li>
+<li>对四个下游任务进行实验，得到了性能和准确率提升。</li>
+</ol>
+<h3 id="相关工作">相关工作</h3>
+<h4 id="vision-language中的视觉表示">Vision-Language中的视觉表示</h4>
+<p>早期的工作采用CNN分类模型来提取视觉特征，后来，Anderson等人提出了在视觉基因数据集上预训练的BUTD检测模型，以提取突出的区域特征作为视觉输入，最近，一些工作提出在特定的Vision-Language任务上，用卷积神经网络可以直接学习网格特征形式的视觉表征。</p>
+<p>VideoBERT和bag of words文献也使用矢量量化来表示视觉信息。VD与相关作品的关键区别在于，我们用可训练的视觉编码器的输出动态更新基于VD的嵌入，而不是预先计算的输入特征（即VD是<strong>动态更新</strong>的）。VD的动态更新机制可以从视觉语言数据集中获取文本指导语义。因此，该模型可以直接用高级语义来优化视觉语言的理解和对齐。</p>
+<h4 id="vision-language的预训练">Vision-Language的预训练</h4>
+<p>许多视觉语言预训练工作已经被提出用来学习跨模态表征，它们可以被分为single-stream模型和two-stream模型，双流模型分别处理视觉和语言信息，并在之后通过另一个transformer层将它们融合；相反，单流模型使用BERT来学习检测边界框特征（可以理解为ROI特征）和文本嵌入特征的双向联合分布。这两种类型都使用基于Transformer的模型来学习视觉-语言联合嵌入特征。虽然他们忽略了视觉表征学习对视觉-语言任务也很重要。</p>
+<h3 id="方法">方法</h3>
+<p>SOHO是一个端到端的框架，它由一个基于CNN的可训练的视觉编码器、一个视觉字典嵌入模块和一个多层transformer组成，视觉编码器将图像作为输入并产生视觉特征，视觉字典嵌入模块被设计用来将不同的视觉语义信息聚集到视觉token中，transformer被用来融合视觉和语言模态的特征，并产生特定任务的输出。SOHO可以通过MVM、MLM和ITM任务进行端到端的预训练，并很容易地适应下游任务。SOHO的整体架构如下图所示，</p>
+<center>
+<img src="/2022/03/09/SOHO%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/003.png" width="700px">
+<p style="font-family:KaiTi">
+图2：SOHO模型架构
+</p>
+</center>
+<h4 id="可训练的视觉编码器">可训练的视觉编码器</h4>
+<p>基于区域的图像特征的表现能力受到预先定义的对象和属性类别的限制，并且不能学习到某些边界框外的上下文信息。为了保留所有视觉信息，文章建议使用一个可训练的CNN视觉编码器，将整个图像作为输入，产生图像级别的视觉特征，而不是区域级别的特征。由于不受边界框的限制，视觉编码器可以从预训练的损失函数或下游任务的损失函数中进行端到端的更新，进而进一步优化跨模态学习。给定一张图片<span class="math inline">\(\mathcal{I}\)</span>，可以根据以下公式得到其特征<span class="math inline">\(\mathcal{V}\)</span>，</p>
+<p><span class="math display">\[
+\mathcal{V}=E(\mathcal{I}, \theta) \in \mathbf{R}^{l \times c}
+\]</span></p>
+<p>其中<span class="math inline">\(l\)</span>表示嵌入特征向量的数量，<span class="math inline">\(c\)</span>表示嵌入特征向量维度，另外，将在ImageNet上预训练的ResNet加上<span class="math inline">\(1 \times 1\)</span>的卷积层和<span class="math inline">\(2 \times 2\)</span>最大池化层作为编码器<span class="math inline">\(E\)</span>的结构。</p>
+<h4 id="视觉字典">视觉字典</h4>
+<p>视觉特征编码器提取的视觉特征<span class="math inline">\(\mathcal{V}\)</span>比语言词标记更加多样和密集，这将给跨模态理解的学习带来困难。为了弥补其与语言token的差距，我们提出了一个视觉字典，通过将相似的视觉语义聚合到同一图像特征中来标记视觉特征。</p>
+<h5 id="视觉字典嵌入">视觉字典嵌入</h5>
+<p>文章将视觉字典定义为一个矩阵<span class="math inline">\(\mathcal{D} \in \mathbf{R}^{k \times c}\)</span>，包含<span class="math inline">\(k\)</span>个嵌入向量，每个<span class="math inline">\(c\)</span>维，第<span class="math inline">\(j\)</span>个嵌入向量被表示为<span class="math inline">\(d_{j}\)</span>，对于每一个视觉特征<span class="math inline">\(v_{i}\)</span>，文章通过在<span class="math inline">\(\mathcal{D}\)</span>中搜索最近邻来计算其映射索引<span class="math inline">\(h_{i}\)</span>，记为如下公式，</p>
+<p><span class="math display">\[
+h_{i}=\operatorname{argmin}_{j}\left\|v_{i}-d_{j}\right\|_{2}
+\]</span></p>
+<p>因此可以定义以下映射函数<span class="math inline">\(f\)</span>，将视觉特征<span class="math inline">\(v_{i}\)</span>映射到视觉字典矩阵<span class="math inline">\(\mathcal{D}\)</span>：</p>
+<p><span class="math display">\[
+f\left(v_{i}\right)=d_{h_{i}}
+\]</span></p>
+<p>其使用视觉字典中最近的嵌入向量来表示视觉特征，<span class="math inline">\(f^{-1}(j)\)</span>表示逆映射函数，将索引<span class="math inline">\(j\)</span>映射回一组视觉特征。</p>
+<h5 id="视觉字典的学习更新">视觉字典的学习更新</h5>
+<p>视觉字典矩阵被随机初始化，并在一个小批次中通过移动平均操作进一步更新，记为如下公式，</p>
+<p><span class="math display">\[
+\hat{d}_{j}=\gamma * d_{j}+(1-\gamma) * \frac{\sum_{h_{i}=j} v_{i}}{\left|f^{-1}(j)\right|}
+\]</span></p>
+<p>即保留一部分原有的<span class="math inline">\(d_{j}\)</span>，根据小批次中被归为<span class="math inline">\(h_{j}\)</span>索引的视觉特征进行更新。</p>
+<h5 id="梯度反向传播">梯度反向传播</h5>
+<p>由于argmin操作时不可微的，梯度反向传播将被视觉字典停止，为了使视觉编码器可训练，采用了以下方法进行更新，</p>
+<p><span class="math display">\[
+f\left(v_{i}\right)=s g\left[d_{h_{i}}-v_{i}\right]+v_{i}
+\]</span></p>
+<p>其中<span class="math inline">\(s g[\cdot]\)</span>为停止梯度运算符。</p>
+<p>视觉词典根据特征相似度对视觉特征图进行在线聚类，并通过聚类中心表示每个特征向量。具有相似语义的特征向量将被聚集到同一个聚类中，聚类的索引可以被视为一个虚拟的视觉语义标签。<strong>由于聚类可以受到视觉语言学习任务的影响，每个嵌入向量的学习语义更适合于跨模态的理解和对齐。</strong></p>
+<p>视觉字典面临着一个冷启动问题，直接将梯度从随机初始化的嵌入向量复制到视觉特征图上会导致不正确的模型优化方向（即模式崩溃）。因此，我们在前10个训练历时中冻结了视觉特征编码器中ResNet的参数。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="reward-container">
+  <div></div>
+  <button>
+    赞赏
+  </button>
+  <div class="post-reward">
+      <div>
+        <img src="/images/wechatpay.png" alt="Rainy Universe 微信">
+        <span>微信</span>
+      </div>
+      <div>
+        <img src="/images/alipay.png" alt="Rainy Universe 支付宝">
+        <span>支付宝</span>
+      </div>
+
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/%E5%A4%9A%E6%A8%A1%E6%80%81%E6%A8%A1%E5%9E%8B/" rel="tag"># 多模态模型</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2022/03/08/ViLBERT%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/" rel="prev" title="ViLBERT论文阅读">
+                  <i class="fa fa-chevron-left"></i> ViLBERT论文阅读
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments gitalk-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Rainy Universe</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/pisces/" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+  <script src="/js/third-party/pace.js"></script>
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">true</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.0/es5/tex-mml-chtml.js","integrity":"sha256-r+3itOMtGGjap0x+10hu6jW/gZCzxHsoKrOd7gyRSGY="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
+
+<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"rainyuniverse","repo":"blog-comment","client_id":"dd3ab568cf554224b60c","client_secret":"d377ea691384ea1e236e98cb932bd8e090b2d863","admin_user":"rainyuniverse","distraction_free_mode":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token","language":"zh-CN","js":{"url":"https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.min.js","integrity":"sha256-Pmj85ojLaPOWwRtlMJwmezB/Qg8BzvJp5eTzvXaYAfA="},"path_md5":"d06e24b5a3053b765c1601533e7d9519"}</script>
+<script src="/js/third-party/comments/gitalk.js"></script>
+
+  
+</body>
+</html>
