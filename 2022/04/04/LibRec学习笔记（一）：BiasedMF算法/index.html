@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 5.4.1">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/themes/blue/pace-theme-barber-shop.css">
+  <script src="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/pace.min.js" integrity="sha256-gqd7YTjg/BtfqWSwsJOvndl0Bxc8gFImLEkXQT8+qj0=" crossorigin="anonymous"></script>
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Pisces","darkmode":false,"version":"8.9.0","exturl":false,"sidebar":{"position":"left","width":300,"display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<meta name="description" content="最近推荐系统导论课程需要使用LibRec库实现一些推荐算法，其实LibRec库已经封装了很多算法，并不需要再去实现，只需要调用命令行修改配置就可以运行，但为了更好地理解算法，我阅读了LibRec库的一些算法的源码，以下是BiaseMF算法在LibRec库中的实现，本文主要从三部分展开讲解，分别是预测公式、损失函数公式和更新公式。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="LibRec学习笔记（一）：BiasedMF算法">
+<meta property="og:url" content="http://example.com/2022/04/04/LibRec%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%EF%BC%88%E4%B8%80%EF%BC%89%EF%BC%9ABiasedMF%E7%AE%97%E6%B3%95/index.html">
+<meta property="og:site_name" content="雨宙的个人博客">
+<meta property="og:description" content="最近推荐系统导论课程需要使用LibRec库实现一些推荐算法，其实LibRec库已经封装了很多算法，并不需要再去实现，只需要调用命令行修改配置就可以运行，但为了更好地理解算法，我阅读了LibRec库的一些算法的源码，以下是BiaseMF算法在LibRec库中的实现，本文主要从三部分展开讲解，分别是预测公式、损失函数公式和更新公式。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2022-04-04T07:26:00.000Z">
+<meta property="article:modified_time" content="2022-04-04T07:36:52.776Z">
+<meta property="article:author" content="Rainy Universe">
+<meta property="article:tag" content="推荐系统">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="http://example.com/2022/04/04/LibRec%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%EF%BC%88%E4%B8%80%EF%BC%89%EF%BC%9ABiasedMF%E7%AE%97%E6%B3%95/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"http://example.com/2022/04/04/LibRec%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%EF%BC%88%E4%B8%80%EF%BC%89%EF%BC%9ABiasedMF%E7%AE%97%E6%B3%95/","path":"2022/04/04/LibRec学习笔记（一）：BiasedMF算法/","title":"LibRec学习笔记（一）：BiasedMF算法"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>LibRec学习笔记（一）：BiasedMF算法 | 雨宙的个人博客</title>
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+
+  <script src="https://cdn.jsdelivr.net/npm/jquery/dist/jquery.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome/css/font-awesome.min.css"/>
+  
+</head>
+
+
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <script src="/live2d-widget/autoload.js"></script>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">雨宙的个人博客</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BB%A3%E7%A0%81%E5%B1%95%E7%A4%BA"><span class="nav-number">1.</span> <span class="nav-text">代码展示</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E9%A2%84%E6%B5%8B%E5%85%AC%E5%BC%8F"><span class="nav-number">2.</span> <span class="nav-text">预测公式</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%8D%9F%E5%A4%B1%E5%87%BD%E6%95%B0%E5%85%AC%E5%BC%8F"><span class="nav-number">3.</span> <span class="nav-text">损失函数公式</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%9B%B4%E6%96%B0%E5%85%AC%E5%BC%8F"><span class="nav-number">4.</span> <span class="nav-text">更新公式</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Rainy Universe"
+      src="/images/avatar.gif">
+  <p class="site-author-name" itemprop="name">Rainy Universe</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">7</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/rainyuniverse" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;rainyuniverse" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+  </div>
+
+
+
+        </div>
+      </div>
+      <div id="music163player">
+        <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=300 src="//music.163.com/outchain/player?type=0&id=7267179044&auto=1&height=430">
+        </iframe>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/04/04/LibRec%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%EF%BC%88%E4%B8%80%EF%BC%89%EF%BC%9ABiasedMF%E7%AE%97%E6%B3%95/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Rainy Universe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="雨宙的个人博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          LibRec学习笔记（一）：BiasedMF算法
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2022-04-04 15:26:00 / 修改时间：15:36:52" itemprop="dateCreated datePublished" datetime="2022-04-04T15:26:00+08:00">2022-04-04</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%8E%A8%E8%8D%90%E7%B3%BB%E7%BB%9F/" itemprop="url" rel="index"><span itemprop="name">推荐系统</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>最近推荐系统导论课程需要使用LibRec库实现一些推荐算法，其实LibRec库已经封装了很多算法，并不需要再去实现，只需要调用命令行修改配置就可以运行，但为了更好地理解算法，我阅读了LibRec库的一些算法的源码，以下是BiaseMF算法在LibRec库中的实现，本文主要从三部分展开讲解，分别是预测公式、损失函数公式和更新公式。 <span id="more"></span></p>
+<h1 id="代码展示">代码展示</h1>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// SVDPlusPlusRecommender类继承BiasedMFRecommender父类</span></span><br><span class="line"><span class="keyword">package</span> net.librec.recommender.cf.rating;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.util.Iterator;</span><br><span class="line"><span class="keyword">import</span> net.librec.annotation.ModelData;</span><br><span class="line"><span class="keyword">import</span> net.librec.common.LibrecException;</span><br><span class="line"><span class="keyword">import</span> net.librec.math.structure.MatrixEntry;</span><br><span class="line"><span class="keyword">import</span> net.librec.math.structure.VectorBasedDenseVector;</span><br><span class="line"><span class="keyword">import</span> net.librec.recommender.MatrixFactorizationRecommender;</span><br><span class="line"></span><br><span class="line"><span class="meta">@ModelData(&#123;&quot;isRating&quot;, &quot;biasedMF&quot;, &quot;userFactors&quot;, &quot;itemFactors&quot;, &quot;userBiases&quot;, &quot;itemBiases&quot;&#125;)</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">BiasedMFRecommender</span> <span class="keyword">extends</span> <span class="title">MatrixFactorizationRecommender</span> </span>&#123;</span><br><span class="line">    <span class="keyword">protected</span> <span class="keyword">double</span> regBias;</span><br><span class="line">    <span class="keyword">protected</span> VectorBasedDenseVector userBiases;</span><br><span class="line">    <span class="keyword">protected</span> VectorBasedDenseVector itemBiases;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">BiasedMFRecommender</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">setup</span><span class="params">()</span> <span class="keyword">throws</span> LibrecException </span>&#123;</span><br><span class="line">        <span class="keyword">super</span>.setup();</span><br><span class="line">        <span class="keyword">this</span>.regBias = <span class="keyword">this</span>.conf.getDouble(<span class="string">&quot;rec.bias.regularization&quot;</span>, <span class="number">0.01D</span>);</span><br><span class="line">        <span class="comment">// 用户偏差向量</span></span><br><span class="line">        <span class="keyword">this</span>.userBiases = <span class="keyword">new</span> VectorBasedDenseVector(<span class="keyword">this</span>.numUsers);</span><br><span class="line">        <span class="comment">// 物品偏差向量</span></span><br><span class="line">        <span class="keyword">this</span>.itemBiases = <span class="keyword">new</span> VectorBasedDenseVector(<span class="keyword">this</span>.numItems);</span><br><span class="line">        <span class="comment">// 用户偏差初始化</span></span><br><span class="line">        <span class="keyword">this</span>.userBiases.init((<span class="keyword">double</span>)<span class="keyword">this</span>.initMean, (<span class="keyword">double</span>)<span class="keyword">this</span>.initStd);</span><br><span class="line">        <span class="comment">// 物品偏差初始化</span></span><br><span class="line">        <span class="keyword">this</span>.itemBiases.init((<span class="keyword">double</span>)<span class="keyword">this</span>.initMean, (<span class="keyword">double</span>)<span class="keyword">this</span>.initStd);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">trainModel</span><span class="params">()</span> <span class="keyword">throws</span> LibrecException </span>&#123;</span><br><span class="line">        <span class="keyword">for</span>(<span class="keyword">int</span> iter = <span class="number">1</span>; iter &lt;= <span class="keyword">this</span>.numIterations; ++iter) &#123;</span><br><span class="line">            <span class="comment">// 损失</span></span><br><span class="line">            <span class="keyword">this</span>.loss = <span class="number">0.0D</span>;</span><br><span class="line"></span><br><span class="line">            Iterator var2 = <span class="keyword">this</span>.trainMatrix.iterator();</span><br><span class="line"></span><br><span class="line">            <span class="keyword">while</span>(var2.hasNext()) &#123;</span><br><span class="line">                MatrixEntry matrixEntry = (MatrixEntry)var2.next();</span><br><span class="line">                <span class="keyword">int</span> userIdx = matrixEntry.row();</span><br><span class="line">                <span class="keyword">int</span> itemIdx = matrixEntry.column();</span><br><span class="line">                <span class="comment">// 实际评分</span></span><br><span class="line">                <span class="keyword">double</span> realRating = matrixEntry.get();</span><br><span class="line">                <span class="comment">// 预测评分</span></span><br><span class="line">                <span class="keyword">double</span> predictRating = <span class="keyword">this</span>.predict(userIdx, itemIdx);</span><br><span class="line">                <span class="comment">// 实际评分与预测评分的误差</span></span><br><span class="line">                <span class="keyword">double</span> error = realRating - predictRating;</span><br><span class="line">                <span class="keyword">this</span>.loss += error * error;</span><br><span class="line"></span><br><span class="line">                <span class="comment">// 根据当前用户ID得到当前用户偏差向量</span></span><br><span class="line">                <span class="keyword">double</span> userBiasValue = <span class="keyword">this</span>.userBiases.get(userIdx);</span><br><span class="line">                <span class="comment">// 用户偏置项的更新公式</span></span><br><span class="line">                <span class="keyword">this</span>.userBiases.plus(userIdx, (<span class="keyword">double</span>)<span class="keyword">this</span>.learnRate * (error - <span class="keyword">this</span>.regBias * userBiasValue));</span><br><span class="line"></span><br><span class="line">                <span class="keyword">this</span>.loss += <span class="keyword">this</span>.regBias * userBiasValue * userBiasValue;</span><br><span class="line">                <span class="comment">// 根据当前物品ID得到当前物品偏差向量</span></span><br><span class="line">                <span class="keyword">double</span> itemBiasValue = <span class="keyword">this</span>.itemBiases.get(itemIdx);</span><br><span class="line">                <span class="comment">// 物品偏置项的更新公式</span></span><br><span class="line">                <span class="keyword">this</span>.itemBiases.plus(itemIdx, (<span class="keyword">double</span>)<span class="keyword">this</span>.learnRate * (error - <span class="keyword">this</span>.regBias * itemBiasValue));</span><br><span class="line"></span><br><span class="line">                <span class="keyword">this</span>.loss += <span class="keyword">this</span>.regBias * itemBiasValue * itemBiasValue;</span><br><span class="line"></span><br><span class="line">                <span class="keyword">for</span>(<span class="keyword">int</span> factorIdx = <span class="number">0</span>; factorIdx &lt; <span class="keyword">this</span>.numFactors; ++factorIdx) &#123;</span><br><span class="line">                    <span class="keyword">double</span> userFactorValue = <span class="keyword">this</span>.userFactors.get(userIdx, factorIdx);</span><br><span class="line">                    <span class="keyword">double</span> itemFactorValue = <span class="keyword">this</span>.itemFactors.get(itemIdx, factorIdx);</span><br><span class="line">                    <span class="keyword">this</span>.userFactors.plus(userIdx, factorIdx, (<span class="keyword">double</span>)<span class="keyword">this</span>.learnRate * (error * itemFactorValue - (<span class="keyword">double</span>)<span class="keyword">this</span>.regUser * userFactorValue));</span><br><span class="line">                    <span class="keyword">this</span>.itemFactors.plus(itemIdx, factorIdx, (<span class="keyword">double</span>)<span class="keyword">this</span>.learnRate * (error * userFactorValue - (<span class="keyword">double</span>)<span class="keyword">this</span>.regItem * itemFactorValue));</span><br><span class="line">                    <span class="keyword">this</span>.loss += (<span class="keyword">double</span>)<span class="keyword">this</span>.regUser * userFactorValue * userFactorValue + (<span class="keyword">double</span>)<span class="keyword">this</span>.regItem * itemFactorValue * itemFactorValue;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">this</span>.loss *= <span class="number">0.5D</span>;</span><br><span class="line">            <span class="keyword">if</span> (<span class="keyword">this</span>.isConverged(iter) &amp;&amp; <span class="keyword">this</span>.earlyStop) &#123;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">this</span>.updateLRate(iter);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">double</span> <span class="title">predict</span><span class="params">(<span class="keyword">int</span> userIdx, <span class="keyword">int</span> itemIdx)</span> <span class="keyword">throws</span> LibrecException </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">this</span>.userFactors.row(userIdx).dot(<span class="keyword">this</span>.itemFactors.row(itemIdx)) + <span class="keyword">this</span>.userBiases.get(userIdx) + <span class="keyword">this</span>.itemBiases.get(itemIdx) + <span class="keyword">this</span>.globalMean;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="预测公式">预测公式</h1>
+<p><span class="math inline">\(\hat{r_{u i}}=\mu+b_{i}+b_{u}+p_{u} q_{i}^{T}\)</span></p>
+<p>其中，<span class="math inline">\(\mu\)</span>表示全局均值，在代码中使用<code>this.globalMean</code>表示，<span class="math inline">\(b_{i}\)</span>表示物品偏差项，在代码中使用<code>this.itemBiases.get(itemIdx)</code>表示，需要注意的是，物品偏置项需要根据物品ID进行索引，<span class="math inline">\(b_{u}\)</span>表示用户偏差项，在代码中使用<code>this.userBiases.get(userIdx)</code>表示，同样地，用户偏置项需要根据用户ID来进行索引，<span class="math inline">\(p_{u}\)</span>表示对用户评分矩阵进行矩阵分解后得到的用户向量，<span class="math inline">\(q_{i}\)</span>表示对用户评分矩阵进行分解后得到的物品向量。</p>
+<ul>
+<li>PS：这里说是用户向量和物品向量的原因是都是针对某一用户和物品进行计算。</li>
+</ul>
+<p>预测公式代码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">double</span> <span class="title">predict</span><span class="params">(<span class="keyword">int</span> userIdx, <span class="keyword">int</span> itemIdx)</span> <span class="keyword">throws</span> LibrecException </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">this</span>.userFactors.row(userIdx).dot(<span class="keyword">this</span>.itemFactors.row(itemIdx)) + <span class="keyword">this</span>.userBiases.get(userIdx) + <span class="keyword">this</span>.itemBiases.get(itemIdx) + <span class="keyword">this</span>.globalMean;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>传入<code>userIdx</code>和<code>itemIdx</code>的原因是需要明确特定用户和特定物品，才能进行预测评分，<code>userFactors</code>和<code>itemFactors</code>是对用户评分矩阵进行矩阵分解后得到的用户矩阵和物品矩阵，需要明确索引才能使用。</p>
+<h1 id="损失函数公式">损失函数公式</h1>
+<p><span class="math inline">\(\sum_{r_{u i} \in R_{\text {train }}}\left(r_{u i}-\hat{r}_{u i}\right)^{2}+\lambda\left(b_{i}^{2}+b_{u}^{2}+\left\|q_{i}\right\|^{2}+\left\|p_{u}\right\|^{2}\right)\)</span></p>
+<p>将用户对物品的特定评分与真实评分之间的差值的平方作为损失函数的一部分是显而易见的，在代码中体现如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 实际评分</span></span><br><span class="line"><span class="keyword">double</span> realRating = matrixEntry.get();</span><br><span class="line"><span class="comment">// 预测评分</span></span><br><span class="line"><span class="keyword">double</span> predictRating = <span class="keyword">this</span>.predict(userIdx, itemIdx);</span><br><span class="line"><span class="comment">// 实际评分与预测评分的误差</span></span><br><span class="line"><span class="keyword">double</span> error = realRating - predictRating;</span><br><span class="line"><span class="keyword">this</span>.loss += error * error;</span><br></pre></td></tr></table></figure>
+<p>通过以上展示的<code>predict()</code>函数可以直接根据用户ID与物品ID求出预测评分，但值得琢磨的是，实际评分是如何得到的？</p>
+<p>可以看到，<code>MatrixEntry</code>接口是如下定义的，</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">MatrixEntry</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">int</span> <span class="title">row</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">int</span> <span class="title">column</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">double</span> <span class="title">get</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">set</span><span class="params">(<span class="keyword">double</span> var1)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">int</span> <span class="title">rowPosition</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">int</span> <span class="title">columnPosition</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在<code>SequentialSparseMatrixEntry</code>类中实现了<code>MatrixEntry</code>接口的<code>get()</code>方法，</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">double</span> <span class="title">get</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">this</span>.tempVector.getAtPosition(<span class="keyword">this</span>.columnPosition);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>值得注意的是，在<code>SequentialSparseMatrixEntry</code>类中，<code>columnPosition</code>属性被初始化为<code>-1</code>，这就让我们联想到，标签的值总是被设置在最后一列，我们可以验证这个猜想，在代码中，<code>var2</code>被强制转换为<code>MatrixEntry</code>类型，而<code>var2</code>又是<code>trainMatrix</code>的一个迭代器，不出所料地，<code>trainMatrix</code>是·<code>SequentialAccessSparseMatrix</code>类型，所以程序中可以直接调用<code>get()</code>方法来获取数据集中的实际评分值。</p>
+<p>我们重新来回到损失函数的话题上，接下来需要关注正则项的那一部分，即</p>
+<p><span class="math inline">\(\lambda\left(b_{i}^{2}+b_{u}^{2}+\left|q_{i}\right|^{2}+\left|p_{u}\right|^{2}\right)\)</span></p>
+<p>首先我们关注<span class="math inline">\(\lambda(b_{i}^{2}+b_{u}^{2})\)</span>，这一部分的代码比较好写，根据索引找到特定的用户偏置向量和物品偏置向量就可以写出代码，代码如下所示，</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">double</span> userBiasValue = <span class="keyword">this</span>.userBiases.get(userIdx);</span><br><span class="line"><span class="keyword">this</span>.loss += <span class="keyword">this</span>.regBias * userBiasValue * userBiasValue;</span><br><span class="line"><span class="keyword">double</span> itemBiasValue = <span class="keyword">this</span>.itemBiases.get(itemIdx);</span><br><span class="line"><span class="keyword">this</span>.loss += <span class="keyword">this</span>.regBias * itemBiasValue * itemBiasValue;</span><br></pre></td></tr></table></figure>
+<p>接下来的一部分就可能比较难懂，在对用户评分矩阵进行分解时，我们有一个超参数<span class="math inline">\(K\)</span>，表示的是隐因子的个数，在电影的用户评分矩阵中，隐因子指的可能是喜剧片、动画片等内容，换言之，用户是因为这些隐因子才作出的这些评分，所以矩阵分解的公式可以表示如下，</p>
+<p><span class="math inline">\(\hat{r_{u i}}=p_{u} q_{i}^{T}=\sum_{k=1}^{K} p_{u k} q_{k i}^{T}=\sum_{k=1}^{K} p_{u k} q_{i k} \approx r_{u i}\)</span></p>
+<p>所以在代码中我们需要增加一层遍历，即从1到<span class="math inline">\(K\)</span>对隐因子的遍历，对应每一种隐因子ID和用户ID有不同的用户隐因子值，同样的，对于每一种隐因子ID和物品ID有不同的物品隐因子值，对于<span class="math inline">\(\lambda\left(\left|q_{ik}\right|^{2}+\left|p_{uk}\right|^{2}\right)\)</span>这一部分的代码如下所示，</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span>(<span class="keyword">int</span> factorIdx = <span class="number">0</span>; factorIdx &lt; <span class="keyword">this</span>.numFactors; ++factorIdx) &#123;</span><br><span class="line">    <span class="keyword">double</span> userFactorValue = <span class="keyword">this</span>.userFactors.get(userIdx, factorIdx);</span><br><span class="line">    <span class="keyword">double</span> itemFactorValue = <span class="keyword">this</span>.itemFactors.get(itemIdx, factorIdx);</span><br><span class="line">    <span class="keyword">this</span>.loss += (<span class="keyword">double</span>)<span class="keyword">this</span>.regUser * userFactorValue * userFactorValue + (<span class="keyword">double</span>)<span class="keyword">this</span>.regItem * itemFactorValue * itemFactorValue;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>以上就是损失函数全部的内容。</p>
+<h1 id="更新公式">更新公式</h1>
+<p><span class="math inline">\(\begin{array}{l} b_{u} \leftarrow b_{u}+\gamma\left(e_{u i}-\lambda b_{u}\right) \\ b_{i} \leftarrow b_{i}+\gamma\left(e_{u i}-\lambda b_{i}\right) \\ p_{u} \leftarrow p_{u}+\gamma\left(e_{u i} \cdot q_{i}-\lambda p_{u}\right) \\ q_{i} \leftarrow q_{i}+\gamma\left(e_{u i} \cdot p_{u}-\lambda q_{i}\right) \end{array}\)</span></p>
+<p>有了预测函数和损失函数的铺垫，这一部分就可以直接上代码，函数变量基本是差不多的，</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">this</span>.userBiases.plus(userIdx, (<span class="keyword">double</span>)<span class="keyword">this</span>.learnRate * (error - <span class="keyword">this</span>.regBias * userBiasValue));</span><br><span class="line"><span class="keyword">this</span>.itemBiases.plus(itemIdx, (<span class="keyword">double</span>)<span class="keyword">this</span>.learnRate * (error - <span class="keyword">this</span>.regBias * itemBiasValu));</span><br><span class="line"><span class="keyword">for</span>(<span class="keyword">int</span> factorIdx = <span class="number">0</span>; factorIdx &lt; <span class="keyword">this</span>.numFactors; ++factorIdx) &#123;</span><br><span class="line">    <span class="keyword">double</span> userFactorValue = <span class="keyword">this</span>.userFactors.get(userIdx, factorIdx);</span><br><span class="line">    <span class="keyword">double</span> itemFactorValue = <span class="keyword">this</span>.itemFactors.get(itemIdx, factorIdx);</span><br><span class="line">    <span class="keyword">this</span>.userFactors.plus(userIdx, factorIdx, (<span class="keyword">double</span>)<span class="keyword">this</span>.learnRate * (error * itemFactorValue - (<span class="keyword">double</span>)<span class="keyword">this</span>.regUser * userFactorValue));</span><br><span class="line">    <span class="keyword">this</span>.itemFactors.plus(itemIdx, factorIdx, (<span class="keyword">double</span>)<span class="keyword">this</span>.learnRate * (error * userFactorValue - (<span class="keyword">double</span>)<span class="keyword">this</span>.regItem * itemFactorValue));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>只需要注意一点，<code>plus()</code>函数是需要知道具体索引位置才能进行更新的，所以需要传入索引参数。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// DenseVector类中的plus方法</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">plus</span><span class="params">(<span class="keyword">int</span> index, <span class="keyword">double</span> value)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">this</span>.set(index, value + <span class="keyword">this</span>.get(index));</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// DenseMatrix类中的plus方法</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">plus</span><span class="params">(<span class="keyword">int</span> row, <span class="keyword">int</span> column, <span class="keyword">double</span> value)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">double</span>[] var10000 = <span class="keyword">this</span>.values[row];</span><br><span class="line">    var10000[column] += value;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="reward-container">
+  <div></div>
+  <button>
+    赞赏
+  </button>
+  <div class="post-reward">
+      <div>
+        <img src="/images/wechatpay.png" alt="Rainy Universe 微信">
+        <span>微信</span>
+      </div>
+      <div>
+        <img src="/images/alipay.png" alt="Rainy Universe 支付宝">
+        <span>支付宝</span>
+      </div>
+
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/%E6%8E%A8%E8%8D%90%E7%B3%BB%E7%BB%9F/" rel="tag"># 推荐系统</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2022/03/09/SOHO%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/" rel="prev" title="SOHO论文阅读">
+                  <i class="fa fa-chevron-left"></i> SOHO论文阅读
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments gitalk-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Rainy Universe</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/pisces/" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+  <script src="/js/third-party/pace.js"></script>
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">true</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.0/es5/tex-mml-chtml.js","integrity":"sha256-r+3itOMtGGjap0x+10hu6jW/gZCzxHsoKrOd7gyRSGY="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
+
+<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"rainyuniverse","repo":"blog-comment","client_id":"dd3ab568cf554224b60c","client_secret":"d377ea691384ea1e236e98cb932bd8e090b2d863","admin_user":"rainyuniverse","distraction_free_mode":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token","language":"zh-CN","js":{"url":"https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.min.js","integrity":"sha256-Pmj85ojLaPOWwRtlMJwmezB/Qg8BzvJp5eTzvXaYAfA="},"path_md5":"55f71017894cdfff4ad56194e0de3ef8"}</script>
+<script src="/js/third-party/comments/gitalk.js"></script>
+
+  
+</body>
+</html>
