@@ -727,13 +727,13 @@ f\left(v_{i}\right)=s g\left[d_{h_{i}}-v_{i}\right]+v_{i}
 </ol>
 <h3 id="传统方式">传统方式</h3>
 <ol type="1">
-<li>在每一个路由器中的单独路由器算法元件，在控制平面进行交互<br></li>
-<li>路由和转发的相互作用：</li>
-</ol>
+<li><p>在每一个路由器中的单独路由器算法元件，在控制平面进行交互<br></p></li>
+<li><p>路由和转发的相互作用：</p>
 <ul>
 <li>控制平面：路由算法决定端到端路径<br></li>
 <li>数据平面：IP协议根据转发表决定了IP数据报在此路由器上的局部转发</li>
-</ul>
+</ul></li>
+</ol>
 <h3 id="sdn方式逻辑集中的控制平面">SDN方式：逻辑集中的控制平面</h3>
 <ol type="1">
 <li>一个不同的（通常是远程的）控制器与本地控制代理（CAs）交互</li>
@@ -747,15 +747,15 @@ f\left(v_{i}\right)=s g\left[d_{h_{i}}-v_{i}\right]+v_{i}
 <p>高层面通用路由器体系架构<br> 1. 路由：运行路由选择算法/协议（RIP，OSPF，BGP）——生成路由表<br> 2. 转发：从输入到输出链路交换数据报——根据路由表进行分组的转发 <img src="https://img-blog.csdnimg.cn/20210330184838153.png" alt="在这里插入图片描述"></p>
 <h3 id="输入端口功能">输入端口功能</h3>
 <ol type="1">
-<li>物理层：Bit级的接收<br></li>
-<li>数据链路层：链路层协议动作、解封装<br></li>
-<li>网络层：分布式交换<br></li>
-</ol>
+<li><p>物理层：Bit级的接收<br></p></li>
+<li><p>数据链路层：链路层协议动作、解封装<br></p></li>
+<li><p>网络层：分布式交换<br></p>
 <ul>
 <li>根据数据报头部的信息如：目的地址，在输入端口内存中的转发表中查找合适的输出端口</li>
 <li>基于目标的转发：仅仅依赖于IP数据报的目标IP地址（最长前缀匹配）</li>
 <li>通用转发：基于头部字段的任意集合进行转发</li>
-</ul>
+</ul></li>
+</ol>
 <h3 id="输入端口缓存">输入端口缓存</h3>
 <ol type="1">
 <li>当交换机构的速率小于输入端口的汇聚速率时，在输入端口可能要排队（排队延迟以及由于输入缓存溢出造成丢失）<br></li>
@@ -811,28 +811,26 @@ f\left(v_{i}\right)=s g\left[d_{h_{i}}-v_{i}\right]+v_{i}
 </figure>
 <h3 id="ip分片和重组">IP分片和重组</h3>
 <ol type="1">
-<li>网络链路有MTU（最大传输单元）——链路层帧所携带的最大数据长度（不同的链路类型有不同的MTU）<br></li>
-<li>大的IP数据报在网络上被分片</li>
-</ol>
+<li><p>网络链路有MTU（最大传输单元）——链路层帧所携带的最大数据长度（不同的链路类型有不同的MTU）<br></p></li>
+<li><p>大的IP数据报在网络上被分片</p>
 <ul>
 <li>一个数据报被分割成若干个小的数据报（有相同的ID，不同的偏移量，最后一个分片标记为0）</li>
 <li>重组分片只在最终的目标主机进行</li>
 <li>IP头部的信息被用于标识，排序相关分片</li>
-</ul>
-<ol start="3" type="1">
-<li>例子 <img src="https://img-blog.csdnimg.cn/20210330195240725.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3JhaW55X3VuaXZlcnNl,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></li>
+</ul></li>
+<li><p>例子 <img src="https://img-blog.csdnimg.cn/20210330195240725.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3JhaW55X3VuaXZlcnNl,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p></li>
 </ol>
 <h3 id="ip编址">IP编址</h3>
 <h4 id="引论">引论</h4>
 <ol type="1">
-<li>IP地址：32位标示，对主机或者路由器的接口编址<br></li>
-<li>接口：主机/路由器和物理链路的连接处</li>
-</ol>
+<li><p>IP地址：32位标示，对主机或者路由器的接口编址<br></p></li>
+<li><p>接口：主机/路由器和物理链路的连接处</p>
 <ul>
 <li>路由器通常拥有多个接口</li>
 <li>主机也有可能有多个接口</li>
 <li>IP地址和每一个接口关联</li>
-</ul>
+</ul></li>
+</ol>
 <p><strong>3. 一个IP地址和一个接口相关联</strong></p>
 <h4 id="子网subnets">子网（subnets）</h4>
 <ol type="1">
@@ -852,21 +850,19 @@ f\left(v_{i}\right)=s g\left[d_{h_{i}}-v_{i}\right]+v_{i}
 <img src="https://img-blog.csdnimg.cn/20210330202049353.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3JhaW55X3VuaXZlcnNl,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><figcaption aria-hidden="true">在这里插入图片描述</figcaption>
 </figure>
 <ol type="1">
-<li>特殊IP地址：</li>
-</ol>
+<li><p>特殊IP地址：</p>
 <ul>
 <li>子网部分全为0，本网络</li>
 <li>主机部分全为0，本主机</li>
 <li>主机部分全为1，广播地址，这个网络的所有主机</li>
-</ul>
-<ol start="2" type="1">
-<li>内网（专用）IP地址</li>
-</ol>
+</ul></li>
+<li><p>内网（专用）IP地址</p>
 <ul>
 <li>专用地址：地址空间的一部分供专用地址使用</li>
 <li>永远不会被当做公用地址来分配，不会与公用地址重复（只在局部网络中意义，区分不同的设备）</li>
 <li>路由器不对目标地址是专用地址的分组进行转发</li>
-</ul>
+</ul></li>
+</ol>
 <h4 id="cidr-无类域间路由">CIDR 无类域间路由</h4>
 <ol type="1">
 <li>子网部分可以在任意的位置<br></li>
