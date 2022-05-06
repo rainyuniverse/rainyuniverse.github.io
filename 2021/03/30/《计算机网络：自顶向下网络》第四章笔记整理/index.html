@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 5.4.1">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/themes/blue/pace-theme-barber-shop.css">
+  <script src="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/pace.min.js" integrity="sha256-gqd7YTjg/BtfqWSwsJOvndl0Bxc8gFImLEkXQT8+qj0=" crossorigin="anonymous"></script>
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Pisces","darkmode":false,"version":"8.9.0","exturl":false,"sidebar":{"position":"left","width":300,"display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<meta name="description" content="对大黑书《计算机网络：自顶向下方法》第四章进行笔记整理......">
+<meta property="og:type" content="article">
+<meta property="og:title" content="《计算机网络：自顶向下方法》第四章笔记整理">
+<meta property="og:url" content="http://example.com/2021/03/30/%E3%80%8A%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C%EF%BC%9A%E8%87%AA%E9%A1%B6%E5%90%91%E4%B8%8B%E7%BD%91%E7%BB%9C%E3%80%8B%E7%AC%AC%E5%9B%9B%E7%AB%A0%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/index.html">
+<meta property="og:site_name" content="雨宙的个人博客">
+<meta property="og:description" content="对大黑书《计算机网络：自顶向下方法》第四章进行笔记整理......">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20210330184838153.png">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20210330185758172.png">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20210330190501677.png">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20210330191022409.png">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20210330191343346.png">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20210330192430417.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3JhaW55X3VuaXZlcnNl,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20210330192548897.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3JhaW55X3VuaXZlcnNl,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20210330195240725.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3JhaW55X3VuaXZlcnNl,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20210330202049353.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3JhaW55X3VuaXZlcnNl,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20210330212245799.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3JhaW55X3VuaXZlcnNl,size_16,color_FFFFFF,t_70">
+<meta property="article:published_time" content="2021-03-30T13:00:52.000Z">
+<meta property="article:modified_time" content="2022-05-06T03:36:33.302Z">
+<meta property="article:author" content="Rainy Universe">
+<meta property="article:tag" content="计算机网络">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://img-blog.csdnimg.cn/20210330184838153.png">
+
+
+<link rel="canonical" href="http://example.com/2021/03/30/%E3%80%8A%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C%EF%BC%9A%E8%87%AA%E9%A1%B6%E5%90%91%E4%B8%8B%E7%BD%91%E7%BB%9C%E3%80%8B%E7%AC%AC%E5%9B%9B%E7%AB%A0%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"http://example.com/2021/03/30/%E3%80%8A%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C%EF%BC%9A%E8%87%AA%E9%A1%B6%E5%90%91%E4%B8%8B%E7%BD%91%E7%BB%9C%E3%80%8B%E7%AC%AC%E5%9B%9B%E7%AB%A0%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/","path":"2021/03/30/《计算机网络：自顶向下网络》第四章笔记整理/","title":"《计算机网络：自顶向下方法》第四章笔记整理"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>《计算机网络：自顶向下方法》第四章笔记整理 | 雨宙的个人博客</title>
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+
+  <script src="https://cdn.jsdelivr.net/npm/jquery/dist/jquery.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome/css/font-awesome.min.css"/>
+  
+</head>
+
+
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <script src="/live2d-widget/autoload.js"></script>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">雨宙的个人博客</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AF%BC%E8%AE%BA"><span class="nav-number">1.</span> <span class="nav-text">导论</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BD%91%E7%BB%9C%E5%B1%82%E6%9C%8D%E5%8A%A1"><span class="nav-number">1.1.</span> <span class="nav-text">网络层服务</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BD%91%E7%BB%9C%E5%B1%82%E7%9A%84%E5%85%B3%E9%94%AE%E5%8A%9F%E8%83%BD"><span class="nav-number">1.2.</span> <span class="nav-text">网络层的关键功能</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E5%B9%B3%E9%9D%A2%E5%92%8C%E6%8E%A7%E5%88%B6%E5%B9%B3%E9%9D%A2"><span class="nav-number">1.3.</span> <span class="nav-text">数据平面和控制平面</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E5%B9%B3%E9%9D%A2"><span class="nav-number">1.3.1.</span> <span class="nav-text">数据平面</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%8E%A7%E5%88%B6%E5%B9%B3%E9%9D%A2"><span class="nav-number">1.3.2.</span> <span class="nav-text">控制平面</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BC%A0%E7%BB%9F%E6%96%B9%E5%BC%8F"><span class="nav-number">1.4.</span> <span class="nav-text">传统方式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#sdn%E6%96%B9%E5%BC%8F%E9%80%BB%E8%BE%91%E9%9B%86%E4%B8%AD%E7%9A%84%E6%8E%A7%E5%88%B6%E5%B9%B3%E9%9D%A2"><span class="nav-number">1.5.</span> <span class="nav-text">SDN方式：逻辑集中的控制平面</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BD%91%E7%BB%9C%E6%9C%8D%E5%8A%A1%E6%A8%A1%E5%9E%8B"><span class="nav-number">1.6.</span> <span class="nav-text">网络服务模型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BF%9E%E6%8E%A5%E5%BB%BA%E7%AB%8B"><span class="nav-number">1.7.</span> <span class="nav-text">连接建立</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%B7%AF%E7%94%B1%E5%99%A8%E7%BB%84%E6%88%90"><span class="nav-number">2.</span> <span class="nav-text">路由器组成</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%B7%AF%E7%94%B1%E5%99%A8%E7%BB%93%E6%9E%84%E6%A6%82%E5%86%B5"><span class="nav-number">2.1.</span> <span class="nav-text">路由器结构概况</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BE%93%E5%85%A5%E7%AB%AF%E5%8F%A3%E5%8A%9F%E8%83%BD"><span class="nav-number">2.2.</span> <span class="nav-text">输入端口功能</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BE%93%E5%85%A5%E7%AB%AF%E5%8F%A3%E7%BC%93%E5%AD%98"><span class="nav-number">2.3.</span> <span class="nav-text">输入端口缓存</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BA%A4%E6%8D%A2%E7%BB%93%E6%9E%84"><span class="nav-number">2.4.</span> <span class="nav-text">交换结构</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E9%80%9A%E8%BF%87%E5%86%85%E5%AD%98%E4%BA%A4%E6%8D%A2"><span class="nav-number">2.4.1.</span> <span class="nav-text">通过内存交换</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E9%80%9A%E8%BF%87%E6%80%BB%E7%BA%BF%E4%BA%A4%E6%8D%A2"><span class="nav-number">2.4.2.</span> <span class="nav-text">通过总线交换</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E9%80%9A%E8%BF%87%E4%BA%92%E8%81%94%E7%BD%91%E7%BB%9Ccrossbar%E7%AD%89%E7%9A%84%E4%BA%A4%E6%8D%A2"><span class="nav-number">2.4.3.</span> <span class="nav-text">通过互联网络（crossbar等）的交换</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BE%93%E5%87%BA%E7%AB%AF%E5%8F%A3"><span class="nav-number">2.5.</span> <span class="nav-text">输出端口</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%B0%83%E5%BA%A6%E6%9C%BA%E5%88%B6"><span class="nav-number">2.5.1.</span> <span class="nav-text">调度机制</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E8%B0%83%E5%BA%A6%E7%AD%96%E7%95%A5%E4%BC%98%E5%85%88%E6%9D%83"><span class="nav-number">2.5.1.1.</span> <span class="nav-text">调度策略：优先权</span></a></li></ol></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ipinternet%E5%8D%8F%E8%AE%AE"><span class="nav-number">3.</span> <span class="nav-text">IP：Internet协议</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BA%92%E8%81%94%E7%BD%91%E7%9A%84%E7%BD%91%E7%BB%9C%E5%B1%82"><span class="nav-number">3.1.</span> <span class="nav-text">互联网的网络层</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ip%E6%95%B0%E6%8D%AE%E6%8A%A5%E6%A0%BC%E5%BC%8F"><span class="nav-number">3.2.</span> <span class="nav-text">IP数据报格式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ip%E5%88%86%E7%89%87%E5%92%8C%E9%87%8D%E7%BB%84"><span class="nav-number">3.3.</span> <span class="nav-text">IP分片和重组</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ip%E7%BC%96%E5%9D%80"><span class="nav-number">3.4.</span> <span class="nav-text">IP编址</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%BC%95%E8%AE%BA"><span class="nav-number">3.4.1.</span> <span class="nav-text">引论</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%AD%90%E7%BD%91subnets"><span class="nav-number">3.4.2.</span> <span class="nav-text">子网（subnets）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#ip%E5%9C%B0%E5%9D%80%E5%88%86%E7%B1%BB"><span class="nav-number">3.4.3.</span> <span class="nav-text">IP地址分类</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#cidr-%E6%97%A0%E7%B1%BB%E5%9F%9F%E9%97%B4%E8%B7%AF%E7%94%B1"><span class="nav-number">3.4.4.</span> <span class="nav-text">CIDR 无类域间路由</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%AD%90%E7%BD%91%E6%8E%A9%E7%A0%81"><span class="nav-number">3.4.5.</span> <span class="nav-text">子网掩码</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#%E8%BD%AC%E5%8F%91%E8%A1%A8%E5%92%8C%E8%BD%AC%E5%8F%91%E7%AE%97%E6%B3%95"><span class="nav-number">3.4.5.0.1.</span> <span class="nav-text">转发表和转发算法</span></a></li></ol></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%8E%B7%E5%8F%96ip%E5%9C%B0%E5%9D%80%E7%9A%84%E8%BF%87%E7%A8%8B"><span class="nav-number">3.4.6.</span> <span class="nav-text">获取IP地址的过程</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#nat%E7%BD%91%E7%BB%9C%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2"><span class="nav-number">3.4.7.</span> <span class="nav-text">NAT：网络地址转换</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#ipv6"><span class="nav-number">3.4.8.</span> <span class="nav-text">IPv6</span></a></li></ol></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Rainy Universe"
+      src="/images/avatar.gif">
+  <p class="site-author-name" itemprop="name">Rainy Universe</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">11</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/rainyuniverse" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;rainyuniverse" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+  </div>
+
+
+
+        </div>
+      </div>
+      <div id="music163player">
+        <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=300 src="//music.163.com/outchain/player?type=0&id=7267179044&auto=1&height=430">
+        </iframe>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/03/30/%E3%80%8A%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C%EF%BC%9A%E8%87%AA%E9%A1%B6%E5%90%91%E4%B8%8B%E7%BD%91%E7%BB%9C%E3%80%8B%E7%AC%AC%E5%9B%9B%E7%AB%A0%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Rainy Universe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="雨宙的个人博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          《计算机网络：自顶向下方法》第四章笔记整理
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2021-03-30 21:00:52" itemprop="dateCreated datePublished" datetime="2021-03-30T21:00:52+08:00">2021-03-30</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2022-05-06 11:36:33" itemprop="dateModified" datetime="2022-05-06T11:36:33+08:00">2022-05-06</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" itemprop="url" rel="index"><span itemprop="name">计算机网络</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>对大黑书《计算机网络：自顶向下方法》第四章进行笔记整理...... <span id="more"></span></p>
+<h2 id="导论">导论</h2>
+<h3 id="网络层服务">网络层服务</h3>
+<ol type="1">
+<li>在发送主机和接收主机之间传送段（segment）。<br></li>
+<li>在发送端将段封装到数据报中，在接收端将段上交给传输层实体。<br></li>
+<li>网络层协议存在于每一个主机和路由器。<br></li>
+<li>路由器检查每一个经过它的IP数据报的头部。</li>
+</ol>
+<h3 id="网络层的关键功能">网络层的关键功能</h3>
+<ol type="1">
+<li>转发：将分组从路由器的输入接口转发到合适的输出接口。<br></li>
+<li>路由：使用路由算法来决定分组从发送主机到目标接收主机的路径。</li>
+</ol>
+<h3 id="数据平面和控制平面">数据平面和控制平面</h3>
+<h4 id="数据平面">数据平面</h4>
+<ol type="1">
+<li>本地，每个路由器功能<br></li>
+<li>决定从路由器输入端口到达的分组如何转发到输出端口<br></li>
+<li>转发功能：传统方式是基于目标地址和转发表；SDN方式是基于多个字段和转发表</li>
+</ol>
+<h4 id="控制平面">控制平面</h4>
+<ol type="1">
+<li>网络范围内的逻辑<br></li>
+<li>决定数据报如何在路由器之间路由，决定数据报从源到目标主机之间的端到端路径<br></li>
+<li>两个控制平面方法：传统的路由算法在路由器中被实现；SDN在远程的服务器中实现</li>
+</ol>
+<h3 id="传统方式">传统方式</h3>
+<ol type="1">
+<li>在每一个路由器中的单独路由器算法元件，在控制平面进行交互<br></li>
+<li>路由和转发的相互作用：</li>
+</ol>
+<ul>
+<li>控制平面：路由算法决定端到端路径<br></li>
+<li>数据平面：IP协议根据转发表决定了IP数据报在此路由器上的局部转发</li>
+</ul>
+<h3 id="sdn方式逻辑集中的控制平面">SDN方式：逻辑集中的控制平面</h3>
+<ol type="1">
+<li>一个不同的（通常是远程的）控制器与本地控制代理（CAs）交互</li>
+</ol>
+<h3 id="网络服务模型">网络服务模型</h3>
+<p>从发送方主机到接收方主机传输数据报的通道，<br> 对于单个数据报的服务：可靠传送；延迟保证<br> 对于数据报流的服务：保序数据报传送；保证流的最小带宽；分组之间的延迟差</p>
+<h3 id="连接建立">连接建立</h3>
+<p>在分组传输之前，在两个主机之间，在通过一些路由器所构成的路径上建立一个网络层连接（涉及到路由器）</p>
+<h2 id="路由器组成">路由器组成</h2>
+<h3 id="路由器结构概况">路由器结构概况</h3>
+<p>高层面通用路由器体系架构<br> 1. 路由：运行路由选择算法/协议（RIP，OSPF，BGP）——生成路由表<br> 2. 转发：从输入到输出链路交换数据报——根据路由表进行分组的转发 <img src="https://img-blog.csdnimg.cn/20210330184838153.png" alt="在这里插入图片描述"></p>
+<h3 id="输入端口功能">输入端口功能</h3>
+<ol type="1">
+<li>物理层：Bit级的接收<br></li>
+<li>数据链路层：链路层协议动作、解封装<br></li>
+<li>网络层：分布式交换<br></li>
+</ol>
+<ul>
+<li>根据数据报头部的信息如：目的地址，在输入端口内存中的转发表中查找合适的输出端口</li>
+<li>基于目标的转发：仅仅依赖于IP数据报的目标IP地址（最长前缀匹配）</li>
+<li>通用转发：基于头部字段的任意集合进行转发</li>
+</ul>
+<h3 id="输入端口缓存">输入端口缓存</h3>
+<ol type="1">
+<li>当交换机构的速率小于输入端口的汇聚速率时，在输入端口可能要排队（排队延迟以及由于输入缓存溢出造成丢失）<br></li>
+<li>HOL blocking：排在队头的数据报阻止了队列中其他数据报向前移动 <img src="https://img-blog.csdnimg.cn/20210330185758172.png" alt="在这里插入图片描述"></li>
+</ol>
+<h3 id="交换结构">交换结构</h3>
+<ol type="1">
+<li>将分组从输入缓存区传输到合适的输出端口<br></li>
+<li>交换速率：分组可以按照该速率从输入传输到输出<br></li>
+<li>三种典型的交换机构</li>
+</ol>
+<h4 id="通过内存交换">通过内存交换</h4>
+<ol type="1">
+<li>在CPU直接控制下的交换，采用传统的计算机<br></li>
+<li>分组被拷贝到系统内存，CPU从分组头部提取出目标地址，查找转发表，找到对应的输出端口，拷贝到输出端口<br></li>
+<li>转发速率被内存的带宽限制（数据报通过BUS两遍）<br></li>
+<li>一次只能转发一个分组 <img src="https://img-blog.csdnimg.cn/20210330190501677.png" alt="在这里插入图片描述"></li>
+</ol>
+<h4 id="通过总线交换">通过总线交换</h4>
+<ol type="1">
+<li>数据报通过共享总线，从输入端口转发到输出端口<br></li>
+<li>总线竞争：交换速度受限于总线带宽<br></li>
+<li>一次处理一个分组 <img src="https://img-blog.csdnimg.cn/20210330191022409.png" alt="在这里插入图片描述"></li>
+</ol>
+<h4 id="通过互联网络crossbar等的交换">通过互联网络（crossbar等）的交换</h4>
+<ol type="1">
+<li>同时并发转发多个分组，克服总线带宽限制<br></li>
+<li>榕树网络，纵横网络和其他的互联网络被开发，将多个处理器连接成多处理器<br></li>
+<li>高级设计：将数据报分片为固定长度的信元，通过交换网络交换 <img src="https://img-blog.csdnimg.cn/20210330191343346.png" alt="在这里插入图片描述"></li>
+</ol>
+<h3 id="输出端口">输出端口</h3>
+<ol type="1">
+<li>当数据报从交换机构的到达速度比传输速率快，就需要输出端口缓存（数据报可能会被丢弃，由于拥塞，缓冲区没有空间）<br></li>
+<li>由调度规则选择排队的数据报进行传输（不一定先到先传）</li>
+</ol>
+<h4 id="调度机制">调度机制</h4>
+<ol type="1">
+<li>调度：选择下一个要通过链路传输的分组<br></li>
+<li>FIFO scheduling：按照分组到来的次序发送<br></li>
+<li>丢弃策略：丢弃刚到达的分组、根据优先权丢失/移除分组，随机地丢弃/移除<br></li>
+<li>调度策略</li>
+</ol>
+<h5 id="调度策略优先权">调度策略：优先权</h5>
+<p>发送最高优先权的分组</p>
+<h2 id="ipinternet协议">IP：Internet协议</h2>
+<h3 id="互联网的网络层">互联网的网络层</h3>
+<figure>
+<img src="https://img-blog.csdnimg.cn/20210330192430417.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3JhaW55X3VuaXZlcnNl,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><figcaption aria-hidden="true">在这里插入图片描述</figcaption>
+</figure>
+<h3 id="ip数据报格式">IP数据报格式</h3>
+<figure>
+<img src="https://img-blog.csdnimg.cn/20210330192548897.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3JhaW55X3VuaXZlcnNl,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><figcaption aria-hidden="true">在这里插入图片描述</figcaption>
+</figure>
+<h3 id="ip分片和重组">IP分片和重组</h3>
+<ol type="1">
+<li>网络链路有MTU（最大传输单元）——链路层帧所携带的最大数据长度（不同的链路类型有不同的MTU）<br></li>
+<li>大的IP数据报在网络上被分片</li>
+</ol>
+<ul>
+<li>一个数据报被分割成若干个小的数据报（有相同的ID，不同的偏移量，最后一个分片标记为0）</li>
+<li>重组分片只在最终的目标主机进行</li>
+<li>IP头部的信息被用于标识，排序相关分片</li>
+</ul>
+<ol start="3" type="1">
+<li>例子 <img src="https://img-blog.csdnimg.cn/20210330195240725.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3JhaW55X3VuaXZlcnNl,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></li>
+</ol>
+<h3 id="ip编址">IP编址</h3>
+<h4 id="引论">引论</h4>
+<ol type="1">
+<li>IP地址：32位标示，对主机或者路由器的接口编址<br></li>
+<li>接口：主机/路由器和物理链路的连接处</li>
+</ol>
+<ul>
+<li>路由器通常拥有多个接口</li>
+<li>主机也有可能有多个接口</li>
+<li>IP地址和每一个接口关联</li>
+</ul>
+<p><strong>3. 一个IP地址和一个接口相关联</strong></p>
+<h4 id="子网subnets">子网（subnets）</h4>
+<ol type="1">
+<li>IP地址：</li>
+</ol>
+<ul>
+<li>子网部分（高位bits）</li>
+<li>主机部分（低位bits）</li>
+</ul>
+<ol start="2" type="1">
+<li>一个子网内的节点（主机或者路由器）它们的IP地址的高位部分相同，这些节点构成的网络的一部分叫做子网<br></li>
+<li>无需路由器介入，子网内各主机可以在物理上相互直接到达<br></li>
+<li>判断子网的方法（将每一个接口从主机或者路由器上分开）</li>
+</ol>
+<h4 id="ip地址分类">IP地址分类</h4>
+<figure>
+<img src="https://img-blog.csdnimg.cn/20210330202049353.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3JhaW55X3VuaXZlcnNl,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><figcaption aria-hidden="true">在这里插入图片描述</figcaption>
+</figure>
+<ol type="1">
+<li>特殊IP地址：</li>
+</ol>
+<ul>
+<li>子网部分全为0，本网络</li>
+<li>主机部分全为0，本主机</li>
+<li>主机部分全为1，广播地址，这个网络的所有主机</li>
+</ul>
+<ol start="2" type="1">
+<li>内网（专用）IP地址</li>
+</ol>
+<ul>
+<li>专用地址：地址空间的一部分供专用地址使用</li>
+<li>永远不会被当做公用地址来分配，不会与公用地址重复（只在局部网络中意义，区分不同的设备）</li>
+<li>路由器不对目标地址是专用地址的分组进行转发</li>
+</ul>
+<h4 id="cidr-无类域间路由">CIDR 无类域间路由</h4>
+<ol type="1">
+<li>子网部分可以在任意的位置<br></li>
+<li>地址格式：a.b.c.d/x，其中x是地址中子网号的长度，例如，200.23.16.0/23</li>
+</ol>
+<h4 id="子网掩码">子网掩码</h4>
+<ol type="1">
+<li>32bits，1代表子网部分，0代表主机部分</li>
+</ol>
+<h6 id="转发表和转发算法">转发表和转发算法</h6>
+<p>获取IP数据报的目标地址，对于转发表中的每一个表项，如果如 (IP Des addr) &amp; (mask)==destination, 则按照表项对应的接口转发该数据报；如果都没有找到，则使用默认表项转发数据报</p>
+<h4 id="获取ip地址的过程">获取IP地址的过程</h4>
+<ol type="1">
+<li>主机获得IP地址</li>
+</ol>
+<ul>
+<li><p>系统管理员将地址配置在一个文件中</p></li>
+<li><p><strong>DHCP</strong>：从服务器中动态获得一个IP地址（即插即用）</p>
+<ul>
+<li><p>允许主机在加入网络的时候，动态地从服务器那里获得IP地址</p></li>
+<li><p>DHCP工作概况：</p>
+<ul>
+<li>主机广播“DHCP discover”报文</li>
+<li>DHCP服务器用“DHCP offer”提供报文响应</li>
+<li>主机请求IP地址：发送“DHCP request”报文</li>
+<li>DHCP服务器发送地址：“DHCP ack”报文</li>
+</ul></li>
+</ul></li>
+</ul>
+<ol start="2" type="1">
+<li>获取一个网络的子网部分</li>
+</ol>
+<ul>
+<li><p>从ISP获得地址块中分配一个小地址块</p></li>
+<li><p><strong>层次编址</strong> <img src="https://img-blog.csdnimg.cn/20210330212245799.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3JhaW55X3VuaXZlcnNl,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p></li>
+</ul>
+<h4 id="nat网络地址转换">NAT：网络地址转换</h4>
+<ol type="1">
+<li>所有离开本地网络的数据报具有一个相同的源地址NAT IP address，但是具有不同的端口号<br></li>
+<li>本地网络只有一个有效IP地址</li>
+</ol>
+<ul>
+<li>不需要从ISP分配一块地址，可用一个IP地址用于所有的（局域网）设备</li>
+<li>可以在局域网改变设备的地址情况下而无需通知外界</li>
+<li>可以改变ISP（地址变化）而不需改变内部的设备地址</li>
+<li>局域网内部的设备没有明确的地址，对外是不可见的</li>
+</ul>
+<p>3.实现</p>
+<ul>
+<li>外出数据包：替换源地址和端口号为NAT IP地址和新的端口号，目标IP和端口不变</li>
+<li>记住每个转换替换对（在NAT转换表中）</li>
+<li>进入数据包：替换目标IP地址和端口号，采用存储在NAT表中的mapping表项</li>
+</ul>
+<h4 id="ipv6">IPv6</h4>
+<p>1.固定的40字节头部，数据报传输过程中，不允许分片<br> 2.IPv4到IPv6的平移</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="reward-container">
+  <div></div>
+  <button>
+    赞赏
+  </button>
+  <div class="post-reward">
+      <div>
+        <img src="/images/wechatpay.png" alt="Rainy Universe 微信">
+        <span>微信</span>
+      </div>
+      <div>
+        <img src="/images/alipay.png" alt="Rainy Universe 支付宝">
+        <span>支付宝</span>
+      </div>
+
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" rel="tag"># 计算机网络</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2021/03/12/%E3%80%8A%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C%EF%BC%9A%E8%87%AA%E9%A1%B6%E5%90%91%E4%B8%8B%E6%96%B9%E6%B3%95%E3%80%8B%E7%AC%AC%E5%85%AD%E7%AB%A0%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/" rel="prev" title="《计算机网络：自顶向下方法》第六章笔记整理">
+                  <i class="fa fa-chevron-left"></i> 《计算机网络：自顶向下方法》第六章笔记整理
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2022/02/11/%E5%A4%9A%E6%A8%A1%E6%80%81%E6%83%85%E6%84%9F%E5%88%86%E6%9E%90%E7%BB%BC%E8%BF%B0/" rel="next" title="多模态情感分析综述">
+                  多模态情感分析综述 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments gitalk-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Rainy Universe</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/pisces/" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+  <script src="/js/third-party/pace.js"></script>
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">true</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.0/es5/tex-mml-chtml.js","integrity":"sha256-r+3itOMtGGjap0x+10hu6jW/gZCzxHsoKrOd7gyRSGY="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
+
+<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"rainyuniverse","repo":"blog-comment","client_id":"dd3ab568cf554224b60c","client_secret":"d377ea691384ea1e236e98cb932bd8e090b2d863","admin_user":"rainyuniverse","distraction_free_mode":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token","language":"zh-CN","js":{"url":"https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.min.js","integrity":"sha256-Pmj85ojLaPOWwRtlMJwmezB/Qg8BzvJp5eTzvXaYAfA="},"path_md5":"6eed85222affe2f7f3a1dc7938bc6886"}</script>
+<script src="/js/third-party/comments/gitalk.js"></script>
+
+  
+</body>
+</html>

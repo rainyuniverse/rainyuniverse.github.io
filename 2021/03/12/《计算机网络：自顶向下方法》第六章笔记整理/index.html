@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 5.4.1">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/themes/blue/pace-theme-barber-shop.css">
+  <script src="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/pace.min.js" integrity="sha256-gqd7YTjg/BtfqWSwsJOvndl0Bxc8gFImLEkXQT8+qj0=" crossorigin="anonymous"></script>
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Pisces","darkmode":false,"version":"8.9.0","exturl":false,"sidebar":{"position":"left","width":300,"display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<meta name="description" content="对大黑书《计算机网络：自顶向下方法》第六章进行笔记整理......">
+<meta property="og:type" content="article">
+<meta property="og:title" content="《计算机网络：自顶向下方法》第六章笔记整理">
+<meta property="og:url" content="http://example.com/2021/03/12/%E3%80%8A%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C%EF%BC%9A%E8%87%AA%E9%A1%B6%E5%90%91%E4%B8%8B%E6%96%B9%E6%B3%95%E3%80%8B%E7%AC%AC%E5%85%AD%E7%AB%A0%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/index.html">
+<meta property="og:site_name" content="雨宙的个人博客">
+<meta property="og:description" content="对大黑书《计算机网络：自顶向下方法》第六章进行笔记整理......">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2021-03-12T15:52:38.000Z">
+<meta property="article:modified_time" content="2022-05-06T03:36:25.532Z">
+<meta property="article:author" content="Rainy Universe">
+<meta property="article:tag" content="计算机网络">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="http://example.com/2021/03/12/%E3%80%8A%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C%EF%BC%9A%E8%87%AA%E9%A1%B6%E5%90%91%E4%B8%8B%E6%96%B9%E6%B3%95%E3%80%8B%E7%AC%AC%E5%85%AD%E7%AB%A0%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"http://example.com/2021/03/12/%E3%80%8A%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C%EF%BC%9A%E8%87%AA%E9%A1%B6%E5%90%91%E4%B8%8B%E6%96%B9%E6%B3%95%E3%80%8B%E7%AC%AC%E5%85%AD%E7%AB%A0%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/","path":"2021/03/12/《计算机网络：自顶向下方法》第六章笔记整理/","title":"《计算机网络：自顶向下方法》第六章笔记整理"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>《计算机网络：自顶向下方法》第六章笔记整理 | 雨宙的个人博客</title>
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+
+  <script src="https://cdn.jsdelivr.net/npm/jquery/dist/jquery.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome/css/font-awesome.min.css"/>
+  
+</head>
+
+
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <script src="/live2d-widget/autoload.js"></script>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">雨宙的个人博客</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BC%95%E8%AF%81%E5%92%8C%E6%9C%8D%E5%8A%A1"><span class="nav-number">1.</span> <span class="nav-text">引证和服务</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BD%91%E7%BB%9C%E8%8A%82%E7%82%B9%E7%9A%84%E8%BF%9E%E6%8E%A5%E6%96%B9%E5%BC%8F"><span class="nav-number">1.1.</span> <span class="nav-text">网络节点的连接方式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%8A%82%E7%82%B9%E4%B8%BB%E6%9C%BA%E8%B7%AF%E7%94%B1%E5%99%A8"><span class="nav-number">1.2.</span> <span class="nav-text">节点：主机&#x2F;路由器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%93%BE%E8%B7%AF%E5%B1%82%E5%8A%9F%E8%83%BD%E5%AE%9E%E7%8E%B0"><span class="nav-number">1.3.</span> <span class="nav-text">链路层功能实现</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B7%AE%E9%94%99%E6%A3%80%E6%B5%8B%E5%92%8C%E7%BA%A0%E6%AD%A3"><span class="nav-number">2.</span> <span class="nav-text">差错检测和纠正</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A5%87%E5%81%B6%E6%A0%A1%E9%AA%8C"><span class="nav-number">2.1.</span> <span class="nav-text">奇偶校验</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#internet%E6%A0%A1%E9%AA%8C%E5%92%8C"><span class="nav-number">2.2.</span> <span class="nav-text">Internet校验和</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#crc%E5%BE%AA%E7%8E%AF%E5%86%97%E4%BD%99%E6%A3%80%E6%B5%8B"><span class="nav-number">2.3.</span> <span class="nav-text">CRC（循环冗余检测）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A4%9A%E7%82%B9%E8%AE%BF%E9%97%AE%E5%8D%8F%E8%AE%AE"><span class="nav-number">3.</span> <span class="nav-text">多点访问协议</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%A4%E7%A7%8D%E7%B1%BB%E5%9E%8B%E7%9A%84%E9%93%BE%E8%B7%AF%E4%B8%80%E4%B8%AA%E5%AD%90%E7%BD%91%E5%86%85%E9%83%A8%E9%93%BE%E8%B7%AF%E8%BF%9E%E6%8E%A5%E5%BD%A2%E5%BC%8F"><span class="nav-number">3.1.</span> <span class="nav-text">两种类型的链路（一个子网内部链路连接形式）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8D%95%E4%B8%AA%E5%85%B1%E4%BA%AB%E7%9A%84%E5%B9%BF%E6%92%AD%E5%9E%8B%E9%93%BE%E8%B7%AF"><span class="nav-number">3.2.</span> <span class="nav-text">单个共享的广播型链路</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%90%86%E6%83%B3%E7%9A%84%E5%A4%9A%E8%B7%AF%E8%AE%BF%E9%97%AE%E5%8D%8F%E8%AE%AE"><span class="nav-number">3.3.</span> <span class="nav-text">理想的多路访问协议</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#mac%E5%8D%8F%E8%AE%AE%E5%88%86%E7%B1%BB"><span class="nav-number">3.4.</span> <span class="nav-text">MAC协议分类</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%BF%A1%E9%81%93%E5%88%92%E5%88%86%E5%8D%8F%E8%AE%AEtdmafdmacdma"><span class="nav-number">3.4.1.</span> <span class="nav-text">信道划分协议：TDMA、FDMA、CDMA</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E9%9A%8F%E6%9C%BA%E8%AE%BF%E9%97%AE%E5%8D%8F%E8%AE%AE"><span class="nav-number">3.4.2.</span> <span class="nav-text">随机访问协议</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E6%97%B6%E9%9A%99aloha"><span class="nav-number">3.4.2.1.</span> <span class="nav-text">时隙ALOHA</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E7%BA%AFaloha%E9%9D%9E%E6%97%B6%E9%9A%99"><span class="nav-number">3.4.2.2.</span> <span class="nav-text">纯ALOHA（非时隙）</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#csma"><span class="nav-number">3.4.2.3.</span> <span class="nav-text">CSMA</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%BD%AE%E6%B5%81mac%E5%8D%8F%E8%AE%AE"><span class="nav-number">3.4.3.</span> <span class="nav-text">轮流MAC协议</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#lans"><span class="nav-number">4.</span> <span class="nav-text">LANS</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#mac%E5%9C%B0%E5%9D%80%E5%92%8Carp"><span class="nav-number">4.1.</span> <span class="nav-text">MAC地址和ARP</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%A5%E5%A4%AA%E7%BD%91"><span class="nav-number">5.</span> <span class="nav-text">以太网</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%9B%86%E7%BA%BF%E5%99%A8%E5%92%8C%E4%BA%A4%E6%8D%A2%E6%9C%BA"><span class="nav-number">6.</span> <span class="nav-text">集线器和交换机</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Rainy Universe"
+      src="/images/avatar.gif">
+  <p class="site-author-name" itemprop="name">Rainy Universe</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">11</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/rainyuniverse" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;rainyuniverse" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+  </div>
+
+
+
+        </div>
+      </div>
+      <div id="music163player">
+        <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=300 src="//music.163.com/outchain/player?type=0&id=7267179044&auto=1&height=430">
+        </iframe>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/03/12/%E3%80%8A%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C%EF%BC%9A%E8%87%AA%E9%A1%B6%E5%90%91%E4%B8%8B%E6%96%B9%E6%B3%95%E3%80%8B%E7%AC%AC%E5%85%AD%E7%AB%A0%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Rainy Universe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="雨宙的个人博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          《计算机网络：自顶向下方法》第六章笔记整理
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2021-03-12 23:52:38" itemprop="dateCreated datePublished" datetime="2021-03-12T23:52:38+08:00">2021-03-12</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2022-05-06 11:36:25" itemprop="dateModified" datetime="2022-05-06T11:36:25+08:00">2022-05-06</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" itemprop="url" rel="index"><span itemprop="name">计算机网络</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>对大黑书《计算机网络：自顶向下方法》第六章进行笔记整理...... <span id="more"></span></p>
+<h2 id="引证和服务">引证和服务</h2>
+<h3 id="网络节点的连接方式">网络节点的连接方式</h3>
+<ol type="1">
+<li>点到点的网络（广域网采用）</li>
+<li>多点连接（局域网）</li>
+</ol>
+<h3 id="节点主机路由器">节点：主机/路由器</h3>
+<ol type="1">
+<li>链路：沿着通信路径、连接相邻节点通信信道的是链路，分为有线链路、无线链路、局域网和共享性链路。
+<ul>
+<li>链路层负责从一个节点通过链路将帧中的数据报发送到相邻物理节点（以帧为单位）。</li>
+<li>数据报在不同的链路上以不同的链路协议传送（例如第一跳是以太网，中间链路是帧中继链路，最后一跳是802.11）。</li>
+<li>不同的链路协议提供不同的服务。 ### 链路层提供服务 （一般化的链路层服务，不是所有的链路层都提供这些服务，一个特定的链路层只提供其中一部分的服务）</li>
+</ul></li>
+<li>成帧、链路接入：
+<ul>
+<li>将数据报封装在帧中，加上帧头部、帧尾部。</li>
+<li>如果采用的是共享性介质，信道接入获得信道访问权。</li>
+<li>在帧头部使用MAC地址来表示源和目的。</li>
+</ul></li>
+<li>在相邻两个节点完成可靠数据传输：
+<ul>
+<li>在低出错率的链路上（光纤和双绞线电缆）很少使用。</li>
+<li>在无线链路经常使用，出错率高（防止源端重发）。</li>
+</ul></li>
+<li>流量控制</li>
+<li>差错检测、纠正</li>
+<li>半双工和全双工
+<ul>
+<li>半双工：链路可以双向传输，但一次只有一个方向。</li>
+</ul></li>
+</ol>
+<h3 id="链路层功能实现">链路层功能实现</h3>
+<ol type="1">
+<li>在适配器（网卡）上实现或者在一个芯片组上，网卡可以同时发同时接。</li>
+</ol>
+<h2 id="差错检测和纠正">差错检测和纠正</h2>
+<h3 id="奇偶校验">奇偶校验</h3>
+<ol type="1">
+<li>单bit奇偶校验</li>
+<li>二维bit奇偶校验</li>
+</ol>
+<h3 id="internet校验和">Internet校验和</h3>
+<ol type="1">
+<li>加起来取反码</li>
+</ol>
+<h3 id="crc循环冗余检测">CRC（循环冗余检测）</h3>
+<ol type="1">
+<li>模二运算</li>
+<li>位串的两种表示（二进制和多项式）</li>
+<li>生成多项式</li>
+<li>发送方和接收方的发送接收校验过程</li>
+</ol>
+<h2 id="多点访问协议">多点访问协议</h2>
+<h3 id="两种类型的链路一个子网内部链路连接形式">两种类型的链路（一个子网内部链路连接形式）</h3>
+<ol type="1">
+<li>点对点
+<ul>
+<li>拨号访问的PPP</li>
+<li>以太网交换机和主机之间的点对点链路</li>
+</ul></li>
+<li>广播（共享链路或媒体）
+<ul>
+<li>传统以太网</li>
+<li>HFC上行链路</li>
+<li>802.11无线局域网</li>
+</ul></li>
+</ol>
+<h3 id="单个共享的广播型链路">单个共享的广播型链路</h3>
+<ol type="1">
+<li>2个或更多的站点同时传送产生冲突；</li>
+<li>分布式算法决定节点如何使用共享信道，即决定哪个节点什么时候可以发送；</li>
+<li>关于共享控制的通信必须借助信道本身传输。</li>
+</ol>
+<h3 id="理想的多路访问协议">理想的多路访问协议</h3>
+<ol type="1">
+<li>当一个节点要发送时，以最大速率发送；当M个节点要发送时，每个节点以M分之一的最大速率发送。</li>
+<li>完全分布，没有特殊节点协调发送，没有时钟和时隙的同步。</li>
+<li>简单。</li>
+</ol>
+<h3 id="mac协议分类">MAC协议分类</h3>
+<h4 id="信道划分协议tdmafdmacdma">信道划分协议：TDMA、FDMA、CDMA</h4>
+<h4 id="随机访问协议">随机访问协议</h4>
+<h5 id="时隙aloha">时隙ALOHA</h5>
+<ol type="1">
+<li>假设：所有帧是等长的；时间被划分为相等的时隙，每个时隙可发送一帧；节点只在时隙开始时发送帧；节点在时隙上是同步的；如果两个或多个节点在一个时隙传输，所有的站点都能检测到冲突。</li>
+<li>运行：当节点获取新的帧，在下一个时隙传输；
+<ul>
+<li>Re1:传输时没有检测到冲突，成功，节点能够在下一时隙发送新帧；</li>
+<li>Re2:传输时检测到冲突，失败，节点在每一个随后的时隙以概率P重传帧直至成功。</li>
+</ul></li>
+<li>优点：
+<ul>
+<li>节点可以以信道带宽全速连续传输；</li>
+<li>高度分布；</li>
+<li>简单</li>
+</ul></li>
+<li>缺点：
+<ul>
+<li>存在冲突，浪费时隙；</li>
+<li>即使有帧要发送，仍然有可能存在空闲的时隙；</li>
+<li>发现冲突也必须要传完；</li>
+<li>需要时钟上同步；</li>
+</ul></li>
+</ol>
+<h5 id="纯aloha非时隙">纯ALOHA（非时隙）</h5>
+<ol type="1">
+<li>简单，无需在时钟上同步。</li>
+<li>当有帧需要传输，马上传输。</li>
+<li>冲突的概率增加。</li>
+</ol>
+<h5 id="csma">CSMA</h5>
+<ol type="1">
+<li>CSMA/CD
+<ul>
+<li>发送前侦听信息，发送时侦听信息</li>
+<li>以太网CSMA/CD算法
+<ul>
+<li>（1）适配器获取数据报，创建帧；</li>
+<li>（2） 发送前，侦听信道CS，如果闲，则开始传送帧，如果忙，则一直等到闲再发送；</li>
+<li>（3）发送过程中，冲突检测CD，如果没有冲突，则成功，如果检测到冲突，则放弃，之后尝试重发；</li>
+<li>（4） 发送方适配器检测到冲突，除放弃外，还发送一个Jam信号，所有听到冲突的适配器也是如此；（强化冲突）</li>
+<li>（5） 如果放弃，适配器进入指数退避状态；（二进制指数退避算法）</li>
+</ul></li>
+</ul></li>
+<li>无线局域网中的MAC协议：CSMA/CA</li>
+</ol>
+<h4 id="轮流mac协议">轮流MAC协议</h4>
+<ol type="1">
+<li><p>信道划分MAC协议：共享信道在高负载时是有效的和公平的；在低负载时效率低下。</p></li>
+<li><p>随机访问协议：在低负载时效率高，单个节点可以完全利用信道全部带宽；高负载时，冲突开销较大，效率极低，时间很多浪费在冲突中。</p></li>
+<li><p>轮流协议在高负载和低负载时都很好，但太复杂。</p>
+<p>轮询：</p>
+<ul>
+<li>主节点邀请从节点依次传送</li>
+<li>缺点：
+<ul>
+<li>轮询开销：轮询本身消耗信道带宽；</li>
+<li>等待时间：每个节点需要等到主节点轮询后开始传输，即使只有一个节点，也需要等到轮询一周之后才能发送；</li>
+<li>单点故障：主节点失效时造成整个系统无法工作；</li>
+</ul></li>
+</ul>
+<p>令牌传递：</p>
+<ul>
+<li>控制令牌循环从一个节点到下一个节点传递</li>
+<li>令牌报文：特殊的帧</li>
+<li>传输数据时传输一圈，直到重新回到发送节点再将令牌传给下一个节点</li>
+<li>缺点：
+<ul>
+<li>令牌开销：本身消耗带宽</li>
+<li>延迟：只有等到抓住令牌，才可传输</li>
+<li>单点故障：令牌丢失系统级故障，整个系统无法传输（复杂机制重新生成令牌）</li>
+</ul></li>
+</ul></li>
+</ol>
+<h2 id="lans">LANS</h2>
+<h3 id="mac地址和arp">MAC地址和ARP</h3>
+<ol type="1">
+<li>32比特IP地址
+<ul>
+<li>网络层地址</li>
+<li>用于使数据报到达目的子网，前n-1跳</li>
+<li>从而到达子网中的目标节点，最后一跳</li>
+</ul></li>
+<li>LAN地址
+<ul>
+<li>用于使帧从一个网卡传递到与其物理连接的另一个网卡（在同一个物理网络中）</li>
+<li>48比特MAC地址固化在适配器的ROM，有时也可以通过软件设定</li>
+<li>理论上全球任何两个网卡的MAC地址都不相同</li>
+<li>MAC地址由IEEE管理和分配，制造商购入MAC地址空间 ### ARP： Address Resolution Protocol</li>
+</ul></li>
+<li>在LAN的每个IP节点都有一个ARP表，ARP表中包括一些LAN节点IP/MAC地址的映射</li>
+<li>运行过程</li>
+</ol>
+<h2 id="以太网">以太网</h2>
+<ol type="1">
+<li>以太网是目前最主流的LAN技术
+<ul>
+<li>总线：所有节点在一个碰撞域内，一次只允许一个节点发送；可靠性差，如果介质破损，截面形成信号的反射，发送节点误以为是冲突，总是冲突</li>
+<li>星形：
+<ul>
+<li>连接选择：hub或switch</li>
+<li>现在一般是交换机在中心</li>
+<li>每个节点以及相连的交换机端口使用（独立的）以太网协议，不会和其他节点的发送产生碰撞</li>
+</ul></li>
+</ul></li>
+<li>以太帧结构</li>
+</ol>
+<ul>
+<li>前导码：用来同步接收方和发送方的时钟速率，使得接收方将自己的时钟调到发送方的时钟，从而可以按照发送端的时钟来接收所发送的帧</li>
+</ul>
+<ol start="3" type="1">
+<li>无连接、不可靠的服务</li>
+<li>以太网使用CSMA/CD</li>
+<li>10BaseT和100BaseT
+<ul>
+<li>T代表双绞线</li>
+<li>节点连接到hub上</li>
+<li>节点和hub间的最大距离是100m</li>
+</ul></li>
+<li>HUB</li>
+</ol>
+<ul>
+<li>HUB本质上是物理层的中继器。
+<ul>
+<li>从一个端口收，转发到其他所有端口。</li>
+<li>速率一致。</li>
+<li>没有帧的缓存。</li>
+<li>提供网络管理功能。</li>
+</ul></li>
+</ul>
+<ol start="7" type="1">
+<li>Manchester编码（物理层）
+<ul>
+<li>在10BaseT中使用。</li>
+<li>每一个比特的位时中间有一个信号跳变。</li>
+<li>允许在接收方和发送方节点之间进行时钟同步，节点间不需要集中的和全局的时钟。 10Mbps，使用20M带宽，效率50%，可以采用4b5b编码。</li>
+</ul></li>
+<li>千兆以太网
+<ul>
+<li>采用标准的以太帧格式。</li>
+<li>允许点对点链路和共享广播信道。</li>
+<li>物理编码：8b10b编码。</li>
+<li>共享模式：继续使用CSMA/CD MAC技术，节点间需要较短距离以提高利用率。</li>
+<li>交换模式：全双工千兆可用于点对点链路。</li>
+</ul></li>
+</ol>
+<h2 id="集线器和交换机">集线器和交换机</h2>
+<ol type="1">
+<li>集线器：
+<ul>
+<li>网段：可以允许一个站点发送的网络范围。
+<ul>
+<li>在一个碰撞域，同时只允许一个站点在发送。</li>
+<li>如果有两个节点在发送，则会碰撞。</li>
+<li>通常拥有相同的前缀，让IP子网更详细的前缀。</li>
+</ul></li>
+<li>所有以hub连到一起的站点处在一个网段，处在一个碰撞域，骨干hub将所有的网段连到了一起。</li>
+<li>通过hub可扩展节点间的最大距离。</li>
+<li>通过hub，不能将10BaseT和100BaseT的网路连接到一起。</li>
+</ul></li>
+<li>交换机
+<ul>
+<li>链路层设备</li>
+<li>透明</li>
+<li>即插即用，自学习</li>
+</ul></li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="reward-container">
+  <div></div>
+  <button>
+    赞赏
+  </button>
+  <div class="post-reward">
+      <div>
+        <img src="/images/wechatpay.png" alt="Rainy Universe 微信">
+        <span>微信</span>
+      </div>
+      <div>
+        <img src="/images/alipay.png" alt="Rainy Universe 支付宝">
+        <span>支付宝</span>
+      </div>
+
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" rel="tag"># 计算机网络</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2021/02/02/%E3%80%8A%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C%EF%BC%9A%E8%87%AA%E9%A1%B6%E5%90%91%E4%B8%8B%E6%96%B9%E6%B3%95%E3%80%8B%E7%AC%AC%E4%B8%80%E7%AB%A0%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/" rel="prev" title="《计算机网络：自顶向下方法》第一章笔记整理">
+                  <i class="fa fa-chevron-left"></i> 《计算机网络：自顶向下方法》第一章笔记整理
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2021/03/30/%E3%80%8A%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C%EF%BC%9A%E8%87%AA%E9%A1%B6%E5%90%91%E4%B8%8B%E7%BD%91%E7%BB%9C%E3%80%8B%E7%AC%AC%E5%9B%9B%E7%AB%A0%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/" rel="next" title="《计算机网络：自顶向下方法》第四章笔记整理">
+                  《计算机网络：自顶向下方法》第四章笔记整理 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments gitalk-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Rainy Universe</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/pisces/" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+  <script src="/js/third-party/pace.js"></script>
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">true</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.0/es5/tex-mml-chtml.js","integrity":"sha256-r+3itOMtGGjap0x+10hu6jW/gZCzxHsoKrOd7gyRSGY="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
+
+<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"rainyuniverse","repo":"blog-comment","client_id":"dd3ab568cf554224b60c","client_secret":"d377ea691384ea1e236e98cb932bd8e090b2d863","admin_user":"rainyuniverse","distraction_free_mode":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token","language":"zh-CN","js":{"url":"https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.min.js","integrity":"sha256-Pmj85ojLaPOWwRtlMJwmezB/Qg8BzvJp5eTzvXaYAfA="},"path_md5":"9c925d9d92c53a8b0cc37c9ad10c7fd8"}</script>
+<script src="/js/third-party/comments/gitalk.js"></script>
+
+  
+</body>
+</html>
