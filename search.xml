@@ -1,54 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title>LibRec学习笔记（一）：BiasedMF算法</title>
-    <url>/2022/04/04/LibRec%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%EF%BC%88%E4%B8%80%EF%BC%89%EF%BC%9ABiasedMF%E7%AE%97%E6%B3%95/</url>
-    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="\assets\css\APlayer.min.css"><script src="\assets\js\APlayer.min.js" class="aplayer-secondary-script-marker"></script><p>最近推荐系统导论课程需要使用LibRec库实现一些推荐算法，其实LibRec库已经封装了很多算法，并不需要再去实现，只需要调用命令行修改配置就可以运行，但为了更好地理解算法，我阅读了LibRec库的一些算法的源码，以下是BiaseMF算法在LibRec库中的实现，本文主要从三部分展开讲解，分别是预测公式、损失函数公式和更新公式。 <span id="more"></span></p>
-<h1 id="代码展示">代码展示</h1>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// SVDPlusPlusRecommender类继承BiasedMFRecommender父类</span></span><br><span class="line"><span class="keyword">package</span> net.librec.recommender.cf.rating;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.util.Iterator;</span><br><span class="line"><span class="keyword">import</span> net.librec.annotation.ModelData;</span><br><span class="line"><span class="keyword">import</span> net.librec.common.LibrecException;</span><br><span class="line"><span class="keyword">import</span> net.librec.math.structure.MatrixEntry;</span><br><span class="line"><span class="keyword">import</span> net.librec.math.structure.VectorBasedDenseVector;</span><br><span class="line"><span class="keyword">import</span> net.librec.recommender.MatrixFactorizationRecommender;</span><br><span class="line"></span><br><span class="line"><span class="meta">@ModelData(&#123;&quot;isRating&quot;, &quot;biasedMF&quot;, &quot;userFactors&quot;, &quot;itemFactors&quot;, &quot;userBiases&quot;, &quot;itemBiases&quot;&#125;)</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">BiasedMFRecommender</span> <span class="keyword">extends</span> <span class="title">MatrixFactorizationRecommender</span> </span>&#123;</span><br><span class="line">    <span class="keyword">protected</span> <span class="keyword">double</span> regBias;</span><br><span class="line">    <span class="keyword">protected</span> VectorBasedDenseVector userBiases;</span><br><span class="line">    <span class="keyword">protected</span> VectorBasedDenseVector itemBiases;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">BiasedMFRecommender</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">setup</span><span class="params">()</span> <span class="keyword">throws</span> LibrecException </span>&#123;</span><br><span class="line">        <span class="keyword">super</span>.setup();</span><br><span class="line">        <span class="keyword">this</span>.regBias = <span class="keyword">this</span>.conf.getDouble(<span class="string">&quot;rec.bias.regularization&quot;</span>, <span class="number">0.01D</span>);</span><br><span class="line">        <span class="comment">// 用户偏差向量</span></span><br><span class="line">        <span class="keyword">this</span>.userBiases = <span class="keyword">new</span> VectorBasedDenseVector(<span class="keyword">this</span>.numUsers);</span><br><span class="line">        <span class="comment">// 物品偏差向量</span></span><br><span class="line">        <span class="keyword">this</span>.itemBiases = <span class="keyword">new</span> VectorBasedDenseVector(<span class="keyword">this</span>.numItems);</span><br><span class="line">        <span class="comment">// 用户偏差初始化</span></span><br><span class="line">        <span class="keyword">this</span>.userBiases.init((<span class="keyword">double</span>)<span class="keyword">this</span>.initMean, (<span class="keyword">double</span>)<span class="keyword">this</span>.initStd);</span><br><span class="line">        <span class="comment">// 物品偏差初始化</span></span><br><span class="line">        <span class="keyword">this</span>.itemBiases.init((<span class="keyword">double</span>)<span class="keyword">this</span>.initMean, (<span class="keyword">double</span>)<span class="keyword">this</span>.initStd);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">trainModel</span><span class="params">()</span> <span class="keyword">throws</span> LibrecException </span>&#123;</span><br><span class="line">        <span class="keyword">for</span>(<span class="keyword">int</span> iter = <span class="number">1</span>; iter &lt;= <span class="keyword">this</span>.numIterations; ++iter) &#123;</span><br><span class="line">            <span class="comment">// 损失</span></span><br><span class="line">            <span class="keyword">this</span>.loss = <span class="number">0.0D</span>;</span><br><span class="line"></span><br><span class="line">            Iterator var2 = <span class="keyword">this</span>.trainMatrix.iterator();</span><br><span class="line"></span><br><span class="line">            <span class="keyword">while</span>(var2.hasNext()) &#123;</span><br><span class="line">                MatrixEntry matrixEntry = (MatrixEntry)var2.next();</span><br><span class="line">                <span class="keyword">int</span> userIdx = matrixEntry.row();</span><br><span class="line">                <span class="keyword">int</span> itemIdx = matrixEntry.column();</span><br><span class="line">                <span class="comment">// 实际评分</span></span><br><span class="line">                <span class="keyword">double</span> realRating = matrixEntry.get();</span><br><span class="line">                <span class="comment">// 预测评分</span></span><br><span class="line">                <span class="keyword">double</span> predictRating = <span class="keyword">this</span>.predict(userIdx, itemIdx);</span><br><span class="line">                <span class="comment">// 实际评分与预测评分的误差</span></span><br><span class="line">                <span class="keyword">double</span> error = realRating - predictRating;</span><br><span class="line">                <span class="keyword">this</span>.loss += error * error;</span><br><span class="line"></span><br><span class="line">                <span class="comment">// 根据当前用户ID得到当前用户偏差向量</span></span><br><span class="line">                <span class="keyword">double</span> userBiasValue = <span class="keyword">this</span>.userBiases.get(userIdx);</span><br><span class="line">                <span class="comment">// 用户偏置项的更新公式</span></span><br><span class="line">                <span class="keyword">this</span>.userBiases.plus(userIdx, (<span class="keyword">double</span>)<span class="keyword">this</span>.learnRate * (error - <span class="keyword">this</span>.regBias * userBiasValue));</span><br><span class="line"></span><br><span class="line">                <span class="keyword">this</span>.loss += <span class="keyword">this</span>.regBias * userBiasValue * userBiasValue;</span><br><span class="line">                <span class="comment">// 根据当前物品ID得到当前物品偏差向量</span></span><br><span class="line">                <span class="keyword">double</span> itemBiasValue = <span class="keyword">this</span>.itemBiases.get(itemIdx);</span><br><span class="line">                <span class="comment">// 物品偏置项的更新公式</span></span><br><span class="line">                <span class="keyword">this</span>.itemBiases.plus(itemIdx, (<span class="keyword">double</span>)<span class="keyword">this</span>.learnRate * (error - <span class="keyword">this</span>.regBias * itemBiasValue));</span><br><span class="line"></span><br><span class="line">                <span class="keyword">this</span>.loss += <span class="keyword">this</span>.regBias * itemBiasValue * itemBiasValue;</span><br><span class="line"></span><br><span class="line">                <span class="keyword">for</span>(<span class="keyword">int</span> factorIdx = <span class="number">0</span>; factorIdx &lt; <span class="keyword">this</span>.numFactors; ++factorIdx) &#123;</span><br><span class="line">                    <span class="keyword">double</span> userFactorValue = <span class="keyword">this</span>.userFactors.get(userIdx, factorIdx);</span><br><span class="line">                    <span class="keyword">double</span> itemFactorValue = <span class="keyword">this</span>.itemFactors.get(itemIdx, factorIdx);</span><br><span class="line">                    <span class="keyword">this</span>.userFactors.plus(userIdx, factorIdx, (<span class="keyword">double</span>)<span class="keyword">this</span>.learnRate * (error * itemFactorValue - (<span class="keyword">double</span>)<span class="keyword">this</span>.regUser * userFactorValue));</span><br><span class="line">                    <span class="keyword">this</span>.itemFactors.plus(itemIdx, factorIdx, (<span class="keyword">double</span>)<span class="keyword">this</span>.learnRate * (error * userFactorValue - (<span class="keyword">double</span>)<span class="keyword">this</span>.regItem * itemFactorValue));</span><br><span class="line">                    <span class="keyword">this</span>.loss += (<span class="keyword">double</span>)<span class="keyword">this</span>.regUser * userFactorValue * userFactorValue + (<span class="keyword">double</span>)<span class="keyword">this</span>.regItem * itemFactorValue * itemFactorValue;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">this</span>.loss *= <span class="number">0.5D</span>;</span><br><span class="line">            <span class="keyword">if</span> (<span class="keyword">this</span>.isConverged(iter) &amp;&amp; <span class="keyword">this</span>.earlyStop) &#123;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">this</span>.updateLRate(iter);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">double</span> <span class="title">predict</span><span class="params">(<span class="keyword">int</span> userIdx, <span class="keyword">int</span> itemIdx)</span> <span class="keyword">throws</span> LibrecException </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">this</span>.userFactors.row(userIdx).dot(<span class="keyword">this</span>.itemFactors.row(itemIdx)) + <span class="keyword">this</span>.userBiases.get(userIdx) + <span class="keyword">this</span>.itemBiases.get(itemIdx) + <span class="keyword">this</span>.globalMean;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h1 id="预测公式">预测公式</h1>
-<p><span class="math inline">\(\hat{r_{u i}}=\mu+b_{i}+b_{u}+p_{u} q_{i}^{T}\)</span></p>
-<p>其中，<span class="math inline">\(\mu\)</span>表示全局均值，在代码中使用<code>this.globalMean</code>表示，<span class="math inline">\(b_{i}\)</span>表示物品偏差项，在代码中使用<code>this.itemBiases.get(itemIdx)</code>表示，需要注意的是，物品偏置项需要根据物品ID进行索引，<span class="math inline">\(b_{u}\)</span>表示用户偏差项，在代码中使用<code>this.userBiases.get(userIdx)</code>表示，同样地，用户偏置项需要根据用户ID来进行索引，<span class="math inline">\(p_{u}\)</span>表示对用户评分矩阵进行矩阵分解后得到的用户向量，<span class="math inline">\(q_{i}\)</span>表示对用户评分矩阵进行分解后得到的物品向量。</p>
-<ul>
-<li>PS：这里说是用户向量和物品向量的原因是都是针对某一用户和物品进行计算。</li>
-</ul>
-<p>预测公式代码如下：</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">double</span> <span class="title">predict</span><span class="params">(<span class="keyword">int</span> userIdx, <span class="keyword">int</span> itemIdx)</span> <span class="keyword">throws</span> LibrecException </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">this</span>.userFactors.row(userIdx).dot(<span class="keyword">this</span>.itemFactors.row(itemIdx)) + <span class="keyword">this</span>.userBiases.get(userIdx) + <span class="keyword">this</span>.itemBiases.get(itemIdx) + <span class="keyword">this</span>.globalMean;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>传入<code>userIdx</code>和<code>itemIdx</code>的原因是需要明确特定用户和特定物品，才能进行预测评分，<code>userFactors</code>和<code>itemFactors</code>是对用户评分矩阵进行矩阵分解后得到的用户矩阵和物品矩阵，需要明确索引才能使用。</p>
-<h1 id="损失函数公式">损失函数公式</h1>
-<p><span class="math inline">\(\sum_{r_{u i} \in R_{\text {train }}}\left(r_{u i}-\hat{r}_{u i}\right)^{2}+\lambda\left(b_{i}^{2}+b_{u}^{2}+\left\|q_{i}\right\|^{2}+\left\|p_{u}\right\|^{2}\right)\)</span></p>
-<p>将用户对物品的特定评分与真实评分之间的差值的平方作为损失函数的一部分是显而易见的，在代码中体现如下：</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 实际评分</span></span><br><span class="line"><span class="keyword">double</span> realRating = matrixEntry.get();</span><br><span class="line"><span class="comment">// 预测评分</span></span><br><span class="line"><span class="keyword">double</span> predictRating = <span class="keyword">this</span>.predict(userIdx, itemIdx);</span><br><span class="line"><span class="comment">// 实际评分与预测评分的误差</span></span><br><span class="line"><span class="keyword">double</span> error = realRating - predictRating;</span><br><span class="line"><span class="keyword">this</span>.loss += error * error;</span><br></pre></td></tr></table></figure>
-<p>通过以上展示的<code>predict()</code>函数可以直接根据用户ID与物品ID求出预测评分，但值得琢磨的是，实际评分是如何得到的？</p>
-<p>可以看到，<code>MatrixEntry</code>接口是如下定义的，</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">MatrixEntry</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">int</span> <span class="title">row</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">int</span> <span class="title">column</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">double</span> <span class="title">get</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">set</span><span class="params">(<span class="keyword">double</span> var1)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">int</span> <span class="title">rowPosition</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">int</span> <span class="title">columnPosition</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>在<code>SequentialSparseMatrixEntry</code>类中实现了<code>MatrixEntry</code>接口的<code>get()</code>方法，</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">double</span> <span class="title">get</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">this</span>.tempVector.getAtPosition(<span class="keyword">this</span>.columnPosition);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>值得注意的是，在<code>SequentialSparseMatrixEntry</code>类中，<code>columnPosition</code>属性被初始化为<code>-1</code>，这就让我们联想到，标签的值总是被设置在最后一列，我们可以验证这个猜想，在代码中，<code>var2</code>被强制转换为<code>MatrixEntry</code>类型，而<code>var2</code>又是<code>trainMatrix</code>的一个迭代器，不出所料地，<code>trainMatrix</code>是·<code>SequentialAccessSparseMatrix</code>类型，所以程序中可以直接调用<code>get()</code>方法来获取数据集中的实际评分值。</p>
-<p>我们重新来回到损失函数的话题上，接下来需要关注正则项的那一部分，即</p>
-<p><span class="math inline">\(\lambda\left(b_{i}^{2}+b_{u}^{2}+\left|q_{i}\right|^{2}+\left|p_{u}\right|^{2}\right)\)</span></p>
-<p>首先我们关注<span class="math inline">\(\lambda(b_{i}^{2}+b_{u}^{2})\)</span>，这一部分的代码比较好写，根据索引找到特定的用户偏置向量和物品偏置向量就可以写出代码，代码如下所示，</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">double</span> userBiasValue = <span class="keyword">this</span>.userBiases.get(userIdx);</span><br><span class="line"><span class="keyword">this</span>.loss += <span class="keyword">this</span>.regBias * userBiasValue * userBiasValue;</span><br><span class="line"><span class="keyword">double</span> itemBiasValue = <span class="keyword">this</span>.itemBiases.get(itemIdx);</span><br><span class="line"><span class="keyword">this</span>.loss += <span class="keyword">this</span>.regBias * itemBiasValue * itemBiasValue;</span><br></pre></td></tr></table></figure>
-<p>接下来的一部分就可能比较难懂，在对用户评分矩阵进行分解时，我们有一个超参数<span class="math inline">\(K\)</span>，表示的是隐因子的个数，在电影的用户评分矩阵中，隐因子指的可能是喜剧片、动画片等内容，换言之，用户是因为这些隐因子才作出的这些评分，所以矩阵分解的公式可以表示如下，</p>
-<p><span class="math inline">\(\hat{r_{u i}}=p_{u} q_{i}^{T}=\sum_{k=1}^{K} p_{u k} q_{k i}^{T}=\sum_{k=1}^{K} p_{u k} q_{i k} \approx r_{u i}\)</span></p>
-<p>所以在代码中我们需要增加一层遍历，即从1到<span class="math inline">\(K\)</span>对隐因子的遍历，对应每一种隐因子ID和用户ID有不同的用户隐因子值，同样的，对于每一种隐因子ID和物品ID有不同的物品隐因子值，对于<span class="math inline">\(\lambda\left(\left|q_{ik}\right|^{2}+\left|p_{uk}\right|^{2}\right)\)</span>这一部分的代码如下所示，</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">for</span>(<span class="keyword">int</span> factorIdx = <span class="number">0</span>; factorIdx &lt; <span class="keyword">this</span>.numFactors; ++factorIdx) &#123;</span><br><span class="line">    <span class="keyword">double</span> userFactorValue = <span class="keyword">this</span>.userFactors.get(userIdx, factorIdx);</span><br><span class="line">    <span class="keyword">double</span> itemFactorValue = <span class="keyword">this</span>.itemFactors.get(itemIdx, factorIdx);</span><br><span class="line">    <span class="keyword">this</span>.loss += (<span class="keyword">double</span>)<span class="keyword">this</span>.regUser * userFactorValue * userFactorValue + (<span class="keyword">double</span>)<span class="keyword">this</span>.regItem * itemFactorValue * itemFactorValue;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>以上就是损失函数全部的内容。</p>
-<h1 id="更新公式">更新公式</h1>
-<p><span class="math inline">\(\begin{array}{l} b_{u} \leftarrow b_{u}+\gamma\left(e_{u i}-\lambda b_{u}\right) \\ b_{i} \leftarrow b_{i}+\gamma\left(e_{u i}-\lambda b_{i}\right) \\ p_{u} \leftarrow p_{u}+\gamma\left(e_{u i} \cdot q_{i}-\lambda p_{u}\right) \\ q_{i} \leftarrow q_{i}+\gamma\left(e_{u i} \cdot p_{u}-\lambda q_{i}\right) \end{array}\)</span></p>
-<p>有了预测函数和损失函数的铺垫，这一部分就可以直接上代码，函数变量基本是差不多的，</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">this</span>.userBiases.plus(userIdx, (<span class="keyword">double</span>)<span class="keyword">this</span>.learnRate * (error - <span class="keyword">this</span>.regBias * userBiasValue));</span><br><span class="line"><span class="keyword">this</span>.itemBiases.plus(itemIdx, (<span class="keyword">double</span>)<span class="keyword">this</span>.learnRate * (error - <span class="keyword">this</span>.regBias * itemBiasValu));</span><br><span class="line"><span class="keyword">for</span>(<span class="keyword">int</span> factorIdx = <span class="number">0</span>; factorIdx &lt; <span class="keyword">this</span>.numFactors; ++factorIdx) &#123;</span><br><span class="line">    <span class="keyword">double</span> userFactorValue = <span class="keyword">this</span>.userFactors.get(userIdx, factorIdx);</span><br><span class="line">    <span class="keyword">double</span> itemFactorValue = <span class="keyword">this</span>.itemFactors.get(itemIdx, factorIdx);</span><br><span class="line">    <span class="keyword">this</span>.userFactors.plus(userIdx, factorIdx, (<span class="keyword">double</span>)<span class="keyword">this</span>.learnRate * (error * itemFactorValue - (<span class="keyword">double</span>)<span class="keyword">this</span>.regUser * userFactorValue));</span><br><span class="line">    <span class="keyword">this</span>.itemFactors.plus(itemIdx, factorIdx, (<span class="keyword">double</span>)<span class="keyword">this</span>.learnRate * (error * userFactorValue - (<span class="keyword">double</span>)<span class="keyword">this</span>.regItem * itemFactorValue));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>只需要注意一点，<code>plus()</code>函数是需要知道具体索引位置才能进行更新的，所以需要传入索引参数。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// DenseVector类中的plus方法</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">plus</span><span class="params">(<span class="keyword">int</span> index, <span class="keyword">double</span> value)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">this</span>.set(index, value + <span class="keyword">this</span>.get(index));</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// DenseMatrix类中的plus方法</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">plus</span><span class="params">(<span class="keyword">int</span> row, <span class="keyword">int</span> column, <span class="keyword">double</span> value)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">double</span>[] var10000 = <span class="keyword">this</span>.values[row];</span><br><span class="line">    var10000[column] += value;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-]]></content>
-      <categories>
-        <category>推荐系统</category>
-      </categories>
-      <tags>
-        <tag>推荐系统</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>BINDING LANGUAGE MODELS IN SYMBOLIC LANGUAGES论文阅读</title>
     <url>/2022/10/17/BINDING-LANGUAGE-MODELS-IN-SYMBOLIC-LANGUAGES%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/</url>
     <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="\assets\css\APlayer.min.css"><script src="\assets\js\APlayer.min.js" class="aplayer-secondary-script-marker"></script><p>终于保研结束啦！！928之后先划水了一周，然后老师就布置任务了，于是就对这一篇免训练的神经符号框架论文进行阅读，论文的一个背景是越来越多的端到端的模型在QA以及其他自然语言处理领域的任务上取得了良好的效果，但是它们具有缺乏可解释性的缺点，本文将符号方法绑定到语言模型中，增强了模型的可解释性，另外现有的一些模型在特定领域需要进行模型微调，本文提出的框架具有免训练的特点，只需要一些精心挑选的prompt和API调用就可以达到SOTA效果。</p>
@@ -221,6 +173,54 @@
       </tags>
   </entry>
   <entry>
+    <title>LibRec学习笔记（一）：BiasedMF算法</title>
+    <url>/2022/04/04/LibRec%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%EF%BC%88%E4%B8%80%EF%BC%89%EF%BC%9ABiasedMF%E7%AE%97%E6%B3%95/</url>
+    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="\assets\css\APlayer.min.css"><script src="\assets\js\APlayer.min.js" class="aplayer-secondary-script-marker"></script><p>最近推荐系统导论课程需要使用LibRec库实现一些推荐算法，其实LibRec库已经封装了很多算法，并不需要再去实现，只需要调用命令行修改配置就可以运行，但为了更好地理解算法，我阅读了LibRec库的一些算法的源码，以下是BiaseMF算法在LibRec库中的实现，本文主要从三部分展开讲解，分别是预测公式、损失函数公式和更新公式。 <span id="more"></span></p>
+<h1 id="代码展示">代码展示</h1>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// SVDPlusPlusRecommender类继承BiasedMFRecommender父类</span></span><br><span class="line"><span class="keyword">package</span> net.librec.recommender.cf.rating;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.util.Iterator;</span><br><span class="line"><span class="keyword">import</span> net.librec.annotation.ModelData;</span><br><span class="line"><span class="keyword">import</span> net.librec.common.LibrecException;</span><br><span class="line"><span class="keyword">import</span> net.librec.math.structure.MatrixEntry;</span><br><span class="line"><span class="keyword">import</span> net.librec.math.structure.VectorBasedDenseVector;</span><br><span class="line"><span class="keyword">import</span> net.librec.recommender.MatrixFactorizationRecommender;</span><br><span class="line"></span><br><span class="line"><span class="meta">@ModelData(&#123;&quot;isRating&quot;, &quot;biasedMF&quot;, &quot;userFactors&quot;, &quot;itemFactors&quot;, &quot;userBiases&quot;, &quot;itemBiases&quot;&#125;)</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">BiasedMFRecommender</span> <span class="keyword">extends</span> <span class="title">MatrixFactorizationRecommender</span> </span>&#123;</span><br><span class="line">    <span class="keyword">protected</span> <span class="keyword">double</span> regBias;</span><br><span class="line">    <span class="keyword">protected</span> VectorBasedDenseVector userBiases;</span><br><span class="line">    <span class="keyword">protected</span> VectorBasedDenseVector itemBiases;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">BiasedMFRecommender</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">setup</span><span class="params">()</span> <span class="keyword">throws</span> LibrecException </span>&#123;</span><br><span class="line">        <span class="keyword">super</span>.setup();</span><br><span class="line">        <span class="keyword">this</span>.regBias = <span class="keyword">this</span>.conf.getDouble(<span class="string">&quot;rec.bias.regularization&quot;</span>, <span class="number">0.01D</span>);</span><br><span class="line">        <span class="comment">// 用户偏差向量</span></span><br><span class="line">        <span class="keyword">this</span>.userBiases = <span class="keyword">new</span> VectorBasedDenseVector(<span class="keyword">this</span>.numUsers);</span><br><span class="line">        <span class="comment">// 物品偏差向量</span></span><br><span class="line">        <span class="keyword">this</span>.itemBiases = <span class="keyword">new</span> VectorBasedDenseVector(<span class="keyword">this</span>.numItems);</span><br><span class="line">        <span class="comment">// 用户偏差初始化</span></span><br><span class="line">        <span class="keyword">this</span>.userBiases.init((<span class="keyword">double</span>)<span class="keyword">this</span>.initMean, (<span class="keyword">double</span>)<span class="keyword">this</span>.initStd);</span><br><span class="line">        <span class="comment">// 物品偏差初始化</span></span><br><span class="line">        <span class="keyword">this</span>.itemBiases.init((<span class="keyword">double</span>)<span class="keyword">this</span>.initMean, (<span class="keyword">double</span>)<span class="keyword">this</span>.initStd);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">trainModel</span><span class="params">()</span> <span class="keyword">throws</span> LibrecException </span>&#123;</span><br><span class="line">        <span class="keyword">for</span>(<span class="keyword">int</span> iter = <span class="number">1</span>; iter &lt;= <span class="keyword">this</span>.numIterations; ++iter) &#123;</span><br><span class="line">            <span class="comment">// 损失</span></span><br><span class="line">            <span class="keyword">this</span>.loss = <span class="number">0.0D</span>;</span><br><span class="line"></span><br><span class="line">            Iterator var2 = <span class="keyword">this</span>.trainMatrix.iterator();</span><br><span class="line"></span><br><span class="line">            <span class="keyword">while</span>(var2.hasNext()) &#123;</span><br><span class="line">                MatrixEntry matrixEntry = (MatrixEntry)var2.next();</span><br><span class="line">                <span class="keyword">int</span> userIdx = matrixEntry.row();</span><br><span class="line">                <span class="keyword">int</span> itemIdx = matrixEntry.column();</span><br><span class="line">                <span class="comment">// 实际评分</span></span><br><span class="line">                <span class="keyword">double</span> realRating = matrixEntry.get();</span><br><span class="line">                <span class="comment">// 预测评分</span></span><br><span class="line">                <span class="keyword">double</span> predictRating = <span class="keyword">this</span>.predict(userIdx, itemIdx);</span><br><span class="line">                <span class="comment">// 实际评分与预测评分的误差</span></span><br><span class="line">                <span class="keyword">double</span> error = realRating - predictRating;</span><br><span class="line">                <span class="keyword">this</span>.loss += error * error;</span><br><span class="line"></span><br><span class="line">                <span class="comment">// 根据当前用户ID得到当前用户偏差向量</span></span><br><span class="line">                <span class="keyword">double</span> userBiasValue = <span class="keyword">this</span>.userBiases.get(userIdx);</span><br><span class="line">                <span class="comment">// 用户偏置项的更新公式</span></span><br><span class="line">                <span class="keyword">this</span>.userBiases.plus(userIdx, (<span class="keyword">double</span>)<span class="keyword">this</span>.learnRate * (error - <span class="keyword">this</span>.regBias * userBiasValue));</span><br><span class="line"></span><br><span class="line">                <span class="keyword">this</span>.loss += <span class="keyword">this</span>.regBias * userBiasValue * userBiasValue;</span><br><span class="line">                <span class="comment">// 根据当前物品ID得到当前物品偏差向量</span></span><br><span class="line">                <span class="keyword">double</span> itemBiasValue = <span class="keyword">this</span>.itemBiases.get(itemIdx);</span><br><span class="line">                <span class="comment">// 物品偏置项的更新公式</span></span><br><span class="line">                <span class="keyword">this</span>.itemBiases.plus(itemIdx, (<span class="keyword">double</span>)<span class="keyword">this</span>.learnRate * (error - <span class="keyword">this</span>.regBias * itemBiasValue));</span><br><span class="line"></span><br><span class="line">                <span class="keyword">this</span>.loss += <span class="keyword">this</span>.regBias * itemBiasValue * itemBiasValue;</span><br><span class="line"></span><br><span class="line">                <span class="keyword">for</span>(<span class="keyword">int</span> factorIdx = <span class="number">0</span>; factorIdx &lt; <span class="keyword">this</span>.numFactors; ++factorIdx) &#123;</span><br><span class="line">                    <span class="keyword">double</span> userFactorValue = <span class="keyword">this</span>.userFactors.get(userIdx, factorIdx);</span><br><span class="line">                    <span class="keyword">double</span> itemFactorValue = <span class="keyword">this</span>.itemFactors.get(itemIdx, factorIdx);</span><br><span class="line">                    <span class="keyword">this</span>.userFactors.plus(userIdx, factorIdx, (<span class="keyword">double</span>)<span class="keyword">this</span>.learnRate * (error * itemFactorValue - (<span class="keyword">double</span>)<span class="keyword">this</span>.regUser * userFactorValue));</span><br><span class="line">                    <span class="keyword">this</span>.itemFactors.plus(itemIdx, factorIdx, (<span class="keyword">double</span>)<span class="keyword">this</span>.learnRate * (error * userFactorValue - (<span class="keyword">double</span>)<span class="keyword">this</span>.regItem * itemFactorValue));</span><br><span class="line">                    <span class="keyword">this</span>.loss += (<span class="keyword">double</span>)<span class="keyword">this</span>.regUser * userFactorValue * userFactorValue + (<span class="keyword">double</span>)<span class="keyword">this</span>.regItem * itemFactorValue * itemFactorValue;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">this</span>.loss *= <span class="number">0.5D</span>;</span><br><span class="line">            <span class="keyword">if</span> (<span class="keyword">this</span>.isConverged(iter) &amp;&amp; <span class="keyword">this</span>.earlyStop) &#123;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">this</span>.updateLRate(iter);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">double</span> <span class="title">predict</span><span class="params">(<span class="keyword">int</span> userIdx, <span class="keyword">int</span> itemIdx)</span> <span class="keyword">throws</span> LibrecException </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">this</span>.userFactors.row(userIdx).dot(<span class="keyword">this</span>.itemFactors.row(itemIdx)) + <span class="keyword">this</span>.userBiases.get(userIdx) + <span class="keyword">this</span>.itemBiases.get(itemIdx) + <span class="keyword">this</span>.globalMean;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="预测公式">预测公式</h1>
+<p><span class="math inline">\(\hat{r_{u i}}=\mu+b_{i}+b_{u}+p_{u} q_{i}^{T}\)</span></p>
+<p>其中，<span class="math inline">\(\mu\)</span>表示全局均值，在代码中使用<code>this.globalMean</code>表示，<span class="math inline">\(b_{i}\)</span>表示物品偏差项，在代码中使用<code>this.itemBiases.get(itemIdx)</code>表示，需要注意的是，物品偏置项需要根据物品ID进行索引，<span class="math inline">\(b_{u}\)</span>表示用户偏差项，在代码中使用<code>this.userBiases.get(userIdx)</code>表示，同样地，用户偏置项需要根据用户ID来进行索引，<span class="math inline">\(p_{u}\)</span>表示对用户评分矩阵进行矩阵分解后得到的用户向量，<span class="math inline">\(q_{i}\)</span>表示对用户评分矩阵进行分解后得到的物品向量。</p>
+<ul>
+<li>PS：这里说是用户向量和物品向量的原因是都是针对某一用户和物品进行计算。</li>
+</ul>
+<p>预测公式代码如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">double</span> <span class="title">predict</span><span class="params">(<span class="keyword">int</span> userIdx, <span class="keyword">int</span> itemIdx)</span> <span class="keyword">throws</span> LibrecException </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">this</span>.userFactors.row(userIdx).dot(<span class="keyword">this</span>.itemFactors.row(itemIdx)) + <span class="keyword">this</span>.userBiases.get(userIdx) + <span class="keyword">this</span>.itemBiases.get(itemIdx) + <span class="keyword">this</span>.globalMean;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>传入<code>userIdx</code>和<code>itemIdx</code>的原因是需要明确特定用户和特定物品，才能进行预测评分，<code>userFactors</code>和<code>itemFactors</code>是对用户评分矩阵进行矩阵分解后得到的用户矩阵和物品矩阵，需要明确索引才能使用。</p>
+<h1 id="损失函数公式">损失函数公式</h1>
+<p><span class="math inline">\(\sum_{r_{u i} \in R_{\text {train }}}\left(r_{u i}-\hat{r}_{u i}\right)^{2}+\lambda\left(b_{i}^{2}+b_{u}^{2}+\left\|q_{i}\right\|^{2}+\left\|p_{u}\right\|^{2}\right)\)</span></p>
+<p>将用户对物品的特定评分与真实评分之间的差值的平方作为损失函数的一部分是显而易见的，在代码中体现如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 实际评分</span></span><br><span class="line"><span class="keyword">double</span> realRating = matrixEntry.get();</span><br><span class="line"><span class="comment">// 预测评分</span></span><br><span class="line"><span class="keyword">double</span> predictRating = <span class="keyword">this</span>.predict(userIdx, itemIdx);</span><br><span class="line"><span class="comment">// 实际评分与预测评分的误差</span></span><br><span class="line"><span class="keyword">double</span> error = realRating - predictRating;</span><br><span class="line"><span class="keyword">this</span>.loss += error * error;</span><br></pre></td></tr></table></figure>
+<p>通过以上展示的<code>predict()</code>函数可以直接根据用户ID与物品ID求出预测评分，但值得琢磨的是，实际评分是如何得到的？</p>
+<p>可以看到，<code>MatrixEntry</code>接口是如下定义的，</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">MatrixEntry</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">int</span> <span class="title">row</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">int</span> <span class="title">column</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">double</span> <span class="title">get</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">set</span><span class="params">(<span class="keyword">double</span> var1)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">int</span> <span class="title">rowPosition</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">int</span> <span class="title">columnPosition</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在<code>SequentialSparseMatrixEntry</code>类中实现了<code>MatrixEntry</code>接口的<code>get()</code>方法，</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">double</span> <span class="title">get</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">this</span>.tempVector.getAtPosition(<span class="keyword">this</span>.columnPosition);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>值得注意的是，在<code>SequentialSparseMatrixEntry</code>类中，<code>columnPosition</code>属性被初始化为<code>-1</code>，这就让我们联想到，标签的值总是被设置在最后一列，我们可以验证这个猜想，在代码中，<code>var2</code>被强制转换为<code>MatrixEntry</code>类型，而<code>var2</code>又是<code>trainMatrix</code>的一个迭代器，不出所料地，<code>trainMatrix</code>是·<code>SequentialAccessSparseMatrix</code>类型，所以程序中可以直接调用<code>get()</code>方法来获取数据集中的实际评分值。</p>
+<p>我们重新来回到损失函数的话题上，接下来需要关注正则项的那一部分，即</p>
+<p><span class="math inline">\(\lambda\left(b_{i}^{2}+b_{u}^{2}+\left|q_{i}\right|^{2}+\left|p_{u}\right|^{2}\right)\)</span></p>
+<p>首先我们关注<span class="math inline">\(\lambda(b_{i}^{2}+b_{u}^{2})\)</span>，这一部分的代码比较好写，根据索引找到特定的用户偏置向量和物品偏置向量就可以写出代码，代码如下所示，</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">double</span> userBiasValue = <span class="keyword">this</span>.userBiases.get(userIdx);</span><br><span class="line"><span class="keyword">this</span>.loss += <span class="keyword">this</span>.regBias * userBiasValue * userBiasValue;</span><br><span class="line"><span class="keyword">double</span> itemBiasValue = <span class="keyword">this</span>.itemBiases.get(itemIdx);</span><br><span class="line"><span class="keyword">this</span>.loss += <span class="keyword">this</span>.regBias * itemBiasValue * itemBiasValue;</span><br></pre></td></tr></table></figure>
+<p>接下来的一部分就可能比较难懂，在对用户评分矩阵进行分解时，我们有一个超参数<span class="math inline">\(K\)</span>，表示的是隐因子的个数，在电影的用户评分矩阵中，隐因子指的可能是喜剧片、动画片等内容，换言之，用户是因为这些隐因子才作出的这些评分，所以矩阵分解的公式可以表示如下，</p>
+<p><span class="math inline">\(\hat{r_{u i}}=p_{u} q_{i}^{T}=\sum_{k=1}^{K} p_{u k} q_{k i}^{T}=\sum_{k=1}^{K} p_{u k} q_{i k} \approx r_{u i}\)</span></p>
+<p>所以在代码中我们需要增加一层遍历，即从1到<span class="math inline">\(K\)</span>对隐因子的遍历，对应每一种隐因子ID和用户ID有不同的用户隐因子值，同样的，对于每一种隐因子ID和物品ID有不同的物品隐因子值，对于<span class="math inline">\(\lambda\left(\left|q_{ik}\right|^{2}+\left|p_{uk}\right|^{2}\right)\)</span>这一部分的代码如下所示，</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">for</span>(<span class="keyword">int</span> factorIdx = <span class="number">0</span>; factorIdx &lt; <span class="keyword">this</span>.numFactors; ++factorIdx) &#123;</span><br><span class="line">    <span class="keyword">double</span> userFactorValue = <span class="keyword">this</span>.userFactors.get(userIdx, factorIdx);</span><br><span class="line">    <span class="keyword">double</span> itemFactorValue = <span class="keyword">this</span>.itemFactors.get(itemIdx, factorIdx);</span><br><span class="line">    <span class="keyword">this</span>.loss += (<span class="keyword">double</span>)<span class="keyword">this</span>.regUser * userFactorValue * userFactorValue + (<span class="keyword">double</span>)<span class="keyword">this</span>.regItem * itemFactorValue * itemFactorValue;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>以上就是损失函数全部的内容。</p>
+<h1 id="更新公式">更新公式</h1>
+<p><span class="math inline">\(\begin{array}{l} b_{u} \leftarrow b_{u}+\gamma\left(e_{u i}-\lambda b_{u}\right) \\ b_{i} \leftarrow b_{i}+\gamma\left(e_{u i}-\lambda b_{i}\right) \\ p_{u} \leftarrow p_{u}+\gamma\left(e_{u i} \cdot q_{i}-\lambda p_{u}\right) \\ q_{i} \leftarrow q_{i}+\gamma\left(e_{u i} \cdot p_{u}-\lambda q_{i}\right) \end{array}\)</span></p>
+<p>有了预测函数和损失函数的铺垫，这一部分就可以直接上代码，函数变量基本是差不多的，</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">this</span>.userBiases.plus(userIdx, (<span class="keyword">double</span>)<span class="keyword">this</span>.learnRate * (error - <span class="keyword">this</span>.regBias * userBiasValue));</span><br><span class="line"><span class="keyword">this</span>.itemBiases.plus(itemIdx, (<span class="keyword">double</span>)<span class="keyword">this</span>.learnRate * (error - <span class="keyword">this</span>.regBias * itemBiasValu));</span><br><span class="line"><span class="keyword">for</span>(<span class="keyword">int</span> factorIdx = <span class="number">0</span>; factorIdx &lt; <span class="keyword">this</span>.numFactors; ++factorIdx) &#123;</span><br><span class="line">    <span class="keyword">double</span> userFactorValue = <span class="keyword">this</span>.userFactors.get(userIdx, factorIdx);</span><br><span class="line">    <span class="keyword">double</span> itemFactorValue = <span class="keyword">this</span>.itemFactors.get(itemIdx, factorIdx);</span><br><span class="line">    <span class="keyword">this</span>.userFactors.plus(userIdx, factorIdx, (<span class="keyword">double</span>)<span class="keyword">this</span>.learnRate * (error * itemFactorValue - (<span class="keyword">double</span>)<span class="keyword">this</span>.regUser * userFactorValue));</span><br><span class="line">    <span class="keyword">this</span>.itemFactors.plus(itemIdx, factorIdx, (<span class="keyword">double</span>)<span class="keyword">this</span>.learnRate * (error * userFactorValue - (<span class="keyword">double</span>)<span class="keyword">this</span>.regItem * itemFactorValue));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>只需要注意一点，<code>plus()</code>函数是需要知道具体索引位置才能进行更新的，所以需要传入索引参数。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// DenseVector类中的plus方法</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">plus</span><span class="params">(<span class="keyword">int</span> index, <span class="keyword">double</span> value)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">this</span>.set(index, value + <span class="keyword">this</span>.get(index));</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// DenseMatrix类中的plus方法</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">plus</span><span class="params">(<span class="keyword">int</span> row, <span class="keyword">int</span> column, <span class="keyword">double</span> value)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">double</span>[] var10000 = <span class="keyword">this</span>.values[row];</span><br><span class="line">    var10000[column] += value;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>推荐系统</category>
+      </categories>
+      <tags>
+        <tag>推荐系统</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>SOHO论文阅读</title>
     <url>/2022/03/09/SOHO%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/</url>
     <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="\assets\css\APlayer.min.css"><script src="\assets\js\APlayer.min.js" class="aplayer-secondary-script-marker"></script><p>上一篇ViLBERT模型提出了使用two-stream的结构来分别处理图片和文本信息，然后再进行融合，在“vision-and-language”任务上还有其他模型使用了这种双流结构，因为其架构比单流结构更为复杂，所以架构的种类更加丰富，为了更深入地了解这种处理不同层次信息（图片和文本）的架构方式，我阅读了Seeing Out of tHe bOx:End-to-End Pre-training for Vision-Language Representation Learning这篇论文。特别地，这篇论文提出的视觉特征的提取方法也有其独到之处，能够不受目标特征局限性的影响。</p>
@@ -336,6 +336,29 @@ f\left(v_{i}\right)=s g\left[d_{h_{i}}-v_{i}\right]+v_{i}
       </tags>
   </entry>
   <entry>
+    <title>Hello World</title>
+    <url>/2020/09/06/hello-world/</url>
+    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="\assets\css\APlayer.min.css"><script src="\assets\js\APlayer.min.js" class="aplayer-secondary-script-marker"></script><p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
+<span id="more"></span>
+<h2 id="quick-start">Quick Start</h2>
+<h3 id="create-a-new-post">Create a new post</h3>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
+<h3 id="run-server">Run server</h3>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
+<h3 id="generate-static-files">Generate static files</h3>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
+<h3 id="deploy-to-remote-sites">Deploy to remote sites</h3>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
+]]></content>
+      <tags>
+        <tag>hello world</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>ViLBERT论文阅读</title>
     <url>/2022/03/08/ViLBERT%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/</url>
     <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="\assets\css\APlayer.min.css"><script src="\assets\js\APlayer.min.js" class="aplayer-secondary-script-marker"></script><p>BERT模型的提出使得大规模的预训练成为可能，与BERT模型仅仅处理文本模态不同，ViLBERT模型结合了图片和文本信息的特征，使用two-stream结构，基于大型的图像标题数据库训练与下游任务无关的通用模型，基于该模型通过少量调整即可实现通过标题检索图片、视觉问答等具体任务，最近在学习多模态特征有效的融合和对齐方法，于是对这篇文章进行了研读。</p>
@@ -418,29 +441,6 @@ f\left(v_{i}\right)=s g\left[d_{h_{i}}-v_{i}\right]+v_{i}
 ]]></content>
       <tags>
         <tag>test</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Hello World</title>
-    <url>/2020/09/06/hello-world/</url>
-    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="\assets\css\APlayer.min.css"><script src="\assets\js\APlayer.min.js" class="aplayer-secondary-script-marker"></script><p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<span id="more"></span>
-<h2 id="quick-start">Quick Start</h2>
-<h3 id="create-a-new-post">Create a new post</h3>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="run-server">Run server</h3>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="generate-static-files">Generate static files</h3>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="deploy-to-remote-sites">Deploy to remote sites</h3>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
-]]></content>
-      <tags>
-        <tag>hello world</tag>
       </tags>
   </entry>
   <entry>
@@ -598,6 +598,238 @@ f\left(v_{i}\right)=s g\left[d_{h_{i}}-v_{i}\right]+v_{i}
 <li>1980-1990 体系结构变化，网络数量激增，应用丰富</li>
 <li>1990, 2000’s 商业化, Web, 新的应用</li>
 <li>2005-现在 移动互联时代</li>
+</ol>
+]]></content>
+      <categories>
+        <category>计算机网络</category>
+      </categories>
+      <tags>
+        <tag>计算机网络</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>《计算机网络：自顶向下方法》第四章笔记整理</title>
+    <url>/2021/03/30/%E3%80%8A%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C%EF%BC%9A%E8%87%AA%E9%A1%B6%E5%90%91%E4%B8%8B%E7%BD%91%E7%BB%9C%E3%80%8B%E7%AC%AC%E5%9B%9B%E7%AB%A0%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/</url>
+    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="\assets\css\APlayer.min.css"><script src="\assets\js\APlayer.min.js" class="aplayer-secondary-script-marker"></script><p>对大黑书《计算机网络：自顶向下方法》第四章进行笔记整理...... <span id="more"></span></p>
+<h2 id="导论">导论</h2>
+<h3 id="网络层服务">网络层服务</h3>
+<ol type="1">
+<li>在发送主机和接收主机之间传送段（segment）。<br></li>
+<li>在发送端将段封装到数据报中，在接收端将段上交给传输层实体。<br></li>
+<li>网络层协议存在于每一个主机和路由器。<br></li>
+<li>路由器检查每一个经过它的IP数据报的头部。</li>
+</ol>
+<h3 id="网络层的关键功能">网络层的关键功能</h3>
+<ol type="1">
+<li>转发：将分组从路由器的输入接口转发到合适的输出接口。<br></li>
+<li>路由：使用路由算法来决定分组从发送主机到目标接收主机的路径。</li>
+</ol>
+<h3 id="数据平面和控制平面">数据平面和控制平面</h3>
+<h4 id="数据平面">数据平面</h4>
+<ol type="1">
+<li>本地，每个路由器功能<br></li>
+<li>决定从路由器输入端口到达的分组如何转发到输出端口<br></li>
+<li>转发功能：传统方式是基于目标地址和转发表；SDN方式是基于多个字段和转发表</li>
+</ol>
+<h4 id="控制平面">控制平面</h4>
+<ol type="1">
+<li>网络范围内的逻辑<br></li>
+<li>决定数据报如何在路由器之间路由，决定数据报从源到目标主机之间的端到端路径<br></li>
+<li>两个控制平面方法：传统的路由算法在路由器中被实现；SDN在远程的服务器中实现</li>
+</ol>
+<h3 id="传统方式">传统方式</h3>
+<ol type="1">
+<li><p>在每一个路由器中的单独路由器算法元件，在控制平面进行交互<br></p></li>
+<li><p>路由和转发的相互作用：</p>
+<ul>
+<li>控制平面：路由算法决定端到端路径<br></li>
+<li>数据平面：IP协议根据转发表决定了IP数据报在此路由器上的局部转发</li>
+</ul></li>
+</ol>
+<h3 id="sdn方式逻辑集中的控制平面">SDN方式：逻辑集中的控制平面</h3>
+<ol type="1">
+<li>一个不同的（通常是远程的）控制器与本地控制代理（CAs）交互</li>
+</ol>
+<h3 id="网络服务模型">网络服务模型</h3>
+<p>从发送方主机到接收方主机传输数据报的通道，<br> 对于单个数据报的服务：可靠传送；延迟保证<br> 对于数据报流的服务：保序数据报传送；保证流的最小带宽；分组之间的延迟差</p>
+<h3 id="连接建立">连接建立</h3>
+<p>在分组传输之前，在两个主机之间，在通过一些路由器所构成的路径上建立一个网络层连接（涉及到路由器）</p>
+<h2 id="路由器组成">路由器组成</h2>
+<h3 id="路由器结构概况">路由器结构概况</h3>
+<p>高层面通用路由器体系架构<br> 1. 路由：运行路由选择算法/协议（RIP，OSPF，BGP）——生成路由表<br> 2. 转发：从输入到输出链路交换数据报——根据路由表进行分组的转发 <img src="https://img-blog.csdnimg.cn/20210330184838153.png" alt="在这里插入图片描述"></p>
+<h3 id="输入端口功能">输入端口功能</h3>
+<ol type="1">
+<li><p>物理层：Bit级的接收<br></p></li>
+<li><p>数据链路层：链路层协议动作、解封装<br></p></li>
+<li><p>网络层：分布式交换<br></p>
+<ul>
+<li>根据数据报头部的信息如：目的地址，在输入端口内存中的转发表中查找合适的输出端口</li>
+<li>基于目标的转发：仅仅依赖于IP数据报的目标IP地址（最长前缀匹配）</li>
+<li>通用转发：基于头部字段的任意集合进行转发</li>
+</ul></li>
+</ol>
+<h3 id="输入端口缓存">输入端口缓存</h3>
+<ol type="1">
+<li>当交换机构的速率小于输入端口的汇聚速率时，在输入端口可能要排队（排队延迟以及由于输入缓存溢出造成丢失）<br></li>
+<li>HOL blocking：排在队头的数据报阻止了队列中其他数据报向前移动 <img src="https://img-blog.csdnimg.cn/20210330185758172.png" alt="在这里插入图片描述"></li>
+</ol>
+<h3 id="交换结构">交换结构</h3>
+<ol type="1">
+<li>将分组从输入缓存区传输到合适的输出端口<br></li>
+<li>交换速率：分组可以按照该速率从输入传输到输出<br></li>
+<li>三种典型的交换机构</li>
+</ol>
+<h4 id="通过内存交换">通过内存交换</h4>
+<ol type="1">
+<li>在CPU直接控制下的交换，采用传统的计算机<br></li>
+<li>分组被拷贝到系统内存，CPU从分组头部提取出目标地址，查找转发表，找到对应的输出端口，拷贝到输出端口<br></li>
+<li>转发速率被内存的带宽限制（数据报通过BUS两遍）<br></li>
+<li>一次只能转发一个分组 <img src="https://img-blog.csdnimg.cn/20210330190501677.png" alt="在这里插入图片描述"></li>
+</ol>
+<h4 id="通过总线交换">通过总线交换</h4>
+<ol type="1">
+<li>数据报通过共享总线，从输入端口转发到输出端口<br></li>
+<li>总线竞争：交换速度受限于总线带宽<br></li>
+<li>一次处理一个分组 <img src="https://img-blog.csdnimg.cn/20210330191022409.png" alt="在这里插入图片描述"></li>
+</ol>
+<h4 id="通过互联网络crossbar等的交换">通过互联网络（crossbar等）的交换</h4>
+<ol type="1">
+<li>同时并发转发多个分组，克服总线带宽限制<br></li>
+<li>榕树网络，纵横网络和其他的互联网络被开发，将多个处理器连接成多处理器<br></li>
+<li>高级设计：将数据报分片为固定长度的信元，通过交换网络交换 <img src="https://img-blog.csdnimg.cn/20210330191343346.png" alt="在这里插入图片描述"></li>
+</ol>
+<h3 id="输出端口">输出端口</h3>
+<ol type="1">
+<li>当数据报从交换机构的到达速度比传输速率快，就需要输出端口缓存（数据报可能会被丢弃，由于拥塞，缓冲区没有空间）<br></li>
+<li>由调度规则选择排队的数据报进行传输（不一定先到先传）</li>
+</ol>
+<h4 id="调度机制">调度机制</h4>
+<ol type="1">
+<li>调度：选择下一个要通过链路传输的分组<br></li>
+<li>FIFO scheduling：按照分组到来的次序发送<br></li>
+<li>丢弃策略：丢弃刚到达的分组、根据优先权丢失/移除分组，随机地丢弃/移除<br></li>
+<li>调度策略</li>
+</ol>
+<h5 id="调度策略优先权">调度策略：优先权</h5>
+<p>发送最高优先权的分组</p>
+<h2 id="ipinternet协议">IP：Internet协议</h2>
+<h3 id="互联网的网络层">互联网的网络层</h3>
+<figure>
+<img src="https://img-blog.csdnimg.cn/20210330192430417.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3JhaW55X3VuaXZlcnNl,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><figcaption aria-hidden="true">在这里插入图片描述</figcaption>
+</figure>
+<h3 id="ip数据报格式">IP数据报格式</h3>
+<figure>
+<img src="https://img-blog.csdnimg.cn/20210330192548897.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3JhaW55X3VuaXZlcnNl,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><figcaption aria-hidden="true">在这里插入图片描述</figcaption>
+</figure>
+<h3 id="ip分片和重组">IP分片和重组</h3>
+<ol type="1">
+<li><p>网络链路有MTU（最大传输单元）——链路层帧所携带的最大数据长度（不同的链路类型有不同的MTU）<br></p></li>
+<li><p>大的IP数据报在网络上被分片</p>
+<ul>
+<li>一个数据报被分割成若干个小的数据报（有相同的ID，不同的偏移量，最后一个分片标记为0）</li>
+<li>重组分片只在最终的目标主机进行</li>
+<li>IP头部的信息被用于标识，排序相关分片</li>
+</ul></li>
+<li><p>例子 <img src="https://img-blog.csdnimg.cn/20210330195240725.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3JhaW55X3VuaXZlcnNl,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p></li>
+</ol>
+<h3 id="ip编址">IP编址</h3>
+<h4 id="引论">引论</h4>
+<ol type="1">
+<li><p>IP地址：32位标示，对主机或者路由器的接口编址<br></p></li>
+<li><p>接口：主机/路由器和物理链路的连接处</p>
+<ul>
+<li>路由器通常拥有多个接口</li>
+<li>主机也有可能有多个接口</li>
+<li>IP地址和每一个接口关联</li>
+</ul></li>
+</ol>
+<p><strong>3. 一个IP地址和一个接口相关联</strong></p>
+<h4 id="子网subnets">子网（subnets）</h4>
+<ol type="1">
+<li>IP地址：</li>
+</ol>
+<ul>
+<li>子网部分（高位bits）</li>
+<li>主机部分（低位bits）</li>
+</ul>
+<ol start="2" type="1">
+<li>一个子网内的节点（主机或者路由器）它们的IP地址的高位部分相同，这些节点构成的网络的一部分叫做子网<br></li>
+<li>无需路由器介入，子网内各主机可以在物理上相互直接到达<br></li>
+<li>判断子网的方法（将每一个接口从主机或者路由器上分开）</li>
+</ol>
+<h4 id="ip地址分类">IP地址分类</h4>
+<figure>
+<img src="https://img-blog.csdnimg.cn/20210330202049353.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3JhaW55X3VuaXZlcnNl,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><figcaption aria-hidden="true">在这里插入图片描述</figcaption>
+</figure>
+<ol type="1">
+<li><p>特殊IP地址：</p>
+<ul>
+<li>子网部分全为0，本网络</li>
+<li>主机部分全为0，本主机</li>
+<li>主机部分全为1，广播地址，这个网络的所有主机</li>
+</ul></li>
+<li><p>内网（专用）IP地址</p>
+<ul>
+<li>专用地址：地址空间的一部分供专用地址使用</li>
+<li>永远不会被当做公用地址来分配，不会与公用地址重复（只在局部网络中意义，区分不同的设备）</li>
+<li>路由器不对目标地址是专用地址的分组进行转发</li>
+</ul></li>
+</ol>
+<h4 id="cidr-无类域间路由">CIDR 无类域间路由</h4>
+<ol type="1">
+<li>子网部分可以在任意的位置<br></li>
+<li>地址格式：a.b.c.d/x，其中x是地址中子网号的长度，例如，200.23.16.0/23</li>
+</ol>
+<h4 id="子网掩码">子网掩码</h4>
+<ol type="1">
+<li>32bits，1代表子网部分，0代表主机部分</li>
+</ol>
+<h6 id="转发表和转发算法">转发表和转发算法</h6>
+<p>获取IP数据报的目标地址，对于转发表中的每一个表项，如果如 (IP Des addr) &amp; (mask)==destination, 则按照表项对应的接口转发该数据报；如果都没有找到，则使用默认表项转发数据报</p>
+<h4 id="获取ip地址的过程">获取IP地址的过程</h4>
+<ol type="1">
+<li><p>主机获得IP地址</p>
+<ul>
+<li><p>系统管理员将地址配置在一个文件中</p></li>
+<li><p><strong>DHCP</strong>：从服务器中动态获得一个IP地址（即插即用）</p>
+<ul>
+<li><p>允许主机在加入网络的时候，动态地从服务器那里获得IP地址</p></li>
+<li><p>DHCP工作概况：</p>
+<ul>
+<li>主机广播“DHCP discover”报文</li>
+<li>DHCP服务器用“DHCP offer”提供报文响应</li>
+<li>主机请求IP地址：发送“DHCP request”报文</li>
+<li>DHCP服务器发送地址：“DHCP ack”报文</li>
+</ul></li>
+</ul></li>
+</ul></li>
+<li><p>获取一个网络的子网部分</p>
+<ul>
+<li><p>从ISP获得地址块中分配一个小地址块</p></li>
+<li><p><strong>层次编址</strong> <img src="https://img-blog.csdnimg.cn/20210330212245799.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3JhaW55X3VuaXZlcnNl,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p></li>
+</ul></li>
+</ol>
+<h4 id="nat网络地址转换">NAT：网络地址转换</h4>
+<ol type="1">
+<li><p>所有离开本地网络的数据报具有一个相同的源地址NAT IP address，但是具有不同的端口号<br></p></li>
+<li><p>本地网络只有一个有效IP地址</p>
+<ul>
+<li>不需要从ISP分配一块地址，可用一个IP地址用于所有的（局域网）设备</li>
+<li>可以在局域网改变设备的地址情况下而无需通知外界</li>
+<li>可以改变ISP（地址变化）而不需改变内部的设备地址</li>
+<li>局域网内部的设备没有明确的地址，对外是不可见的</li>
+</ul></li>
+<li><p>实现</p>
+<ul>
+<li>外出数据包：替换源地址和端口号为NAT IP地址和新的端口号，目标IP和端口不变</li>
+<li>记住每个转换替换对（在NAT转换表中）</li>
+<li>进入数据包：替换目标IP地址和端口号，采用存储在NAT表中的mapping表项</li>
+</ul></li>
+</ol>
+<h4 id="ipv6">IPv6</h4>
+<ol type="1">
+<li>固定的40字节头部，数据报传输过程中，不允许分片<br></li>
+<li>IPv4到IPv6的平移</li>
 </ol>
 ]]></content>
       <categories>
@@ -858,238 +1090,6 @@ f\left(v_{i}\right)=s g\left[d_{h_{i}}-v_{i}\right]+v_{i}
 <li>透明</li>
 <li>即插即用，自学习</li>
 </ul></li>
-</ol>
-]]></content>
-      <categories>
-        <category>计算机网络</category>
-      </categories>
-      <tags>
-        <tag>计算机网络</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>《计算机网络：自顶向下方法》第四章笔记整理</title>
-    <url>/2021/03/30/%E3%80%8A%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C%EF%BC%9A%E8%87%AA%E9%A1%B6%E5%90%91%E4%B8%8B%E7%BD%91%E7%BB%9C%E3%80%8B%E7%AC%AC%E5%9B%9B%E7%AB%A0%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/</url>
-    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="\assets\css\APlayer.min.css"><script src="\assets\js\APlayer.min.js" class="aplayer-secondary-script-marker"></script><p>对大黑书《计算机网络：自顶向下方法》第四章进行笔记整理...... <span id="more"></span></p>
-<h2 id="导论">导论</h2>
-<h3 id="网络层服务">网络层服务</h3>
-<ol type="1">
-<li>在发送主机和接收主机之间传送段（segment）。<br></li>
-<li>在发送端将段封装到数据报中，在接收端将段上交给传输层实体。<br></li>
-<li>网络层协议存在于每一个主机和路由器。<br></li>
-<li>路由器检查每一个经过它的IP数据报的头部。</li>
-</ol>
-<h3 id="网络层的关键功能">网络层的关键功能</h3>
-<ol type="1">
-<li>转发：将分组从路由器的输入接口转发到合适的输出接口。<br></li>
-<li>路由：使用路由算法来决定分组从发送主机到目标接收主机的路径。</li>
-</ol>
-<h3 id="数据平面和控制平面">数据平面和控制平面</h3>
-<h4 id="数据平面">数据平面</h4>
-<ol type="1">
-<li>本地，每个路由器功能<br></li>
-<li>决定从路由器输入端口到达的分组如何转发到输出端口<br></li>
-<li>转发功能：传统方式是基于目标地址和转发表；SDN方式是基于多个字段和转发表</li>
-</ol>
-<h4 id="控制平面">控制平面</h4>
-<ol type="1">
-<li>网络范围内的逻辑<br></li>
-<li>决定数据报如何在路由器之间路由，决定数据报从源到目标主机之间的端到端路径<br></li>
-<li>两个控制平面方法：传统的路由算法在路由器中被实现；SDN在远程的服务器中实现</li>
-</ol>
-<h3 id="传统方式">传统方式</h3>
-<ol type="1">
-<li><p>在每一个路由器中的单独路由器算法元件，在控制平面进行交互<br></p></li>
-<li><p>路由和转发的相互作用：</p>
-<ul>
-<li>控制平面：路由算法决定端到端路径<br></li>
-<li>数据平面：IP协议根据转发表决定了IP数据报在此路由器上的局部转发</li>
-</ul></li>
-</ol>
-<h3 id="sdn方式逻辑集中的控制平面">SDN方式：逻辑集中的控制平面</h3>
-<ol type="1">
-<li>一个不同的（通常是远程的）控制器与本地控制代理（CAs）交互</li>
-</ol>
-<h3 id="网络服务模型">网络服务模型</h3>
-<p>从发送方主机到接收方主机传输数据报的通道，<br> 对于单个数据报的服务：可靠传送；延迟保证<br> 对于数据报流的服务：保序数据报传送；保证流的最小带宽；分组之间的延迟差</p>
-<h3 id="连接建立">连接建立</h3>
-<p>在分组传输之前，在两个主机之间，在通过一些路由器所构成的路径上建立一个网络层连接（涉及到路由器）</p>
-<h2 id="路由器组成">路由器组成</h2>
-<h3 id="路由器结构概况">路由器结构概况</h3>
-<p>高层面通用路由器体系架构<br> 1. 路由：运行路由选择算法/协议（RIP，OSPF，BGP）——生成路由表<br> 2. 转发：从输入到输出链路交换数据报——根据路由表进行分组的转发 <img src="https://img-blog.csdnimg.cn/20210330184838153.png" alt="在这里插入图片描述"></p>
-<h3 id="输入端口功能">输入端口功能</h3>
-<ol type="1">
-<li><p>物理层：Bit级的接收<br></p></li>
-<li><p>数据链路层：链路层协议动作、解封装<br></p></li>
-<li><p>网络层：分布式交换<br></p>
-<ul>
-<li>根据数据报头部的信息如：目的地址，在输入端口内存中的转发表中查找合适的输出端口</li>
-<li>基于目标的转发：仅仅依赖于IP数据报的目标IP地址（最长前缀匹配）</li>
-<li>通用转发：基于头部字段的任意集合进行转发</li>
-</ul></li>
-</ol>
-<h3 id="输入端口缓存">输入端口缓存</h3>
-<ol type="1">
-<li>当交换机构的速率小于输入端口的汇聚速率时，在输入端口可能要排队（排队延迟以及由于输入缓存溢出造成丢失）<br></li>
-<li>HOL blocking：排在队头的数据报阻止了队列中其他数据报向前移动 <img src="https://img-blog.csdnimg.cn/20210330185758172.png" alt="在这里插入图片描述"></li>
-</ol>
-<h3 id="交换结构">交换结构</h3>
-<ol type="1">
-<li>将分组从输入缓存区传输到合适的输出端口<br></li>
-<li>交换速率：分组可以按照该速率从输入传输到输出<br></li>
-<li>三种典型的交换机构</li>
-</ol>
-<h4 id="通过内存交换">通过内存交换</h4>
-<ol type="1">
-<li>在CPU直接控制下的交换，采用传统的计算机<br></li>
-<li>分组被拷贝到系统内存，CPU从分组头部提取出目标地址，查找转发表，找到对应的输出端口，拷贝到输出端口<br></li>
-<li>转发速率被内存的带宽限制（数据报通过BUS两遍）<br></li>
-<li>一次只能转发一个分组 <img src="https://img-blog.csdnimg.cn/20210330190501677.png" alt="在这里插入图片描述"></li>
-</ol>
-<h4 id="通过总线交换">通过总线交换</h4>
-<ol type="1">
-<li>数据报通过共享总线，从输入端口转发到输出端口<br></li>
-<li>总线竞争：交换速度受限于总线带宽<br></li>
-<li>一次处理一个分组 <img src="https://img-blog.csdnimg.cn/20210330191022409.png" alt="在这里插入图片描述"></li>
-</ol>
-<h4 id="通过互联网络crossbar等的交换">通过互联网络（crossbar等）的交换</h4>
-<ol type="1">
-<li>同时并发转发多个分组，克服总线带宽限制<br></li>
-<li>榕树网络，纵横网络和其他的互联网络被开发，将多个处理器连接成多处理器<br></li>
-<li>高级设计：将数据报分片为固定长度的信元，通过交换网络交换 <img src="https://img-blog.csdnimg.cn/20210330191343346.png" alt="在这里插入图片描述"></li>
-</ol>
-<h3 id="输出端口">输出端口</h3>
-<ol type="1">
-<li>当数据报从交换机构的到达速度比传输速率快，就需要输出端口缓存（数据报可能会被丢弃，由于拥塞，缓冲区没有空间）<br></li>
-<li>由调度规则选择排队的数据报进行传输（不一定先到先传）</li>
-</ol>
-<h4 id="调度机制">调度机制</h4>
-<ol type="1">
-<li>调度：选择下一个要通过链路传输的分组<br></li>
-<li>FIFO scheduling：按照分组到来的次序发送<br></li>
-<li>丢弃策略：丢弃刚到达的分组、根据优先权丢失/移除分组，随机地丢弃/移除<br></li>
-<li>调度策略</li>
-</ol>
-<h5 id="调度策略优先权">调度策略：优先权</h5>
-<p>发送最高优先权的分组</p>
-<h2 id="ipinternet协议">IP：Internet协议</h2>
-<h3 id="互联网的网络层">互联网的网络层</h3>
-<figure>
-<img src="https://img-blog.csdnimg.cn/20210330192430417.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3JhaW55X3VuaXZlcnNl,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><figcaption aria-hidden="true">在这里插入图片描述</figcaption>
-</figure>
-<h3 id="ip数据报格式">IP数据报格式</h3>
-<figure>
-<img src="https://img-blog.csdnimg.cn/20210330192548897.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3JhaW55X3VuaXZlcnNl,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><figcaption aria-hidden="true">在这里插入图片描述</figcaption>
-</figure>
-<h3 id="ip分片和重组">IP分片和重组</h3>
-<ol type="1">
-<li><p>网络链路有MTU（最大传输单元）——链路层帧所携带的最大数据长度（不同的链路类型有不同的MTU）<br></p></li>
-<li><p>大的IP数据报在网络上被分片</p>
-<ul>
-<li>一个数据报被分割成若干个小的数据报（有相同的ID，不同的偏移量，最后一个分片标记为0）</li>
-<li>重组分片只在最终的目标主机进行</li>
-<li>IP头部的信息被用于标识，排序相关分片</li>
-</ul></li>
-<li><p>例子 <img src="https://img-blog.csdnimg.cn/20210330195240725.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3JhaW55X3VuaXZlcnNl,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p></li>
-</ol>
-<h3 id="ip编址">IP编址</h3>
-<h4 id="引论">引论</h4>
-<ol type="1">
-<li><p>IP地址：32位标示，对主机或者路由器的接口编址<br></p></li>
-<li><p>接口：主机/路由器和物理链路的连接处</p>
-<ul>
-<li>路由器通常拥有多个接口</li>
-<li>主机也有可能有多个接口</li>
-<li>IP地址和每一个接口关联</li>
-</ul></li>
-</ol>
-<p><strong>3. 一个IP地址和一个接口相关联</strong></p>
-<h4 id="子网subnets">子网（subnets）</h4>
-<ol type="1">
-<li>IP地址：</li>
-</ol>
-<ul>
-<li>子网部分（高位bits）</li>
-<li>主机部分（低位bits）</li>
-</ul>
-<ol start="2" type="1">
-<li>一个子网内的节点（主机或者路由器）它们的IP地址的高位部分相同，这些节点构成的网络的一部分叫做子网<br></li>
-<li>无需路由器介入，子网内各主机可以在物理上相互直接到达<br></li>
-<li>判断子网的方法（将每一个接口从主机或者路由器上分开）</li>
-</ol>
-<h4 id="ip地址分类">IP地址分类</h4>
-<figure>
-<img src="https://img-blog.csdnimg.cn/20210330202049353.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3JhaW55X3VuaXZlcnNl,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><figcaption aria-hidden="true">在这里插入图片描述</figcaption>
-</figure>
-<ol type="1">
-<li><p>特殊IP地址：</p>
-<ul>
-<li>子网部分全为0，本网络</li>
-<li>主机部分全为0，本主机</li>
-<li>主机部分全为1，广播地址，这个网络的所有主机</li>
-</ul></li>
-<li><p>内网（专用）IP地址</p>
-<ul>
-<li>专用地址：地址空间的一部分供专用地址使用</li>
-<li>永远不会被当做公用地址来分配，不会与公用地址重复（只在局部网络中意义，区分不同的设备）</li>
-<li>路由器不对目标地址是专用地址的分组进行转发</li>
-</ul></li>
-</ol>
-<h4 id="cidr-无类域间路由">CIDR 无类域间路由</h4>
-<ol type="1">
-<li>子网部分可以在任意的位置<br></li>
-<li>地址格式：a.b.c.d/x，其中x是地址中子网号的长度，例如，200.23.16.0/23</li>
-</ol>
-<h4 id="子网掩码">子网掩码</h4>
-<ol type="1">
-<li>32bits，1代表子网部分，0代表主机部分</li>
-</ol>
-<h6 id="转发表和转发算法">转发表和转发算法</h6>
-<p>获取IP数据报的目标地址，对于转发表中的每一个表项，如果如 (IP Des addr) &amp; (mask)==destination, 则按照表项对应的接口转发该数据报；如果都没有找到，则使用默认表项转发数据报</p>
-<h4 id="获取ip地址的过程">获取IP地址的过程</h4>
-<ol type="1">
-<li><p>主机获得IP地址</p>
-<ul>
-<li><p>系统管理员将地址配置在一个文件中</p></li>
-<li><p><strong>DHCP</strong>：从服务器中动态获得一个IP地址（即插即用）</p>
-<ul>
-<li><p>允许主机在加入网络的时候，动态地从服务器那里获得IP地址</p></li>
-<li><p>DHCP工作概况：</p>
-<ul>
-<li>主机广播“DHCP discover”报文</li>
-<li>DHCP服务器用“DHCP offer”提供报文响应</li>
-<li>主机请求IP地址：发送“DHCP request”报文</li>
-<li>DHCP服务器发送地址：“DHCP ack”报文</li>
-</ul></li>
-</ul></li>
-</ul></li>
-<li><p>获取一个网络的子网部分</p>
-<ul>
-<li><p>从ISP获得地址块中分配一个小地址块</p></li>
-<li><p><strong>层次编址</strong> <img src="https://img-blog.csdnimg.cn/20210330212245799.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3JhaW55X3VuaXZlcnNl,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p></li>
-</ul></li>
-</ol>
-<h4 id="nat网络地址转换">NAT：网络地址转换</h4>
-<ol type="1">
-<li><p>所有离开本地网络的数据报具有一个相同的源地址NAT IP address，但是具有不同的端口号<br></p></li>
-<li><p>本地网络只有一个有效IP地址</p>
-<ul>
-<li>不需要从ISP分配一块地址，可用一个IP地址用于所有的（局域网）设备</li>
-<li>可以在局域网改变设备的地址情况下而无需通知外界</li>
-<li>可以改变ISP（地址变化）而不需改变内部的设备地址</li>
-<li>局域网内部的设备没有明确的地址，对外是不可见的</li>
-</ul></li>
-<li><p>实现</p>
-<ul>
-<li>外出数据包：替换源地址和端口号为NAT IP地址和新的端口号，目标IP和端口不变</li>
-<li>记住每个转换替换对（在NAT转换表中）</li>
-<li>进入数据包：替换目标IP地址和端口号，采用存储在NAT表中的mapping表项</li>
-</ul></li>
-</ol>
-<h4 id="ipv6">IPv6</h4>
-<ol type="1">
-<li>固定的40字节头部，数据报传输过程中，不允许分片<br></li>
-<li>IPv4到IPv6的平移</li>
 </ol>
 ]]></content>
       <categories>
