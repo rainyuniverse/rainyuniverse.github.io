@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 5.4.1">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/themes/blue/pace-theme-barber-shop.css">
+  <script src="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/pace.min.js" integrity="sha256-gqd7YTjg/BtfqWSwsJOvndl0Bxc8gFImLEkXQT8+qj0=" crossorigin="anonymous"></script>
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Pisces","darkmode":false,"version":"8.9.0","exturl":false,"sidebar":{"position":"left","width":300,"display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<meta name="description" content="终于保研结束啦！！928之后先划水了一周，然后老师就布置任务了，于是就对这一篇免训练的神经符号框架论文进行阅读，论文的一个背景是越来越多的端到端的模型在QA以及其他自然语言处理领域的任务上取得了良好的效果，但是它们具有缺乏可解释性的缺点，本文将符号方法绑定到语言模型中，增强了模型的可解释性，另外现有的一些模型在特定领域需要进行模型微调，本文提出的框架具有免训练的特点，只需要一些精心挑选的promp">
+<meta property="og:type" content="article">
+<meta property="og:title" content="BINDING LANGUAGE MODELS IN SYMBOLIC LANGUAGES论文阅读">
+<meta property="og:url" content="http://example.com/2022/10/17/BINDING-LANGUAGE-MODELS-IN-SYMBOLIC-LANGUAGES%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/index.html">
+<meta property="og:site_name" content="雨宙的个人博客">
+<meta property="og:description" content="终于保研结束啦！！928之后先划水了一周，然后老师就布置任务了，于是就对这一篇免训练的神经符号框架论文进行阅读，论文的一个背景是越来越多的端到端的模型在QA以及其他自然语言处理领域的任务上取得了良好的效果，但是它们具有缺乏可解释性的缺点，本文将符号方法绑定到语言模型中，增强了模型的可解释性，另外现有的一些模型在特定领域需要进行模型微调，本文提出的框架具有免训练的特点，只需要一些精心挑选的promp">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/2022/10/17/BINDING-LANGUAGE-MODELS-IN-SYMBOLIC-LANGUAGES%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/1.jpg">
+<meta property="article:published_time" content="2022-10-17T01:25:38.000Z">
+<meta property="article:modified_time" content="2022-10-17T01:48:38.649Z">
+<meta property="article:author" content="Rainy Universe">
+<meta property="article:tag" content="自然语言处理">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2022/10/17/BINDING-LANGUAGE-MODELS-IN-SYMBOLIC-LANGUAGES%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/1.jpg">
+
+
+<link rel="canonical" href="http://example.com/2022/10/17/BINDING-LANGUAGE-MODELS-IN-SYMBOLIC-LANGUAGES%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"http://example.com/2022/10/17/BINDING-LANGUAGE-MODELS-IN-SYMBOLIC-LANGUAGES%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/","path":"2022/10/17/BINDING-LANGUAGE-MODELS-IN-SYMBOLIC-LANGUAGES论文阅读/","title":"BINDING LANGUAGE MODELS IN SYMBOLIC LANGUAGES论文阅读"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>BINDING LANGUAGE MODELS IN SYMBOLIC LANGUAGES论文阅读 | 雨宙的个人博客</title>
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+
+  <script src="https://cdn.jsdelivr.net/npm/jquery/dist/jquery.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome/css/font-awesome.min.css"/>
+  
+</head>
+
+
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <script src="/live2d-widget/autoload.js"></script>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">雨宙的个人博客</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%91%98%E8%A6%81"><span class="nav-number">1.</span> <span class="nav-text">摘要</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%8B%E7%BB%8D"><span class="nav-number">2.</span> <span class="nav-text">介绍</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%96%B9%E6%B3%95"><span class="nav-number">3.</span> <span class="nav-text">方法</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#binder%E6%A1%86%E6%9E%B6"><span class="nav-number">3.1.</span> <span class="nav-text">BINDER框架</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#binder%E7%9A%84%E4%B8%8A%E4%B8%8B%E6%96%87%E5%AD%A6%E4%B9%A0"><span class="nav-number">3.2.</span> <span class="nav-text">BINDER的上下文学习</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#binder%E5%AE%9E%E7%8E%B0"><span class="nav-number">3.3.</span> <span class="nav-text">BINDER实现</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%9E%E9%AA%8C"><span class="nav-number">4.</span> <span class="nav-text">实验</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%AE%9E%E9%AA%8C%E8%AE%BE%E7%BD%AE"><span class="nav-number">4.1.</span> <span class="nav-text">实验设置</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%BB%E8%A6%81%E7%BB%93%E6%9E%9C"><span class="nav-number">4.2.</span> <span class="nav-text">主要结果</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%86%E6%9E%90"><span class="nav-number">5.</span> <span class="nav-text">分析</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%B6%88%E8%9E%8D%E5%88%86%E6%9E%90"><span class="nav-number">5.1.</span> <span class="nav-text">消融分析</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%8F%AF%E8%A7%A3%E9%87%8A%E6%80%A7"><span class="nav-number">5.2.</span> <span class="nav-text">可解释性</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E9%B2%81%E6%A3%92%E6%80%A7"><span class="nav-number">5.3.</span> <span class="nav-text">鲁棒性</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E5%8F%AF%E4%BC%B8%E7%BC%A9%E6%80%A7"><span class="nav-number">5.3.1.</span> <span class="nav-text">可伸缩性</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E5%99%AA%E5%A3%B0%E5%86%85%E5%AE%B9"><span class="nav-number">5.3.2.</span> <span class="nav-text">噪声内容</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8python%E7%9A%84binder"><span class="nav-number">5.3.3.</span> <span class="nav-text">使用Python的BINDER</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E5%A4%9A%E6%A8%A1%E6%80%81%E5%BA%94%E7%94%A8"><span class="nav-number">5.3.4.</span> <span class="nav-text">多模态应用</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%B8%E5%85%B3%E5%B7%A5%E4%BD%9C"><span class="nav-number">6.</span> <span class="nav-text">相关工作</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">7.</span> <span class="nav-text">总结</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Rainy Universe"
+      src="/images/avatar.gif">
+  <p class="site-author-name" itemprop="name">Rainy Universe</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">12</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">8</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/rainyuniverse" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;rainyuniverse" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+  </div>
+
+
+
+        </div>
+      </div>
+      <div id="music163player">
+        <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=300 src="//music.163.com/outchain/player?type=0&id=7267179044&auto=1&height=430">
+        </iframe>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/10/17/BINDING-LANGUAGE-MODELS-IN-SYMBOLIC-LANGUAGES%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Rainy Universe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="雨宙的个人博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          BINDING LANGUAGE MODELS IN SYMBOLIC LANGUAGES论文阅读
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2022-10-17 09:25:38 / 修改时间：09:48:38" itemprop="dateCreated datePublished" datetime="2022-10-17T09:25:38+08:00">2022-10-17</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/" itemprop="url" rel="index"><span itemprop="name">深度学习论文阅读</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>终于保研结束啦！！928之后先划水了一周，然后老师就布置任务了，于是就对这一篇免训练的神经符号框架论文进行阅读，论文的一个背景是越来越多的端到端的模型在QA以及其他自然语言处理领域的任务上取得了良好的效果，但是它们具有缺乏可解释性的缺点，本文将符号方法绑定到语言模型中，增强了模型的可解释性，另外现有的一些模型在特定领域需要进行模型微调，本文提出的框架具有免训练的特点，只需要一些精心挑选的prompt和API调用就可以达到SOTA效果。</p>
+<center>
+<img src="/2022/10/17/BINDING-LANGUAGE-MODELS-IN-SYMBOLIC-LANGUAGES%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/1.jpg" width="600px">
+</center>
+<span id="more"></span>
+<h3 id="摘要">摘要</h3>
+<ol type="1">
+<li>端到端的神经方法最近在性能和易用性方面在NLP任务中占主导地位，但它们缺乏可解释性和稳健性</li>
+<li>本文提出<code>BINDER</code>，一个<strong>免训练</strong>的神经符号框架，它将任务输入映射到程序中
+<ul>
+<li>采用<code>GPT-3 Codex</code>作为语言模型</li>
+<li>在<strong>解析阶段</strong>，只需几个上下文示例，<code>Codex</code>就能识别出任务输入中无法由原始编程语言回答的部分，正确地生成API调用以促使<code>Codex</code>解决无法回答的部分，并在于原始语法兼容的情况下确定API调用的位置</li>
+<li>在<strong>执行阶段</strong>，鉴于API调用中的适当提示，<code>Codex</code>可以执行多种功能（如常识性的QA、信息提取）</li>
+</ul></li>
+</ol>
+<h3 id="介绍">介绍</h3>
+<ol type="1">
+<li>自然语言处理任务的性能由直接将输入映射到输出的神经端到端系统主导
+<ul>
+<li>优点：灵活且易于使用</li>
+<li>缺点：缺乏可解释性和稳健性</li>
+</ul></li>
+<li>端到端的方法与产生明确的中间表征（如逻辑形式、推理路径或程序代码）的符号方法形成对比
+<ul>
+<li>优点：这些符号方法产生的中间形式是可解释的，由此产生的执行结果使它们对输入的变化更加稳健</li>
+<li>缺点：语义覆盖面受到所选符号语言的语法承受力的限制</li>
+</ul></li>
+<li>一些工作已经提出将神经模块和符号语言结合起来，以利用两种方法的优势
+<ul>
+<li>缺点：在不同的任务和领域中，需要定制不同的符号语言和神经模块，并且需要各种大量的训练数据，以确保所有模块都得到良好的训练</li>
+</ul></li>
+<li>提出<code>BINDER</code>，一个免训练的神经符号框架，它将任务输入映射到编程语言中的可执行程序，并绑定了一个统一的API来调用语言模型来执行多功能
+<ul>
+<li>首先，将输入问题通过<code>Codex</code>解析为<code>BINDER</code>程序，其中<code>Codex</code>需要决定以下三点：
+<ul>
+<li>输入中的哪些部分可以转换为目标编程语言</li>
+<li>相应的任务API调用（可以理解为<code>prompt</code>）</li>
+<li>在<code>BINDER</code>程序中插入API调用的位置</li>
+</ul></li>
+<li>接下来，<code>Codex</code>生成任务API调用的答案，将生成的结果整合回编程语言，并执行生成的编程语言表达式以得到最终答案</li>
+</ul></li>
+</ol>
+<h3 id="方法">方法</h3>
+<h4 id="binder框架"><code>BINDER</code>框架</h4>
+<ol type="1">
+<li><p>概述：解决NLP任务的<code>BINDER</code>框架定义如下：给定自然语言输入<span class="math inline">\(Q\)</span>和可选上下文<span class="math inline">\(D\)</span>（如段落、表格、图像或上述组合）作为输入，生成可执行的<code>BINDER</code>程序<span class="math inline">\(Z\)</span>，最后，输出答案<span class="math inline">\(A\)</span>是通过使用<code>BINDER</code>解释器执行<span class="math inline">\(Z\)</span>得到的</p></li>
+<li><p><code>BINDER</code>解析：在解析阶段，输入的自然语言<span class="math inline">\(Q\)</span>被解析为<code>BINDER</code>程序<span class="math inline">\(Z\)</span>，<code>BINDER</code>程序是一种符号语言的表达，在核心符号语言无法提供所需功能的情况下，可以选择API调用</p>
+<ul>
+<li><p>将程序中的API调用定义为方法<span class="math inline">\(f(\hat{Q};\hat{D})\)</span>，其中<span class="math inline">\(\hat{Q}\)</span>是等待回答的问题，可以查询的上下文为<span class="math inline">\(\hat{D}\)</span>，这里<span class="math inline">\(\hat{Q}\)</span>是<span class="math inline">\(Q\)</span>中不能仅仅运用程序语言回答的部分，<span class="math inline">\(\hat{D}\)</span>是<span class="math inline">\({D}\)</span>中和<span class="math inline">\(\hat{Q}\)</span>有关的上下文</p>
+<blockquote>
+<p>这里文中举出了一个例子：</p>
+<p><code>Which is the best-selling shirt made in North America and with no chemicals?</code></p>
+<p>其中的<code>North America</code>是<span class="math inline">\(\hat{Q}\)</span>,<code>Made_in</code>列是对应的上下文</p>
+</blockquote>
+<p><span class="math inline">\(f(\hat{Q};\hat{D})\)</span>API调用的输出是<span class="math inline">\(\hat{Q}\)</span>查询的答案，它被表示为与符号语言语法兼容的变量，以便程序可以被执行</p></li>
+</ul></li>
+<li><p><code>BINDER</code>执行：在执行阶段，程序<span class="math inline">\(Z\)</span>由<code>BINDER</code>解释器执行得到答案a，<code>BINDER</code>解释器由一个<strong>标准符号语言解释器</strong>和实现API调用的模型组成，执行阶段包括词法分析、语法分析和程序评估，</p>
+<ul>
+<li>在<strong>词法和语法分析</strong>中，<span class="math inline">\(f(\hat{Q};\hat{D})\)</span>被添加为语法中的一个新标识符，程序被解析为基于该扩展语法的抽象语法树</li>
+<li>在<strong>程序评估</strong>中，API调用是通过调用底层神经模型来评估的，API调用输出被保存为与标准符号语言兼容的变量，因此程序最终可以由一个现成的符号语言解释器执行，从而获得输出</li>
+</ul></li>
+</ol>
+<h4 id="binder的上下文学习"><code>BINDER</code>的上下文学习</h4>
+<ol type="1">
+<li>在解析阶段，由于插入了API调用，<code>BINDER</code>程序的语法与原始编程语言的语法不同，这里利用<code>Codex</code>的少样本泛化能力，发现它只需要少量的上下文示例就可以有效地学习修改后的语法</li>
+<li>在执行阶段，<code>Codex</code>作为底层的LM，通过连接API调用的输入，<span class="math inline">\(\hat{Q}\)</span>和<span class="math inline">\(\hat{D}\)</span>作为语言模型的提示，给API调用提供输出，而程序的其余部分则由编程语言解释器执行</li>
+<li><code>BINDER</code>的上下文学习遵循下面这个过程：
+<ul>
+<li>输入由<span class="math inline">\(k\)</span>个上下文示例和推理问题组成</li>
+<li>输出是<span class="math inline">\(n\)</span>个候选的<code>BINDER</code>程序，由<code>BINDER</code>解释器运行得到<span class="math inline">\(n\)</span>个答案，根据多数投票策略选出正确答案</li>
+</ul></li>
+</ol>
+<h4 id="binder实现"><code>BINDER</code>实现</h4>
+<ol type="1">
+<li>实现了两个API
+<ul>
+<li><span class="math inline">\(f_{col}(\hat{Q};\hat{D})\)</span>：将已知的列（上下文）映射到一个新的列</li>
+<li><span class="math inline">\(f_{val}(\hat{Q};\hat{D})\)</span>：将已知的列（上下文）映射到一个新的值</li>
+</ul></li>
+</ol>
+<h3 id="实验">实验</h3>
+<h4 id="实验设置">实验设置</h4>
+<ol type="1">
+<li><p><strong>数据集</strong></p>
+<ul>
+<li><code>WIKITQ</code></li>
+<li><code>TABFACT</code></li>
+</ul></li>
+<li><p><strong>评价指标</strong>：评价指标是<code>WIKITQ</code>和<code>TABFACT</code>的执行精度（EA）。在实际情况中，程序的执行结果往往在语义上是正确的，但是不能匹配黄金答案，因此，<strong>文章在<code>WIKITQ</code>中为这些语义上正确的情况添加了一个预匹配检查</strong>，主要包括以下两种情况</p>
+<ul>
+<li>A或B的选择问题：1代表yes，0代表no</li>
+<li>带单位的数字问题：去掉单位也是匹配的</li>
+</ul></li>
+<li><p>基线模型：除了一些传统的强有力的模型，为了进一步证明<code>BINDER</code>的有效性，还使用附加的推理模型来评估<code>Codex</code>，包括：</p>
+<ul>
+<li><code>Codex end-to-end QA</code>：端到端QA，即根据输入问题和表直接输出答案</li>
+<li><code>Codex SQL</code>：使用标准SQL语言进行语义解析（同样的，先调用Codex生成中间SQL，再调用Codex生成答案）</li>
+</ul></li>
+<li><p>实现细节</p>
+<ul>
+<li><p>使用OpenAI中提供的Codex模型接口，作为生成程序的解析器和每个程序执行过程中API调用的基础模型</p></li>
+<li><p>为了生成正确的<code>BINDER</code>程序，为每个数据集注释了14个上下文示例，每个上下文示例提示主要遵循表结构、前三行表、问题和对应的<code>BINDER</code>程序的格式，如下所示</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> Fabrice Santoro(</span><br><span class="line">	row_id <span class="type">int</span>,</span><br><span class="line">	name text,</span><br><span class="line">	<span class="number">2001</span> text,</span><br><span class="line">	<span class="number">2002</span> text,</span><br><span class="line">	<span class="number">2003</span> text,</span><br><span class="line">	<span class="number">2004</span> text,</span><br><span class="line">	<span class="number">2005</span> text,</span><br><span class="line">	<span class="number">2006</span> text,</span><br><span class="line">	<span class="number">2007</span> text,</span><br><span class="line">	<span class="number">2008</span> text,</span><br><span class="line">	<span class="number">2009</span> text,</span><br><span class="line">	<span class="number">2010</span> text,</span><br><span class="line">	career\nsr text,</span><br><span class="line">	career\nwin<span class="operator">-</span>loss text)</span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment">3 example rows:</span></span><br><span class="line"><span class="comment">SELECT * FROM w LIMIT 3;</span></span><br><span class="line"><span class="comment">row_id	name	2001	2002	2003	2004	2005	2006	2007	2008	2009	2010	career\nsr	career\nwin-loss</span></span><br><span class="line"><span class="comment">0	australian open	2r	1r	3r	2r	1r	qf	3r	2r	3r	1r	0 / 18	22–18</span></span><br><span class="line"><span class="comment">1	french open	4r	2r	2r	3r	1r	1r	1r	2r	1r	a	0 / 20	17–20</span></span><br><span class="line"><span class="comment">2	wimbledon	3r	2r	2r	2r	2r	2r	2r	1r	2r	a	0 / 14	11–14</span></span><br><span class="line"><span class="comment">*/</span></span><br><span class="line">Q: did he win more <span class="keyword">at</span> the australian <span class="keyword">open</span> <span class="keyword">or</span> indian wells?</span><br><span class="line">NeuralSQL: <span class="keyword">SELECT</span> name <span class="keyword">FROM</span> w <span class="keyword">WHERE</span> name <span class="keyword">IN</span> (<span class="string">&#x27;australian open&#x27;</span>, <span class="string">&#x27;indian wells&#x27;</span>) <span class="keyword">ORDER</span> <span class="keyword">BY</span> QA(&quot;map@how many wins?&quot;; `career\nwin<span class="operator">-</span>loss`) <span class="keyword">DESC</span> LIMIT <span class="number">1</span></span><br></pre></td></tr></table></figure></li>
+</ul></li>
+</ol>
+<h4 id="主要结果">主要结果</h4>
+<ol type="1">
+<li><code>WIKITQ</code>
+<ul>
+<li>SOTA</li>
+<li><code>Codex BINDER</code>比使用标准SQL在测试集上的执行精度提高，说明<code>BINDER</code>确实缓解了原始语言的覆盖限制</li>
+<li><code>Codex BINDER</code>和<code>Codex SQL</code>都比端到端QA具有显著优势，说明在结构化知识基础和与代码相关的任务中，使用<code>Codex</code>进行语义解析（先生成代码）是更好的默认选择</li>
+</ul></li>
+<li><code>TABFACT</code>
+<ul>
+<li>SOTA</li>
+<li>需要注意的是，符号方法在二元分类问题上通常落后于端到端的方法，因为答案空间很小，但是文章的方法取得了最先进的结果</li>
+<li>然而，<strong>用于上下文学习的有效样本选择仍然是一个挑战</strong></li>
+</ul></li>
+</ol>
+<h3 id="分析">分析</h3>
+<h4 id="消融分析">消融分析</h4>
+<ol type="1">
+<li>将问题分为两种，一种是程序（SQL）可以解决的问题，一种是程序无法解决的问题，<code>Codex BINDER</code>在程序无法解决的问题上明显优于<code>Codex SQL</code>，说明其语义覆盖范围更广</li>
+<li><code>BINDER</code>的假象率更低（没有意外得出正确答案）</li>
+<li><code>BINDER</code>在程序可解性方面也取得了比SQL更高的分数</li>
+</ol>
+<h4 id="可解释性">可解释性</h4>
+<ol type="1">
+<li>显式程序可以帮助人工调试和错误分析，增加了可解释性</li>
+</ol>
+<h4 id="鲁棒性">鲁棒性</h4>
+<h5 id="可伸缩性">可伸缩性</h5>
+<ol type="1">
+<li>端到端QA在预测答案时由于需要整个表作为输入，所以当知识源很大时不能很好地适应，而<code>BINDER</code>的输入只有三条表行，所以当知识源很大时能更好地适应</li>
+</ol>
+<h5 id="噪声内容">噪声内容</h5>
+<ol type="1">
+<li>端到端的方法对噪声输入比较脆弱，特别是当存在与问题相关内容相似的干扰物时，文章构建了一个具有干扰物的数据集并进行实验，发现<code>BINDER</code>比端到端QA更稳定</li>
+</ol>
+<h5 id="使用python的binder">使用<code>Python</code>的<code>BINDER</code></h5>
+<ol type="1">
+<li>文章设计的<code>BINDER</code>很容易扩展到各种编程语言</li>
+</ol>
+<h5 id="多模态应用">多模态应用</h5>
+<ol type="1">
+<li>文章在多模态数据集上应用<code>BINDER</code>，跨越文本、表格和图像，为了将图像输入到LM程序生成中，事先用视觉—文本预训练模型OFA将图像转换成文本图像说明，文章的工作是第一个证明跨文本、表格和图像的多模态QA可以用可解释和可执行的程序来处理，并且取得了和最先进的模型相媲美的性能</li>
+</ol>
+<h3 id="相关工作">相关工作</h3>
+<ol type="1">
+<li><p>语义解析：<strong>语义解析能够在给定自然语言输入的情况下产生可执行的程序</strong>，生成协助解决问题的中间结构，并比后来直接生成解决方案的神经方法提高可解释性，然而，语义解析方法受限于其语法覆盖范围，无法解决需要外部知识或功能的问题</p></li>
+<li><p>神经—符号方法：一些工作将神经模块与符号语言整合起来，以获得两种方法的优势，即良好的性能和可解释性，然而，这些方法往往需要精心设计用于相应任务的函数和校准相应的神经模块，这需要复杂的训练步骤和大量的训练数据来解决特定领域的问题</p></li>
+<li><p>与这些方法相比，BINDER具有很强的表现力和灵活性，能够处理现实世界中的各种问题，因为它能够通过适当的API调用来增强其功能。此外，BINDER不需要训练，只需要几十个基于特定符号语言的注释就可以完成一个特定领域的任务，同时保持：出色的性能、对输入的扩展能力、可解释性和对嘈杂内容的稳健性</p></li>
+</ol>
+<h3 id="总结">总结</h3>
+<ol type="1">
+<li>文章提出了<code>BINDER</code>，一个免训练的神经符号框架，它将任务输入映射到一个程序中，允许绑定一个统一的LM API来实现额外的功能</li>
+<li><code>BINDER</code>旨在结合端到端方法（高覆盖率）和符号方法（高可解释性）的优势</li>
+<li><code>BINDER</code>使用Codex作为LM，在选定的数据集上达到了最先进的性能</li>
+<li>文章还对<code>BINDER</code>进行了一系列的分析，分解了性能提升，检查了对大的或嘈杂的输入的鲁棒性，将其应用于多模态知识源，并将其扩展到Python语言</li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="reward-container">
+  <div></div>
+  <button>
+    赞赏
+  </button>
+  <div class="post-reward">
+      <div>
+        <img src="/images/wechatpay.png" alt="Rainy Universe 微信">
+        <span>微信</span>
+      </div>
+      <div>
+        <img src="/images/alipay.png" alt="Rainy Universe 支付宝">
+        <span>支付宝</span>
+      </div>
+
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/%E8%87%AA%E7%84%B6%E8%AF%AD%E8%A8%80%E5%A4%84%E7%90%86/" rel="tag"># 自然语言处理</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2022/04/04/LibRec%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%EF%BC%88%E4%BA%8C%EF%BC%89-SVD-%E7%AE%97%E6%B3%95/" rel="prev" title="LibRec学习笔记（二）：SVD++算法">
+                  <i class="fa fa-chevron-left"></i> LibRec学习笔记（二）：SVD++算法
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments gitalk-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Rainy Universe</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/pisces/" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+  <script src="/js/third-party/pace.js"></script>
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">true</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.0/es5/tex-mml-chtml.js","integrity":"sha256-r+3itOMtGGjap0x+10hu6jW/gZCzxHsoKrOd7gyRSGY="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
+
+<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"rainyuniverse","repo":"blog-comment","client_id":"dd3ab568cf554224b60c","client_secret":"d377ea691384ea1e236e98cb932bd8e090b2d863","admin_user":"rainyuniverse","distraction_free_mode":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token","language":"zh-CN","js":{"url":"https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.min.js","integrity":"sha256-Pmj85ojLaPOWwRtlMJwmezB/Qg8BzvJp5eTzvXaYAfA="},"path_md5":"58d9f04a54820f4c0ba96e0d199d6372"}</script>
+<script src="/js/third-party/comments/gitalk.js"></script>
+
+  
+</body>
+</html>
