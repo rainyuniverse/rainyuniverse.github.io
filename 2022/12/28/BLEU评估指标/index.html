@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 5.4.1">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/themes/blue/pace-theme-barber-shop.css">
+  <script src="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/pace.min.js" integrity="sha256-gqd7YTjg/BtfqWSwsJOvndl0Bxc8gFImLEkXQT8+qj0=" crossorigin="anonymous"></script>
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Pisces","darkmode":false,"version":"8.9.0","exturl":false,"sidebar":{"position":"left","width":300,"display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<meta name="description" content="BLEU评估指标在机器翻译任务中经常使用，本文主要对BLEU评估指标的计算过程以及计算工具的使用进行总结">
+<meta property="og:type" content="article">
+<meta property="og:title" content="BLEU评估指标">
+<meta property="og:url" content="http://example.com/2022/12/28/BLEU%E8%AF%84%E4%BC%B0%E6%8C%87%E6%A0%87/index.html">
+<meta property="og:site_name" content="雨宙的个人博客">
+<meta property="og:description" content="BLEU评估指标在机器翻译任务中经常使用，本文主要对BLEU评估指标的计算过程以及计算工具的使用进行总结">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2022-12-28T09:38:01.000Z">
+<meta property="article:modified_time" content="2022-12-28T09:45:45.787Z">
+<meta property="article:author" content="Rainy Universe">
+<meta property="article:tag" content="机器翻译">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="http://example.com/2022/12/28/BLEU%E8%AF%84%E4%BC%B0%E6%8C%87%E6%A0%87/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"http://example.com/2022/12/28/BLEU%E8%AF%84%E4%BC%B0%E6%8C%87%E6%A0%87/","path":"2022/12/28/BLEU评估指标/","title":"BLEU评估指标"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>BLEU评估指标 | 雨宙的个人博客</title>
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+
+  <script src="https://cdn.jsdelivr.net/npm/jquery/dist/jquery.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome/css/font-awesome.min.css"/>
+  
+</head>
+
+
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <script src="/live2d-widget/autoload.js"></script>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">雨宙的个人博客</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9A%E4%B9%89"><span class="nav-number">1.</span> <span class="nav-text">定义</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AE%A1%E7%AE%97"><span class="nav-number">2.</span> <span class="nav-text">计算</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Rainy Universe"
+      src="/images/avatar.gif">
+  <p class="site-author-name" itemprop="name">Rainy Universe</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">13</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">9</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/rainyuniverse" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;rainyuniverse" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+  </div>
+
+
+
+        </div>
+      </div>
+      <div id="music163player">
+        <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=300 src="//music.163.com/outchain/player?type=0&id=7267179044&auto=1&height=430">
+        </iframe>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/12/28/BLEU%E8%AF%84%E4%BC%B0%E6%8C%87%E6%A0%87/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Rainy Universe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="雨宙的个人博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          BLEU评估指标
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2022-12-28 17:38:01 / 修改时间：17:45:45" itemprop="dateCreated datePublished" datetime="2022-12-28T17:38:01+08:00">2022-12-28</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%9C%BA%E5%99%A8%E7%BF%BB%E8%AF%91/" itemprop="url" rel="index"><span itemprop="name">机器翻译</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>BLEU评估指标在机器翻译任务中经常使用，本文主要对BLEU评估指标的计算过程以及计算工具的使用进行总结 <span id="more"></span></p>
+<h2 id="定义">定义</h2>
+<ol type="1">
+<li>BLEU（全称为Bilingual Evaluation Understudy），其意思为双语评估替补，用于机器翻译任务的评价，原文如下<a target="_blank" rel="noopener" href="https://aclanthology.org/P02-1040.pdf">BLEU: a Method for Automatic Evaluation of Machine Translation</a></li>
+<li>BLEU算法实际上就是在判断两个句子的相似程度</li>
+<li>BLEU有许多变种，根据<code>n-gram</code>可以划分成多种评价指标，常见的评价指标有BLEU-1、BLEU-2、BLEU-3、BLEU-4四种，其中<code>n-gram</code>指的是连续的单词个数为n，BLEU-1衡量的是单词级别的准确性，更高阶的BLEU可以衡量句子的流畅性</li>
+</ol>
+<h2 id="计算">计算</h2>
+<ol type="1">
+<li><p>BLEU计算的一个大致步骤是：</p>
+<ul>
+<li><p>分别计算<code>candidate</code>句和<code>reference</code>句的<code>N-grams</code>模型，然后统计其匹配的个数，计算匹配度 <span class="math display">\[
+candidate和reference中匹配的n-gram的个数/candidate中n-gram的个数
+\]</span></p>
+<blockquote>
+<p>举例说明：</p>
+<p>candidate: It is a nice day today</p>
+<p>reference: Today is a nice day</p>
+</blockquote>
+<ul>
+<li><p>使用<code>1-gram</code>进行匹配</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">candidate: &#123;it, is, a, nice, day, today&#125;</span><br><span class="line">reference: &#123;today, is, a, nice, day&#125;</span><br></pre></td></tr></table></figure>
+<p>其中<code>&#123;today, is, a, nice, day&#125;</code>匹配，所以匹配度为5/6</p></li>
+<li><p>使用<code>2-gram</code>进行匹配</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">candidate: &#123;it is, is a, a nice, nice day, day today&#125;</span><br><span class="line">reference: &#123;today is, is a, a nice, nice day&#125;</span><br></pre></td></tr></table></figure>
+<p>其中<code>&#123;is a, a nice, nice day&#125;</code>匹配，所以匹配度为3/5</p></li>
+<li><p>使用<code>3-gram</code>进行匹配</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">candidate: &#123;it is a, is a nice, a nice day, nice day today&#125;</span><br><span class="line">reference: &#123;today is a, is a nice, a nice day&#125;</span><br></pre></td></tr></table></figure>
+<p>其中<code>&#123;is a nice, a nice day&#125;</code>匹配，所以匹配度为2/4</p></li>
+<li><p>使用<code>4-gram</code>进行匹配</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">candidate: &#123;it is a nice, is a nice day, a nice day today&#125;</span><br><span class="line">reference: &#123;today is a nice, is a nice day&#125;</span><br></pre></td></tr></table></figure>
+<p>其中<code>&#123;is a nice day&#125;</code>匹配，所以匹配度为1/3</p></li>
+</ul></li>
+<li><p>对匹配的<code>N-grams</code>计数进行修改，以确保它考虑到<code>reference</code>文本中单词的出现，而非奖励生成大量合理翻译单词的候选结果</p>
+<blockquote>
+<p>举例说明：</p>
+<p>candidate: the the the the</p>
+<p>reference: The cat is standing on the ground</p>
+<p>如果按照<code>1-gram</code>的方法进行匹配，则匹配度为1，显然是不合理的，所以计算某个词的出现次数进行改进</p>
+</blockquote>
+<p>将计算某个词的出现次数的方法改为计算<strong>某个词在译文中出现的最小次数</strong>，如下所示， <span class="math display">\[
+\operatorname{count}_{k}=\min ({c}_{k}, {s}_{k})
+\]</span> 其中<span class="math inline">\(k\)</span>表示在机器译文（candidate）中出现的第<span class="math inline">\(k\)</span>个词语，<span class="math inline">\(c_{k}\)</span>则代表在机器译文中这个词语出现的次数，而<span class="math inline">\(s_{k}\)</span>则代表在人工译文（reference）中这个词语出现的次数。</p>
+<p>由此，可以定义BLEU计算公式，首先定义几个数学符号：</p>
+<ul>
+<li>人工译文表示为<span class="math inline">\(s_{j}\)</span>，其中<span class="math inline">\({j} \in \mathrm{M}\)</span>，<span class="math inline">\(\mathrm{M}\)</span>表示有<span class="math inline">\(\mathrm{M}\)</span>个参考答案</li>
+<li>翻译译文表示为<span class="math inline">\(c_{i}\)</span>，其中<span class="math inline">\(i \in \mathrm{E}\)</span>，<span class="math inline">\(\mathrm{E}\)</span>表示共有<span class="math inline">\(\mathrm{E}\)</span>个翻译</li>
+<li><span class="math inline">\(n\)</span>表示<span class="math inline">\(n\)</span>个单词长度的词组集合，令<span class="math inline">\(k\)</span>表示第<span class="math inline">\(k\)</span>个词组</li>
+<li><span class="math inline">\(h_{k}(c_{i})\)</span>表示第<span class="math inline">\(k\)</span>个词组在翻译译文<span class="math inline">\(c_{i}\)</span>中出现的次数</li>
+<li><span class="math inline">\(h_{k}(s_{i,j})\)</span>表示第<span class="math inline">\(k\)</span>个词组在人工译文<span class="math inline">\(s_{i,j}\)</span>中出现的次数</li>
+</ul>
+<p>最后可以得到计算每个<code>n-gram</code>的公式， <span class="math display">\[
+P_{n}=\frac{\sum_{i}^{\mathrm{E}} \sum_{k}^\mathrm{K} \min(h_{k}(c_{i}), \max_{j \in \mathrm{M}}h_{k}(s_{i,j})) }
+{\sum_{i}^{\mathrm{E}} \sum_{k}^\mathrm{K}\min(h_{k}(c_{i}))}
+\]</span> 第一个求和符号统计的是所有的翻译句子，因为计算时可能有多个句子；第二个求和符号是统计一条翻译句子中所有的<code>n-gram</code>，<span class="math inline">\(\max_{j \in \mathrm{M}}h_{k}(s_{i,j})\)</span>表示第<span class="math inline">\(i\)</span>条翻译句子对应的<span class="math inline">\(\mathrm{M}\)</span>条人工译文中包含最多第<span class="math inline">\(k\)</span>个词组的句子中第<span class="math inline">\(k\)</span>个词组的数量</p></li>
+<li><p><code>n-gram</code>匹配度可能会随着句子长度的变短而变好，为了避免这种现象，BLEU在最后的评分结果中引入了长度惩罚因子（Brevity Penalty） <span class="math display">\[
+B P=\left\{\begin{array}{lll}
+1 &amp; \text { if } &amp; l_{c}&gt;l s \\
+e^{1-\frac{l_{s}}{l_{c}}} &amp; \text { if } &amp; l_{c}&lt;=l_{s}
+\end{array}\right.
+\]</span> 其中，<span class="math inline">\(l_{c}\)</span>表示机器翻译译文的长度，<span class="math inline">\(l_{s}\)</span>表示参考译文的有效长度，<strong>当存在多个参考译文时，选取和翻译译文最接近的长度</strong>。当翻译译文长度大于参考译文长度时，惩罚因子为1，意味着不惩罚，只有翻译译文长度小于参考译文长度时，才会计算惩罚因子。</p></li>
+<li><p>计算BLEU最终公式</p>
+<p>为了平衡各阶统计量的作用，对各阶统计量进行加权求和，一般来说，<span class="math inline">\(N\)</span>取4，最多只统计<code>4-gram</code>的精度，<span class="math inline">\(\boldsymbol{W}_{n}\)</span>取<span class="math inline">\(1/N\)</span>，进行均匀加权，最终公式如下： <span class="math display">\[
+B L E U=B P \times \exp \left(\sum_{n=1}^{N} \boldsymbol{W}_{n} \log P_{n}\right)
+\]</span></p></li>
+</ul></li>
+<li><p>计算工具</p>
+<ul>
+<li><p><code>nltk</code></p>
+<ul>
+<li><p>计算独立的BLEU：也就是只计算某一种<code>n-gram</code>的BLEU</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> nltk.translate.bleu_score <span class="keyword">import</span> sentence_bleu</span><br><span class="line"></span><br><span class="line">sentence1 = <span class="string">&quot;it is a guide to action which ensures that the military always obeys the commands of the party&quot;</span></span><br><span class="line">sentence2 = <span class="string">&quot;it is a guide to action that ensures that the military will forever heed party commands&quot;</span></span><br><span class="line">sentence3 = <span class="string">&quot;it is the guiding principle which guarantees the military forces always being under the command of the party&quot;</span></span><br><span class="line">sentence4 = <span class="string">&quot;it is the practical guide for the army always to heed the directions of the party&quot;</span></span><br><span class="line"></span><br><span class="line">candidate = <span class="built_in">list</span>(sentence1.split(<span class="string">&quot; &quot;</span>))</span><br><span class="line">reference = [<span class="built_in">list</span>(sentence2.split(<span class="string">&quot; &quot;</span>)), <span class="built_in">list</span>(sentence3.split(<span class="string">&quot; &quot;</span>)), <span class="built_in">list</span>(sentence4.split(<span class="string">&quot; &quot;</span>))]</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&#x27;Individual 1-gram: &#123;&#125;&#x27;</span>.<span class="built_in">format</span>(sentence_bleu(reference, candidate, weights=(<span class="number">1</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>))))</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&#x27;Individual 2-gram: &#123;&#125;&#x27;</span>.<span class="built_in">format</span>(sentence_bleu(reference, candidate, weights=(<span class="number">0</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="number">0</span>))))</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&#x27;Individual 3-gram: &#123;&#125;&#x27;</span>.<span class="built_in">format</span>(sentence_bleu(reference, candidate, weights=(<span class="number">0</span>, <span class="number">0</span>, <span class="number">1</span>, <span class="number">0</span>))))</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&#x27;Individual 4-gram: &#123;&#125;&#x27;</span>.<span class="built_in">format</span>(sentence_bleu(reference, candidate, weights=(<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">1</span>))))</span><br><span class="line"></span><br><span class="line"><span class="comment"># Individual 1-gram: 0.9444444444444444</span></span><br><span class="line"><span class="comment"># Individual 2-gram: 0.5882352941176471</span></span><br><span class="line"><span class="comment"># Individual 3-gram: 0.4375</span></span><br><span class="line"><span class="comment"># Individual 4-gram: 0.26666666666666666</span></span><br></pre></td></tr></table></figure>
+<ol type="1">
+<li>计算<span class="math inline">\(P_{1}\)</span>：</li>
+</ol>
+<table>
+<colgroup>
+<col style="width: 7%">
+<col style="width: 7%">
+<col style="width: 7%">
+<col style="width: 7%">
+<col style="width: 7%">
+<col style="width: 25%">
+<col style="width: 36%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>词</th>
+<th>候选译文</th>
+<th>参考译文1</th>
+<th>参考译文2</th>
+<th>参考译文3</th>
+<th><span class="math inline">\(\max_{j \in \mathrm{M}}h(s)\)</span></th>
+<th><span class="math inline">\(\min(h(c), \max_{j \in \mathrm{M}}h(s))\)</span></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>it</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>is</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr class="odd">
+<td>a</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>guide</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr class="odd">
+<td>to</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>action</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr class="odd">
+<td>which</td>
+<td>1</td>
+<td>0</td>
+<td>1</td>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>ensures</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr class="odd">
+<td>that</td>
+<td>1</td>
+<td>2</td>
+<td>0</td>
+<td>0</td>
+<td>2</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>the</td>
+<td>3</td>
+<td>1</td>
+<td>3</td>
+<td>3</td>
+<td>3</td>
+<td>3</td>
+</tr>
+<tr class="odd">
+<td>military</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>always</td>
+<td>1</td>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr class="odd">
+<td>obeys</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>commands</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr class="odd">
+<td>of</td>
+<td>1</td>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>party</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+</tr>
+</tbody>
+</table>
+<p><span class="math display">\[
+P_{1}=\frac{1+1+1+1+1+1+1+1+1+3+1+1+0+1+1+1}{1+1+1+1+1+1+1+1+1+3+1+1+1+1+1+1}=\frac{17}{18}=0.9444444444444444
+\]</span></p>
+<ol start="2" type="1">
+<li>计算<span class="math inline">\(P_{2}\)</span></li>
+</ol>
+<table>
+<colgroup>
+<col style="width: 12%">
+<col style="width: 6%">
+<col style="width: 7%">
+<col style="width: 7%">
+<col style="width: 7%">
+<col style="width: 24%">
+<col style="width: 34%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>词</th>
+<th>候选译文</th>
+<th>参考译文1</th>
+<th>参考译文2</th>
+<th>参考译文3</th>
+<th><span class="math inline">\(\max_{j \in \mathrm{M}}h(s)\)</span></th>
+<th><span class="math inline">\(\min(h(c), \max_{j \in \mathrm{M}}h(s))\)</span></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>ensures that</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>guide to</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr class="odd">
+<td>which ensures</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>obeys the</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td>commands of</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>that the</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr class="odd">
+<td>a guide</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>of the</td>
+<td>1</td>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr class="odd">
+<td>always obeys</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>the commands</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td>to action</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>the party</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr class="odd">
+<td>is a</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>action which</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td>It is</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>military always</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td>the military</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+</tr>
+</tbody>
+</table>
+<p><span class="math display">\[
+P_{2}=\frac{10}{17}=0.5882352941176471
+\]</span></p>
+<ol start="3" type="1">
+<li>计算<span class="math inline">\(P_{3}\)</span></li>
+</ol>
+<table>
+<colgroup>
+<col style="width: 16%">
+<col style="width: 6%">
+<col style="width: 7%">
+<col style="width: 7%">
+<col style="width: 7%">
+<col style="width: 23%">
+<col style="width: 32%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>词</th>
+<th>候选译文</th>
+<th>参考译文1</th>
+<th>参考译文2</th>
+<th>参考译文3</th>
+<th><span class="math inline">\(\max_{j \in \mathrm{M}}h(s)\)</span></th>
+<th><span class="math inline">\(\min(h(c), \max_{j \in \mathrm{M}}h(s))\)</span></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>ensures that the</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>which ensures that</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td>action which ensures</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>a guide to</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr class="odd">
+<td>military always obeys</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>the commands of</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td>commands of the</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>to action which</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td>the military always</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>obeys the commands</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td>It is a</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>of the party</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr class="odd">
+<td>is a guide</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>that the military</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr class="odd">
+<td>always obeys the</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>guide to action</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+</tr>
+</tbody>
+</table>
+<p><span class="math display">\[
+P_{3}=\frac{7}{16}=0.4375
+\]</span></p>
+<ol start="4" type="1">
+<li>计算<span class="math inline">\(P_{4}\)</span></li>
+</ol>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 19%">
+<col style="width: 6%">
+<col style="width: 6%">
+<col style="width: 6%">
+<col style="width: 6%">
+<col style="width: 22%">
+<col style="width: 31%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>词</th>
+<th>候选译文</th>
+<th>参考译文1</th>
+<th>参考译文2</th>
+<th>参考译文3</th>
+<th><span class="math inline">\(\max_{j \in \mathrm{M}}h(s)\)</span></th>
+<th><span class="math inline">\(\min(h(c), \max_{j \in \mathrm{M}}h(s))\)</span></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>to action which ensures</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>action which ensures that</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td>guide to action which</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>obeys the commands of</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td>which ensures that the</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>commands of the party</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td>ensures that the military</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>a guide to action</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr class="odd">
+<td>always obeys the commands</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>that the military always</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td>the commands of the</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>the military always obeys</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td>military always obeys the</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>is a guide to</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr class="odd">
+<td>It is a guide</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+</tr>
+</tbody>
+</table>
+<p><span class="math display">\[
+P_{4}=\frac{4}{15}=0.26666666666666666
+\]</span></p></li>
+<li><p>计算累积的BLEU：指的是为各个<code>gram</code>对应的权重加权，来计算得到一个加权几何平均，需要注意以下几点：</p>
+<ol type="1">
+<li>BLEU-4并不是只看<code>4-gram</code>的情况，而是计算从<code>1-gram</code>到<code>4-gram</code>的累积分数，加权策略为<code>1-gram</code>、<code>2-gram</code>、<code>3-gram</code>、<code>4-gram</code>的权重各占25%</li>
+<li><strong>默认情况下（不加<code>weights</code>参数的情况下），<code>sentence_bleu()</code>和<code>corpus_bleu()</code>都是计算BLEU-4分数的</strong></li>
+</ol>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">print</span>(<span class="string">&#x27;Cumulative 1-gram: &#123;&#125;&#x27;</span>.<span class="built_in">format</span>(sentence_bleu(reference, candidate, weights=(<span class="number">1</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>))))</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&#x27;Cumulative 2-gram: &#123;&#125;&#x27;</span>.<span class="built_in">format</span>(sentence_bleu(reference, candidate, weights=(<span class="number">0.5</span>, <span class="number">0.5</span>, <span class="number">0</span>, <span class="number">0</span>))))</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&#x27;Cumulative 3-gram: &#123;&#125;&#x27;</span>.<span class="built_in">format</span>(sentence_bleu(reference, candidate, weights=(<span class="number">0.33</span>, <span class="number">0.33</span>, <span class="number">0.33</span>, <span class="number">0</span>))))</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&#x27;Cumulative 4-gram: &#123;&#125;&#x27;</span>.<span class="built_in">format</span>(sentence_bleu(reference, candidate, weights=(<span class="number">0.25</span>, <span class="number">0.25</span>, <span class="number">0.25</span>, <span class="number">0.25</span>))))</span><br><span class="line"></span><br><span class="line"><span class="comment"># Cumulative 1-gram: 0.9444444444444444</span></span><br><span class="line"><span class="comment"># Cumulative 2-gram: 0.7453559924999299</span></span><br><span class="line"><span class="comment"># Cumulative 3-gram: 0.6270220769211224</span></span><br><span class="line"><span class="comment"># Cumulative 4-gram: 0.5045666840058485</span></span><br></pre></td></tr></table></figure>
+<ol type="1">
+<li><p>计算<code>BLEU-1</code>：</p>
+<p>首先翻译句子的长度为18，而参考译文句子长度分别为16、18、16，选择与翻译句子长度最接近的参考译文句子，此时惩罚因子为1，即不惩罚。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">math.exp(<span class="number">1</span> * math.log(<span class="number">0.9444444444444444</span>))</span><br><span class="line"><span class="comment"># 0.9444444444444444</span></span><br></pre></td></tr></table></figure></li>
+<li><p>计算<code>BLEU-2</code>：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">math.exp(<span class="number">0.5</span> * math.log(<span class="number">0.9444444444444444</span>) + <span class="number">0.5</span> * math.log(<span class="number">0.5882352941176471</span>))</span><br><span class="line"><span class="comment"># 0.7453559924999299</span></span><br></pre></td></tr></table></figure></li>
+<li><p>计算<code>BLEU-3</code>：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">math.exp(<span class="number">0.33</span> * math.log(<span class="number">0.9444444444444444</span>) + <span class="number">0.33</span> * math.log(<span class="number">0.5882352941176471</span>) + <span class="number">0.33</span> * math.log(<span class="number">0.4375</span>))</span><br><span class="line"><span class="comment"># 0.6270220769211224</span></span><br></pre></td></tr></table></figure></li>
+<li><p>计算<code>BLEU-4</code>：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">math.exp(<span class="number">0.25</span> * math.log(<span class="number">0.9444444444444444</span>) + <span class="number">0.25</span> * math.log(<span class="number">0.5882352941176471</span>) </span><br><span class="line">         + <span class="number">0.25</span> * math.log(<span class="number">0.4375</span>) + <span class="number">0.25</span> * math.log(<span class="number">0.26666666666666666</span>))</span><br><span class="line"><span class="comment"># 0.5045666840058485</span></span><br></pre></td></tr></table></figure></li>
+</ol></li>
+<li><p>调用<code>corpus_bleu()</code>方法求得语料级别的BLEU</p>
+<ol type="1">
+<li><p><code>sentence_bleu()</code>和<code>corpus_bleu()</code>输入参数的对比（重点关注<code>sentence_bleu()</code>方法的<code>references</code>和<code>hypothesis</code>参数，以及<code>corpus_bleu()</code>方法的<code>list_of_references</code>和<code>hypotheses</code>参数）</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">sentence_bleu</span>(<span class="params">references, hypothesis, weights=(<span class="params"><span class="number">0.25</span>, <span class="number">0.25</span>, <span class="number">0.25</span>, <span class="number">0.25</span></span>),</span></span></span><br><span class="line"><span class="params"><span class="function">                  smoothing_function=<span class="literal">None</span></span>):</span></span><br><span class="line">		<span class="string">&quot;&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">    :param references: reference sentences</span></span><br><span class="line"><span class="string">    :type references: list(list(str))</span></span><br><span class="line"><span class="string">    :param hypothesis: a hypothesis sentence</span></span><br><span class="line"><span class="string">    :type hypothesis: list(str)</span></span><br><span class="line"><span class="string">    :param weights: weights for unigrams, bigrams, trigrams and so on</span></span><br><span class="line"><span class="string">    :type weights: list(float)</span></span><br><span class="line"><span class="string">    :return: The sentence-level BLEU score.</span></span><br><span class="line"><span class="string">    :rtype: float</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    <span class="keyword">return</span> corpus_bleu([references], [hypothesis], weights, smoothing_function)</span><br><span class="line"></span><br><span class="line">references = [ [<span class="string">&quot;This&quot;</span>, <span class="string">&quot;is&quot;</span>, <span class="string">&quot;a&quot;</span>, <span class="string">&quot;cat&quot;</span>], [<span class="string">&quot;This&quot;</span>, <span class="string">&quot;is&quot;</span>, <span class="string">&quot;a&quot;</span>, <span class="string">&quot;feline&quot;</span>] ]</span><br><span class="line">hypothesis = [<span class="string">&quot;This&quot;</span>, <span class="string">&quot;is&quot;</span>, <span class="string">&quot;cat&quot;</span>]</span><br><span class="line">sentence_bleu(references, hypothesis)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">corpus_bleu</span>(<span class="params">list_of_references, hypotheses, weights=(<span class="params"><span class="number">0.25</span>, <span class="number">0.25</span>, <span class="number">0.25</span>, <span class="number">0.25</span></span>),</span></span></span><br><span class="line"><span class="params"><span class="function">                smoothing_function=<span class="literal">None</span></span>):</span></span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">    :param references: a corpus of lists of reference sentences, w.r.t. hypotheses</span></span><br><span class="line"><span class="string">    :type references: list(list(list(str)))</span></span><br><span class="line"><span class="string">    :param hypotheses: a list of hypothesis sentences</span></span><br><span class="line"><span class="string">    :type hypotheses: list(list(str))</span></span><br><span class="line"><span class="string">    :param weights: weights for unigrams, bigrams, trigrams and so on</span></span><br><span class="line"><span class="string">    :type weights: list(float)</span></span><br><span class="line"><span class="string">    :return: The corpus-level BLEU score.</span></span><br><span class="line"><span class="string">    :rtype: float</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br></pre></td></tr></table></figure></li>
+<li><p>计算语料级别的BLEU值</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> nltk.translate.bleu_score <span class="keyword">import</span> corpus_bleu</span><br><span class="line"></span><br><span class="line">s1 = <span class="string">&quot;the dog bit the man&quot;</span></span><br><span class="line">s2 = <span class="string">&quot;the dog had bit the man&quot;</span></span><br><span class="line"></span><br><span class="line">s3 = <span class="string">&quot;it was not unexpected&quot;</span></span><br><span class="line">s4 = <span class="string">&quot;no one was surprised&quot;</span></span><br><span class="line"></span><br><span class="line">s5 = <span class="string">&quot;the man bit him first&quot;</span></span><br><span class="line">s6 = <span class="string">&quot;the man had bitten the dog&quot;</span></span><br><span class="line"></span><br><span class="line">s7 = <span class="string">&quot;the dog bit the man&quot;</span></span><br><span class="line">s8 = <span class="string">&quot;it was not surprising&quot;</span></span><br><span class="line">s9 = <span class="string">&quot;the man had just bitten him&quot;</span></span><br><span class="line"></span><br><span class="line">candidates = [<span class="built_in">list</span>(s7.split(<span class="string">&quot; &quot;</span>)), <span class="built_in">list</span>(s8.split(<span class="string">&quot; &quot;</span>)), <span class="built_in">list</span>(s9.split(<span class="string">&quot; &quot;</span>))]</span><br><span class="line">references = [</span><br><span class="line">    [<span class="built_in">list</span>(s1.split(<span class="string">&quot; &quot;</span>)), <span class="built_in">list</span>(s2.split(<span class="string">&quot; &quot;</span>))],</span><br><span class="line">    [<span class="built_in">list</span>(s3.split(<span class="string">&quot; &quot;</span>)), <span class="built_in">list</span>(s4.split(<span class="string">&quot; &quot;</span>))],</span><br><span class="line">    [<span class="built_in">list</span>(s5.split(<span class="string">&quot; &quot;</span>)), <span class="built_in">list</span>(s6.split(<span class="string">&quot; &quot;</span>))]</span><br><span class="line">]</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&#x27;Corpus BLEU: &#123;&#125;&#x27;</span>.<span class="built_in">format</span>(corpus_bleu(references, candidates)))</span><br><span class="line"><span class="comment"># Corpus BLEU: 0.5719285395120957</span></span><br></pre></td></tr></table></figure>
+<p>PS：需要注意的是，<strong>计算所有单个句子的BLEU值然后求平均和直接计算<code>corpus</code>级别的BLEU值不同</strong>，如下所示，</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">reference1 = [<span class="built_in">list</span>(s1.split(<span class="string">&quot; &quot;</span>)), <span class="built_in">list</span>(s2.split(<span class="string">&quot; &quot;</span>))]</span><br><span class="line">candidate1 = <span class="built_in">list</span>(s7.split(<span class="string">&quot; &quot;</span>))</span><br><span class="line"></span><br><span class="line">reference2 = [<span class="built_in">list</span>(s3.split(<span class="string">&quot; &quot;</span>)), <span class="built_in">list</span>(s4.split(<span class="string">&quot; &quot;</span>))]</span><br><span class="line">candidate2 = <span class="built_in">list</span>(s8.split(<span class="string">&quot; &quot;</span>))</span><br><span class="line"></span><br><span class="line">reference3 = [<span class="built_in">list</span>(s5.split(<span class="string">&quot; &quot;</span>)), <span class="built_in">list</span>(s6.split(<span class="string">&quot; &quot;</span>))]</span><br><span class="line">candidate3 = <span class="built_in">list</span>(s9.split(<span class="string">&quot; &quot;</span>))</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&#x27;Sentence1 BLEU: &#x27;</span>, sentence_bleu(reference1, candidate1))</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&#x27;Sentence2 BLEU: &#x27;</span>, sentence_bleu(reference2, candidate2))</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&#x27;Sentence3 BLEU: &#x27;</span>, sentence_bleu(reference3, candidate3))</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&#x27;Average Sentence BLEU: &#x27;</span>, (sentence_bleu(reference1, candidate1) + </span><br><span class="line">                                        sentence_bleu(reference2, candidate2) + </span><br><span class="line">                                        sentence_bleu(reference3, candidate3)) / <span class="number">3</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Sentence1 BLEU:  1.0</span></span><br><span class="line"><span class="comment"># Sentence2 BLEU:  8.636168555094496e-78</span></span><br><span class="line"><span class="comment"># Sentence3 BLEU:  6.562069055463047e-78</span></span><br><span class="line"><span class="comment"># Average Sentence BLEU:  0.3333333333333333</span></span><br></pre></td></tr></table></figure>
+<p>正确的计算方法如下所示，将每个句子的<code>i-gram</code>概率的分子和分母对应相加，最后得出统一的4个独立BLEU（<span class="math inline">\(P_{i},i \in {1,2,3,4}\)</span>），再按照公式进行计算，特别地，在计算BP惩罚因子时，翻译句子长度由所有翻译句子长度相加得到，参考译文长度由所有与对应翻译句子长度最接近的参考译文长度相加得到， <span class="math display">\[
+B L E U=B P \times \exp \left(\sum_{n=1}^{4} 0.25* \log P_{n}\right)
+\]</span></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> collections <span class="keyword">import</span> Counter</span><br><span class="line"><span class="keyword">from</span> nltk.translate.bleu_score <span class="keyword">import</span> modified_precision</span><br><span class="line">p_numerators = Counter()</span><br><span class="line">p_denominators = Counter()</span><br><span class="line"><span class="keyword">for</span> refs, hyps <span class="keyword">in</span> <span class="built_in">zip</span>(references, candidates):</span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">1</span>, <span class="number">5</span>):</span><br><span class="line">        p_i = modified_precision(refs, hyps, i)</span><br><span class="line">        p_numerators[i] += p_i.numerator</span><br><span class="line">        p_denominators[i] += p_i.denominator</span><br><span class="line">        </span><br><span class="line"><span class="built_in">print</span>(p_numerators, p_denominators)</span><br><span class="line"><span class="comment"># Counter(&#123;1: 13, 2: 8, 3: 5, 4: 2&#125;) Counter(&#123;1: 15, 2: 12, 3: 9, 4: 6&#125;)</span></span><br><span class="line">res = <span class="number">0</span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">1</span>, <span class="number">5</span>):</span><br><span class="line">    res += <span class="number">0.25</span> * math.log(p_numerators[i] / p_denominators[i])</span><br><span class="line">    </span><br><span class="line"><span class="comment"># 本例中惩罚因子为1</span></span><br><span class="line"><span class="built_in">print</span>(math.exp(res))</span><br><span class="line"><span class="comment"># 0.5719285395120957</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">list</span>(<span class="built_in">zip</span>(references, candidates))</span><br><span class="line"><span class="comment"># [([[&#x27;the&#x27;, &#x27;dog&#x27;, &#x27;bit&#x27;, &#x27;the&#x27;, &#x27;man&#x27;],</span></span><br><span class="line"><span class="comment">#    [&#x27;the&#x27;, &#x27;dog&#x27;, &#x27;had&#x27;, &#x27;bit&#x27;, &#x27;the&#x27;, &#x27;man&#x27;]],</span></span><br><span class="line"><span class="comment">#   [&#x27;the&#x27;, &#x27;dog&#x27;, &#x27;bit&#x27;, &#x27;the&#x27;, &#x27;man&#x27;]),</span></span><br><span class="line"><span class="comment">#  ([[&#x27;it&#x27;, &#x27;was&#x27;, &#x27;not&#x27;, &#x27;unexpected&#x27;], [&#x27;no&#x27;, &#x27;one&#x27;, &#x27;was&#x27;, &#x27;surprised&#x27;]],</span></span><br><span class="line"><span class="comment">#   [&#x27;it&#x27;, &#x27;was&#x27;, &#x27;not&#x27;, &#x27;surprising&#x27;]),</span></span><br><span class="line"><span class="comment">#  ([[&#x27;the&#x27;, &#x27;man&#x27;, &#x27;bit&#x27;, &#x27;him&#x27;, &#x27;first&#x27;],</span></span><br><span class="line"><span class="comment">#    [&#x27;the&#x27;, &#x27;man&#x27;, &#x27;had&#x27;, &#x27;bitten&#x27;, &#x27;the&#x27;, &#x27;dog&#x27;]],</span></span><br><span class="line"><span class="comment">#   [&#x27;the&#x27;, &#x27;man&#x27;, &#x27;had&#x27;, &#x27;just&#x27;, &#x27;bitten&#x27;, &#x27;him&#x27;])]</span></span><br></pre></td></tr></table></figure></li>
+</ol></li>
+</ul></li>
+<li><p><code>sacrebleu</code></p>
+<ul>
+<li><p>计算<code>sentence bleu</code>：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> sacrebleu</span><br><span class="line">sentence1 = <span class="string">&quot;it is a guide to action which ensures that the military always obeys the commands of the party&quot;</span></span><br><span class="line">sentence2 = <span class="string">&quot;it is a guide to action that ensures that the military will forever heed party commands&quot;</span></span><br><span class="line">sentence3 = <span class="string">&quot;it is the guiding principle which guarantees the military forces always being under the command of the party&quot;</span></span><br><span class="line">sentence4 = <span class="string">&quot;it is the practical guide for the army always to heed the directions of the party&quot;</span></span><br><span class="line">bleu = sacrebleu.sentence_bleu(sentence1, [sentence2, sentence3, sentence4])</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;Sentence BLEU: &quot;</span>, bleu)</span><br><span class="line"><span class="comment"># Sentence BLEU:  BLEU = 50.46 94.4/58.8/43.8/26.7 (BP = 1.000 ratio = 1.000 hyp_len = 18 ref_len = 18)</span></span><br></pre></td></tr></table></figure></li>
+<li><p>计算<code>corpus bleu</code>：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">refs = [[<span class="string">&#x27;the dog bit the man&#x27;</span>, <span class="string">&#x27;it was not unexpected&#x27;</span>, <span class="string">&#x27;the man bit him first&#x27;</span>],</span><br><span class="line">        [<span class="string">&#x27;the dog had bit the man&#x27;</span>, <span class="string">&#x27;no one was surprised&#x27;</span>, <span class="string">&#x27;the man had bitten the dog&#x27;</span>]]</span><br><span class="line">sys = [<span class="string">&#x27;the dog bit the man&#x27;</span>, <span class="string">&quot;it was not surprising&quot;</span>, <span class="string">&#x27;the man had just bitten him&#x27;</span>]</span><br><span class="line">bleu = sacrebleu.corpus_bleu(sys, refs)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;Corpus BLEU: &quot;</span>, bleu)</span><br><span class="line"><span class="comment"># Corpus BLEU:  BLEU = 57.19 86.7/66.7/55.6/33.3 (BP = 1.000 ratio = 1.000 hyp_len = 15 ref_len = 15)</span></span><br></pre></td></tr></table></figure></li>
+</ul></li>
+<li><p><a target="_blank" rel="noopener" href="https://github.com/moses-smt/mosesdecoder/blob/master/scripts/generic/multi-bleu.perl"><code>multi-bleu.perl</code></a>：使用<code>multi-bleu</code>进行评测要求事先把句子进行<code>tokenize</code>，这意味着<code>multi-bleu</code>得到的分数受<code>tokenizer</code>如何分词的影响</p></li>
+<li><p><a target="_blank" rel="noopener" href="https://github.com/moses-smt/mosesdecoder/blob/master/scripts/generic/mteval-v14.pl"><code>mteval-v14.pl</code></a>：脚本内部有一套标准的分词器，不需要分词直接输入句子就可以进行评测，计算的值与<code>sacrebleu</code>计算的值相同</p></li>
+</ul></li>
+</ol>
+<p>参考文献：</p>
+<ol type="1">
+<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/404381278">BLEU指标及评测脚本使用的一些误解</a></li>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/g11d111/article/details/100103208">机器翻译评价指标BLEU介绍</a></li>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_30232405/article/details/104219396">BLEU算法（例子和公式解释）</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/by-dream/p/7679284.html">机器翻译评测——BLEU算法详解 (新增 在线计算BLEU分值)</a></li>
+<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/338488036">BLEU score评估模型</a></li>
+<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/223048748">BLEU详解</a></li>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/guolindonggld/article/details/56966200">机器翻译评价指标之BLEU详细计算过程</a></li>
+<li><a target="_blank" rel="noopener" href="https://github.com/nltk/nltk/blob/develop/nltk/translate/bleu_score.py">nltk/bleu_score.py at develop · nltk/nltk (github.com)</a></li>
+<li><a target="_blank" rel="noopener" href="https://github.com/moses-smt/mosesdecoder">moses-smt/mosesdecoder: Moses, the machine translation system (github.com)</a></li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="reward-container">
+  <div></div>
+  <button>
+    赞赏
+  </button>
+  <div class="post-reward">
+      <div>
+        <img src="/images/wechatpay.png" alt="Rainy Universe 微信">
+        <span>微信</span>
+      </div>
+      <div>
+        <img src="/images/alipay.png" alt="Rainy Universe 支付宝">
+        <span>支付宝</span>
+      </div>
+
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/%E6%9C%BA%E5%99%A8%E7%BF%BB%E8%AF%91/" rel="tag"># 机器翻译</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2022/10/17/BINDING-LANGUAGE-MODELS-IN-SYMBOLIC-LANGUAGES%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/" rel="prev" title="BINDING LANGUAGE MODELS IN SYMBOLIC LANGUAGES论文阅读">
+                  <i class="fa fa-chevron-left"></i> BINDING LANGUAGE MODELS IN SYMBOLIC LANGUAGES论文阅读
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments gitalk-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Rainy Universe</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/pisces/" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+  <script src="/js/third-party/pace.js"></script>
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">true</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.0/es5/tex-mml-chtml.js","integrity":"sha256-r+3itOMtGGjap0x+10hu6jW/gZCzxHsoKrOd7gyRSGY="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
+
+<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"rainyuniverse","repo":"blog-comment","client_id":"dd3ab568cf554224b60c","client_secret":"d377ea691384ea1e236e98cb932bd8e090b2d863","admin_user":"rainyuniverse","distraction_free_mode":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token","language":"zh-CN","js":{"url":"https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.min.js","integrity":"sha256-Pmj85ojLaPOWwRtlMJwmezB/Qg8BzvJp5eTzvXaYAfA="},"path_md5":"f8ec6bd963bfcbbdabcfa43e9384419d"}</script>
+<script src="/js/third-party/comments/gitalk.js"></script>
+
+  
+</body>
+</html>
