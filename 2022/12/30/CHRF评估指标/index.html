@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 5.4.1">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/themes/blue/pace-theme-barber-shop.css">
+  <script src="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/pace.min.js" integrity="sha256-gqd7YTjg/BtfqWSwsJOvndl0Bxc8gFImLEkXQT8+qj0=" crossorigin="anonymous"></script>
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Pisces","darkmode":false,"version":"8.9.0","exturl":false,"sidebar":{"position":"left","width":300,"display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<meta name="description" content="不同于BLEU评估指标，CHRF评估指标可以衡量字符级的准确度和流畅度，改进后的CHRF评估指标（CHRF++）将字符级和单词级融合在一起，更全面的评估文本的生成质量，本文主要对CHRF和CHRF++评估指标的手动计算过程和使用nltk和sacrebleu工具的计算原理作出总结和说明。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="CHRF评估指标">
+<meta property="og:url" content="http://example.com/2022/12/30/CHRF%E8%AF%84%E4%BC%B0%E6%8C%87%E6%A0%87/index.html">
+<meta property="og:site_name" content="雨宙的个人博客">
+<meta property="og:description" content="不同于BLEU评估指标，CHRF评估指标可以衡量字符级的准确度和流畅度，改进后的CHRF评估指标（CHRF++）将字符级和单词级融合在一起，更全面的评估文本的生成质量，本文主要对CHRF和CHRF++评估指标的手动计算过程和使用nltk和sacrebleu工具的计算原理作出总结和说明。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2022-12-30T03:11:52.000Z">
+<meta property="article:modified_time" content="2022-12-30T03:16:41.628Z">
+<meta property="article:author" content="Rainy Universe">
+<meta property="article:tag" content="机器翻译">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="http://example.com/2022/12/30/CHRF%E8%AF%84%E4%BC%B0%E6%8C%87%E6%A0%87/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"http://example.com/2022/12/30/CHRF%E8%AF%84%E4%BC%B0%E6%8C%87%E6%A0%87/","path":"2022/12/30/CHRF评估指标/","title":"CHRF评估指标"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>CHRF评估指标 | 雨宙的个人博客</title>
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+
+  <script src="https://cdn.jsdelivr.net/npm/jquery/dist/jquery.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome/css/font-awesome.min.css"/>
+  
+</head>
+
+
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <script src="/live2d-widget/autoload.js"></script>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">雨宙的个人博客</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#chrf"><span class="nav-number">1.</span> <span class="nav-text">CHRF</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#chrf-1"><span class="nav-number">2.</span> <span class="nav-text">CHRF++</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Rainy Universe"
+      src="/images/avatar.gif">
+  <p class="site-author-name" itemprop="name">Rainy Universe</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">14</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">9</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/rainyuniverse" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;rainyuniverse" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+  </div>
+
+
+
+        </div>
+      </div>
+      <div id="music163player">
+        <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=300 src="//music.163.com/outchain/player?type=0&id=7267179044&auto=1&height=430">
+        </iframe>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/12/30/CHRF%E8%AF%84%E4%BC%B0%E6%8C%87%E6%A0%87/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Rainy Universe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="雨宙的个人博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          CHRF评估指标
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2022-12-30 11:11:52 / 修改时间：11:16:41" itemprop="dateCreated datePublished" datetime="2022-12-30T11:11:52+08:00">2022-12-30</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%9C%BA%E5%99%A8%E7%BF%BB%E8%AF%91/" itemprop="url" rel="index"><span itemprop="name">机器翻译</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>不同于BLEU评估指标，CHRF评估指标可以衡量字符级的准确度和流畅度，改进后的CHRF评估指标（CHRF++）将字符级和单词级融合在一起，更全面的评估文本的生成质量，本文主要对CHRF和CHRF++评估指标的手动计算过程和使用<code>nltk</code>和<code>sacrebleu</code>工具的计算原理作出总结和说明。 <span id="more"></span></p>
+<h2 id="chrf">CHRF</h2>
+<ol type="1">
+<li><p>CHRF指标从字符级别对译文质量进行评估，它考虑了一些形态—句法现象，除此之外，与其他评估指标相比，它很简单，不需要任何额外的工具或知识来源，它完全独立于语言，也独立于分词过程。</p></li>
+<li><p>CHRF计算公式： <span class="math display">\[
+\mathrm{chrF} \beta=\left(1+\beta^{2}\right) \frac{\mathrm{chrP} \cdot \mathrm{chrR}}{\beta^{2} \cdot \mathrm{chrP}+\mathrm{chrR}}
+\]</span></p>
+<ul>
+<li><span class="math inline">\(\mathrm{chrP}\)</span>是精确度，指翻译句子和参考译文句子匹配的字符级<code>n-gram</code>在翻译句子中占的比例</li>
+<li><span class="math inline">\(\mathrm{chrR}\)</span>是召回率，指翻译句子和参考译文句子匹配的字符级<code>n-gram</code>在参考译文句子中占的比例</li>
+<li><span class="math inline">\(\beta\)</span>可以控制召回率和精确度两个指标的重要性（召回率比准确率重要<span class="math inline">\(\beta\)</span>倍），当<span class="math inline">\(\beta=1\)</span>时二者同样重要</li>
+</ul></li>
+<li><p>使用<code>nltk</code>计算<code>CHRF</code></p>
+<ul>
+<li><p>当<code>n-gram</code>词组长度为1时（词组的最小长度为1，最大长度也为1，<span class="math inline">\(\beta=3\)</span>）</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> nltk.translate.chrf_score <span class="keyword">import</span> sentence_chrf</span><br><span class="line"></span><br><span class="line">ref = <span class="string">&#x27;the cat is on the mat&#x27;</span>.split()</span><br><span class="line">hyp = <span class="string">&#x27;the the the the the the the&#x27;</span>.split()</span><br><span class="line">sentence_chrf(ref, hyp, min_len=<span class="number">1</span>, max_len=<span class="number">1</span>, beta=<span class="number">3.0</span>)</span><br><span class="line"><span class="comment"># 0.48484848484848486</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li><p>计算TP：重复出现的<code>1-gram</code>有<code>&#123;t, h, e&#125;</code>，总共有8次</p></li>
+<li><p>计算TP + FP：翻译句子的长度为21</p></li>
+<li><p>计算TP + TN：参考译文句子的长度为16</p></li>
+<li><p><span class="math inline">\(\mathrm{chrP}=8/21,\mathrm{chrR}=8/16\)</span> <span class="math display">\[
+\mathrm{chrF}=(1 + 3^2)\frac{\frac{8}{21}*\frac{1}{2}}{3^2*\frac{8}{21}+\frac{1}{2}}=\frac{16}{33}=0.48484848484848485
+\]</span></p></li>
+</ul></li>
+<li><p>拓展到<code>max_len=2</code>的情况，此时<code>n-gram</code>词组的最小长度为1，最大长度为2，<span class="math inline">\(\beta=3\)</span></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> nltk.translate.chrf_score <span class="keyword">import</span> sentence_chrf</span><br><span class="line">ref = <span class="string">&#x27;the cat is on the mat&#x27;</span>.split()</span><br><span class="line">hyp = <span class="string">&#x27;the the the the the the the&#x27;</span>.split()</span><br><span class="line"><span class="built_in">print</span>(sentence_chrf(ref, hyp, min_len=<span class="number">1</span>, max_len=<span class="number">2</span>, beta=<span class="number">3.0</span>))</span><br><span class="line"><span class="comment"># 0.37145650048875856</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li><p>计算<code>1-gram</code>的情况：此时<code>F-score=0.48484848484848486</code>（和CHRF计算相同）</p></li>
+<li><p>计算<code>2-gram</code>的情况：</p>
+<ul>
+<li><p>计算TP：重复出现的<code>2-gram</code>有<code>&#123;th, he&#125;</code>，总共有4次</p></li>
+<li><p>计算TP + FP： 翻译句子分成<code>2-gram</code>的长度为20</p></li>
+<li><p>计算TP + TN：参考译文句子分成<code>2-gram</code>的长度为15</p></li>
+<li><p><span class="math inline">\(\mathrm{chrP}=4/20,\mathrm{chrR}=4/15\)</span> <span class="math display">\[
+\mathrm{chrF_{2-gram}}=(1 + 3^2)\frac{\frac{1}{5}*\frac{4}{15}}{3^2*\frac{1}{5}+\frac{4}{15}}=\frac{8}{31}=0.25806451612903225
+\]</span></p></li>
+</ul></li>
+<li><p>计算总的CHRF <span class="math display">\[
+\mathrm{chrF}=\frac{0.48484848484848486+0.25806451612903225}{2}=0.37145650048875856
+\]</span></p></li>
+</ul></li>
+<li><p>计算语料级的CHRF（以上都是句子级的CHRF）：基本思想是计算出每个句子的CHRF，然后再求算术平均</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">ref1 = <span class="built_in">str</span>(<span class="string">&#x27;It is a guide to action that ensures that the military will forever heed Party commands&#x27;</span>).split()</span><br><span class="line">ref2 = <span class="built_in">str</span>(<span class="string">&#x27;It is the guiding principle which guarantees the military forces always being under the command of the Party&#x27;</span>).split()</span><br><span class="line">hyp1 = <span class="built_in">str</span>(<span class="string">&#x27;It is a guide to action which ensures that the military always obeys the commands of the party&#x27;</span>).split()</span><br><span class="line">hyp2 = <span class="built_in">str</span>(<span class="string">&#x27;It is to insure the troops forever hearing the activity guidebook that party direct&#x27;</span>).split()</span><br><span class="line">corpus_chrf([ref1, ref2], [hyp1, hyp2]) </span><br><span class="line"><span class="comment"># 0.4166529443281564</span></span><br><span class="line"></span><br><span class="line">(sentence_chrf(ref1, hyp1) + sentence_chrf(ref2, hyp2)) / <span class="number">2</span></span><br><span class="line"><span class="comment"># 0.4166529443281564</span></span><br></pre></td></tr></table></figure></li>
+</ul></li>
+<li><p>使用<code>sacrebleu</code>计算<code>CHRF</code></p>
+<ul>
+<li><p>计算句子级CHRF</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">print</span>(sacrebleu.sentence_chrf(hypothesis=<span class="string">&#x27;the the the the the the the&#x27;</span>,</span><br><span class="line">                            references=[<span class="string">&#x27;the cat is on the mat&#x27;</span>],</span><br><span class="line">                            char_order=<span class="number">1</span>, word_order=<span class="number">0</span>, beta=<span class="number">3</span>, remove_whitespace=<span class="literal">True</span>).score)</span><br><span class="line"><span class="comment"># 48.484848484848484</span></span><br><span class="line"><span class="built_in">print</span>(sacrebleu.sentence_chrf(hypothesis=<span class="string">&#x27;the the the the the the the&#x27;</span>,</span><br><span class="line">                            references=[<span class="string">&#x27;the cat is on the mat&#x27;</span>],</span><br><span class="line">                            char_order=<span class="number">2</span>, word_order=<span class="number">0</span>, beta=<span class="number">3</span>, remove_whitespace=<span class="literal">True</span>).score)</span><br><span class="line"><span class="comment"># 37.145882975906794</span></span><br></pre></td></tr></table></figure></li>
+<li><p>计算语料级CHRF</p>
+<ul>
+<li>与<code>nltk</code>工具提供的计算方法不同，<code>sacrebleu</code>并不是计算出每个句子的CHRF，再求算术平均</li>
+<li><code>sacrebleu</code>在计算<code>i-gram</code>的准确率和召回率时，将语料中的参考句子<code>i-gram</code>长度、翻译句子<code>i-gram</code>长度、参考句子和翻译句子匹配<code>i-gram</code>数量分别进行相加，即分数中的分子和分子进行相加，分母和分母进行相加，与<code>nltk</code>中的分数直接进行相加不同，这与<code>sacrebleu</code>中求BLEU的方法有异曲同工之妙</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">ref1 = <span class="string">&#x27;It is a guide to action that ensures that the military will forever heed Party commands&#x27;</span></span><br><span class="line">ref2 = <span class="string">&#x27;It is the guiding principle which guarantees the military forces always being under the command of the Party&#x27;</span></span><br><span class="line">hyp1 = <span class="string">&#x27;It is a guide to action which ensures that the military always obeys the commands of the party&#x27;</span></span><br><span class="line">hyp2 = <span class="string">&#x27;It is to insure the troops forever hearing the activity guidebook that party direct&#x27;</span></span><br><span class="line"><span class="built_in">print</span>(sacrebleu.corpus_chrf(hypotheses=[hyp1, hyp2], references=[[ref1, ref2]], char_order=<span class="number">6</span>, word_order=<span class="number">0</span>, beta=<span class="number">3</span>).score)</span><br><span class="line"><span class="comment"># 39.364938843711016</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li><p>将以上的代码作为示例，<code>sacrebleu</code>首先计算出每个句子各<code>n-gram</code>模型中的参考句子<code>n-gram</code>长度、翻译句子<code>n-gram</code>长度、参考句子和翻译句子匹配<code>n-gram</code>数量，如下所示</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[[77, 72, 65, 76, 71, 50, 75, 70, 44, 74, 69, 40, 73, 68, 36, 72, 67, 33], [70, 91, 60, 69, 90, 28, 68, 89, 12, 67, 88, 4, 66, 87, 1, 65, 86, 0]]</span><br></pre></td></tr></table></figure></li>
+<li><p>列表中的第一项代表第一个句子，列表中的第二项代表第二个句子，以第一个句子为例，列表项中共有18个元素，分别是翻译句子<code>1-gram</code>长度（翻译句子长度）、参考句子<code>1-gram</code>长度（参考句子长度）、翻译句子和参考句子匹配的<code>1-gram</code>数量...以此类推，一直到<code>6-gram</code></p></li>
+<li><p>将列表中的对应项进行相加，得出以下结果（相当于分子和分子相加，分母和分母相加）</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[147, 163, 125, 145, 161, 78, 143, 159, 56, 141, 157, 44, 139, 155, 37, 137, 153, 33]</span><br></pre></td></tr></table></figure></li>
+<li><p>然后求各<code>n-gram</code>的准确率和召回率，将准确率和召回率求算术平均（总和除以6），再用平均后的准确率和召回率求最终的CHRF，基础逻辑如下所示（仿照<code>sacrebleu</code>手搓的，可能有一些特殊情况不适用，比如分母不能为0）</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">data_list = [<span class="number">147</span>, <span class="number">163</span>, <span class="number">125</span>, <span class="number">145</span>, <span class="number">161</span>, <span class="number">78</span>, <span class="number">143</span>, <span class="number">159</span>, <span class="number">56</span>, <span class="number">141</span>, <span class="number">157</span>, <span class="number">44</span>, <span class="number">139</span>, <span class="number">155</span>, <span class="number">37</span>, <span class="number">137</span>, <span class="number">153</span>, <span class="number">33</span>]</span><br><span class="line">sum_prec, sum_rec = <span class="number">0</span>, <span class="number">0</span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>, <span class="number">6</span>):</span><br><span class="line">    index = <span class="number">3</span> * i</span><br><span class="line">    n_hyp = data_list[index]</span><br><span class="line">    n_ref = data_list[index + <span class="number">1</span>]</span><br><span class="line">    n_match = data_list[index + <span class="number">2</span>]</span><br><span class="line">    </span><br><span class="line">    n_prec = n_match / n_hyp</span><br><span class="line">    n_rec = n_match / n_ref</span><br><span class="line">    </span><br><span class="line">    sum_prec += n_prec</span><br><span class="line">    sum_rec += n_rec</span><br><span class="line">    </span><br><span class="line">    n_fscore = (<span class="number">1</span> + <span class="number">9</span>) * n_prec * n_rec / (<span class="number">9</span> * n_prec + n_rec)</span><br><span class="line">    sum_fscore = sum_fscore + n_fscore</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>((<span class="number">1</span> + <span class="number">9</span>) * (sum_prec / <span class="number">6</span>) * (sum_rec / <span class="number">6</span>) / (<span class="number">9</span> * (sum_prec / <span class="number">6</span>) + (sum_rec / <span class="number">6</span>)))</span><br><span class="line"><span class="comment"># 0.39364938843711017</span></span><br></pre></td></tr></table></figure></li>
+</ul></li>
+</ul></li>
+</ol>
+<h2 id="chrf-1">CHRF++</h2>
+<ol type="1">
+<li><p>之前的工作中显示，对于评分较差的句子，CHRF和WORDF分数的标准差是相似的——两个指标都分配了相对相似的（低）分数，但对于人类评分较高的句子，CHRF的偏差相较于WORDF的偏差要低得多，此外，人类评分越高，WORDF与CHRF的偏差的差异越大，这些结果表明，CHRF是优于WORDF的，尤其是在翻译质量较高的片段上</p></li>
+<li><p>但是考虑到CHRF的结果可能过于乐观，所以将CHRF和WORDF结合起来，得到CHRF++</p></li>
+<li><p>当单词<code>n-grams</code>与字符<code>n-grams</code>相加并取平均值时，就会得到CHRF++分数，<strong>这种组合的最佳<code>n-gram</code>长度对于字符<code>n-gram</code>来说是<code>n=6</code></strong>，与CHRF中字符<code>n-gram</code>的最佳长度相同，<strong>对于单词<code>n-gram</code>来说是<code>n=1</code>或<code>n=2</code></strong></p></li>
+<li><p>使用<code>sacrebleu</code>计算CHRF++</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">print</span>(sacrebleu.sentence_chrf(hypothesis=<span class="string">&#x27;the the the the the the the&#x27;</span>,</span><br><span class="line">                                  references=[<span class="string">&#x27;the cat is on the mat&#x27;</span>],</span><br><span class="line">                                  char_order=<span class="number">1</span>, word_order=<span class="number">1</span>, beta=<span class="number">3</span>, remove_whitespace=<span class="literal">True</span>).score)</span><br><span class="line"><span class="comment"># 40.65040650406503</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li><p>为了方便计算，这里字符和单词都选择<code>1-gram</code>，首先可以得到以下统计结果</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[21, 16, 8, 7, 6, 2]</span><br></pre></td></tr></table></figure></li>
+<li><p>前三个数是字符级<code>1-gram</code>的统计结果，后三个数是单词级<code>1-gram</code>的统计结果（分别是翻译句子字符或单词<code>1-gram</code>长度、参考句子字符或单词<code>1-gram</code>长度、匹配的<code>1-gram</code>数量）</p></li>
+<li><p>分别计算准确率和召回率并求平均值（<strong>实际上<code>sacrebleu</code>中求平均值是除以<code>self.order</code>实现的，此时<code>self.order</code>等于列表长度除以3，本例中为<span class="math inline">\(6/3=2\)</span></strong>），得到最后的准确率和召回率，再计算CHRF++</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">prec = <span class="number">0.6666666666666666</span> / <span class="number">2</span></span><br><span class="line">rec = <span class="number">0.8333333333333333</span> / <span class="number">2</span></span><br><span class="line">(<span class="number">1</span> + <span class="number">9</span>) * prec * rec / (<span class="number">9</span> * prec + rec)</span><br><span class="line"><span class="comment"># 0.40650406504065034</span></span><br></pre></td></tr></table></figure></li>
+</ul></li>
+</ol>
+<p><strong>参考文献：</strong></p>
+<ol type="1">
+<li><a target="_blank" rel="noopener" href="https://www.nltk.org/_modules/nltk/translate/chrf_score.html">NLTK :: nltk.translate.chrf_score</a></li>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/weixin_43647120/article/details/114396261">NLG评估指标chrF、chrF++介绍_地大陈参志的博客-CSDN博客</a></li>
+<li><a target="_blank" rel="noopener" href="https://github.com/mjpost/sacrebleu/blob/master/sacrebleu/metrics/chrf.py">sacrebleu/chrf.py at master · mjpost/sacrebleu (github.com)</a></li>
+<li><a target="_blank" rel="noopener" href="https://aclanthology.org/W15-3049/">chrF: character n-gram F-score for automatic MT evaluation - ACL Anthology</a></li>
+<li><a target="_blank" rel="noopener" href="https://aclanthology.org/W17-4770/">chrF++: words helping character n-grams - ACL Anthology</a></li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="reward-container">
+  <div></div>
+  <button>
+    赞赏
+  </button>
+  <div class="post-reward">
+      <div>
+        <img src="/images/wechatpay.png" alt="Rainy Universe 微信">
+        <span>微信</span>
+      </div>
+      <div>
+        <img src="/images/alipay.png" alt="Rainy Universe 支付宝">
+        <span>支付宝</span>
+      </div>
+
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/%E6%9C%BA%E5%99%A8%E7%BF%BB%E8%AF%91/" rel="tag"># 机器翻译</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2022/12/28/BLEU%E8%AF%84%E4%BC%B0%E6%8C%87%E6%A0%87/" rel="prev" title="BLEU评估指标">
+                  <i class="fa fa-chevron-left"></i> BLEU评估指标
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments gitalk-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Rainy Universe</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/pisces/" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+  <script src="/js/third-party/pace.js"></script>
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">true</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.0/es5/tex-mml-chtml.js","integrity":"sha256-r+3itOMtGGjap0x+10hu6jW/gZCzxHsoKrOd7gyRSGY="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
+
+<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"rainyuniverse","repo":"blog-comment","client_id":"dd3ab568cf554224b60c","client_secret":"d377ea691384ea1e236e98cb932bd8e090b2d863","admin_user":"rainyuniverse","distraction_free_mode":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token","language":"zh-CN","js":{"url":"https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.min.js","integrity":"sha256-Pmj85ojLaPOWwRtlMJwmezB/Qg8BzvJp5eTzvXaYAfA="},"path_md5":"360fb023ddd0ffac66f4e59d07eb3f34"}</script>
+<script src="/js/third-party/comments/gitalk.js"></script>
+
+  
+</body>
+</html>
