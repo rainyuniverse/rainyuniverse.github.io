@@ -173,1032 +173,6 @@
       </tags>
   </entry>
   <entry>
-    <title>CHRF评估指标</title>
-    <url>/2022/12/30/CHRF%E8%AF%84%E4%BC%B0%E6%8C%87%E6%A0%87/</url>
-    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="\assets\css\APlayer.min.css"><script src="\assets\js\APlayer.min.js" class="aplayer-secondary-script-marker"></script><p>不同于BLEU评估指标，CHRF评估指标可以衡量字符级的准确度和流畅度，改进后的CHRF评估指标（CHRF++）将字符级和单词级融合在一起，更全面的评估文本的生成质量，本文主要对CHRF和CHRF++评估指标的手动计算过程和使用<code>nltk</code>和<code>sacrebleu</code>工具的计算原理作出总结和说明。 <span id="more"></span></p>
-<h2 id="chrf">CHRF</h2>
-<ol type="1">
-<li><p>CHRF指标从字符级别对译文质量进行评估，它考虑了一些形态—句法现象，除此之外，与其他评估指标相比，它很简单，不需要任何额外的工具或知识来源，它完全独立于语言，也独立于分词过程。</p></li>
-<li><p>CHRF计算公式： <span class="math display">\[
-\mathrm{chrF} \beta=\left(1+\beta^{2}\right) \frac{\mathrm{chrP} \cdot \mathrm{chrR}}{\beta^{2} \cdot \mathrm{chrP}+\mathrm{chrR}}
-\]</span></p>
-<ul>
-<li><span class="math inline">\(\mathrm{chrP}\)</span>是精确度，指翻译句子和参考译文句子匹配的字符级<code>n-gram</code>在翻译句子中占的比例</li>
-<li><span class="math inline">\(\mathrm{chrR}\)</span>是召回率，指翻译句子和参考译文句子匹配的字符级<code>n-gram</code>在参考译文句子中占的比例</li>
-<li><span class="math inline">\(\beta\)</span>可以控制召回率和精确度两个指标的重要性（召回率比准确率重要<span class="math inline">\(\beta\)</span>倍），当<span class="math inline">\(\beta=1\)</span>时二者同样重要</li>
-</ul></li>
-<li><p>使用<code>nltk</code>计算<code>CHRF</code></p>
-<ul>
-<li><p>当<code>n-gram</code>词组长度为1时（词组的最小长度为1，最大长度也为1，<span class="math inline">\(\beta=3\)</span>）</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> nltk.translate.chrf_score <span class="keyword">import</span> sentence_chrf</span><br><span class="line"></span><br><span class="line">ref = <span class="string">&#x27;the cat is on the mat&#x27;</span>.split()</span><br><span class="line">hyp = <span class="string">&#x27;the the the the the the the&#x27;</span>.split()</span><br><span class="line">sentence_chrf(ref, hyp, min_len=<span class="number">1</span>, max_len=<span class="number">1</span>, beta=<span class="number">3.0</span>)</span><br><span class="line"><span class="comment"># 0.48484848484848486</span></span><br></pre></td></tr></table></figure>
-<ul>
-<li><p>计算TP：重复出现的<code>1-gram</code>有<code>&#123;t, h, e&#125;</code>，总共有8次</p></li>
-<li><p>计算TP + FP：翻译句子的长度为21</p></li>
-<li><p>计算TP + TN：参考译文句子的长度为16</p></li>
-<li><p><span class="math inline">\(\mathrm{chrP}=8/21,\mathrm{chrR}=8/16\)</span> <span class="math display">\[
-\mathrm{chrF}=(1 + 3^2)\frac{\frac{8}{21}*\frac{1}{2}}{3^2*\frac{8}{21}+\frac{1}{2}}=\frac{16}{33}=0.48484848484848485
-\]</span></p></li>
-</ul></li>
-<li><p>拓展到<code>max_len=2</code>的情况，此时<code>n-gram</code>词组的最小长度为1，最大长度为2，<span class="math inline">\(\beta=3\)</span></p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> nltk.translate.chrf_score <span class="keyword">import</span> sentence_chrf</span><br><span class="line">ref = <span class="string">&#x27;the cat is on the mat&#x27;</span>.split()</span><br><span class="line">hyp = <span class="string">&#x27;the the the the the the the&#x27;</span>.split()</span><br><span class="line"><span class="built_in">print</span>(sentence_chrf(ref, hyp, min_len=<span class="number">1</span>, max_len=<span class="number">2</span>, beta=<span class="number">3.0</span>))</span><br><span class="line"><span class="comment"># 0.37145650048875856</span></span><br></pre></td></tr></table></figure>
-<ul>
-<li><p>计算<code>1-gram</code>的情况：此时<code>F-score=0.48484848484848486</code>（和CHRF计算相同）</p></li>
-<li><p>计算<code>2-gram</code>的情况：</p>
-<ul>
-<li><p>计算TP：重复出现的<code>2-gram</code>有<code>&#123;th, he&#125;</code>，总共有4次</p></li>
-<li><p>计算TP + FP： 翻译句子分成<code>2-gram</code>的长度为20</p></li>
-<li><p>计算TP + TN：参考译文句子分成<code>2-gram</code>的长度为15</p></li>
-<li><p><span class="math inline">\(\mathrm{chrP}=4/20,\mathrm{chrR}=4/15\)</span> <span class="math display">\[
-\mathrm{chrF_{2-gram}}=(1 + 3^2)\frac{\frac{1}{5}*\frac{4}{15}}{3^2*\frac{1}{5}+\frac{4}{15}}=\frac{8}{31}=0.25806451612903225
-\]</span></p></li>
-</ul></li>
-<li><p>计算总的CHRF <span class="math display">\[
-\mathrm{chrF}=\frac{0.48484848484848486+0.25806451612903225}{2}=0.37145650048875856
-\]</span></p></li>
-</ul></li>
-<li><p>计算语料级的CHRF（以上都是句子级的CHRF）：基本思想是计算出每个句子的CHRF，然后再求算术平均</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">ref1 = <span class="built_in">str</span>(<span class="string">&#x27;It is a guide to action that ensures that the military will forever heed Party commands&#x27;</span>).split()</span><br><span class="line">ref2 = <span class="built_in">str</span>(<span class="string">&#x27;It is the guiding principle which guarantees the military forces always being under the command of the Party&#x27;</span>).split()</span><br><span class="line">hyp1 = <span class="built_in">str</span>(<span class="string">&#x27;It is a guide to action which ensures that the military always obeys the commands of the party&#x27;</span>).split()</span><br><span class="line">hyp2 = <span class="built_in">str</span>(<span class="string">&#x27;It is to insure the troops forever hearing the activity guidebook that party direct&#x27;</span>).split()</span><br><span class="line">corpus_chrf([ref1, ref2], [hyp1, hyp2]) </span><br><span class="line"><span class="comment"># 0.4166529443281564</span></span><br><span class="line"></span><br><span class="line">(sentence_chrf(ref1, hyp1) + sentence_chrf(ref2, hyp2)) / <span class="number">2</span></span><br><span class="line"><span class="comment"># 0.4166529443281564</span></span><br></pre></td></tr></table></figure></li>
-</ul></li>
-<li><p>使用<code>sacrebleu</code>计算<code>CHRF</code></p>
-<ul>
-<li><p>计算句子级CHRF</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="built_in">print</span>(sacrebleu.sentence_chrf(hypothesis=<span class="string">&#x27;the the the the the the the&#x27;</span>,</span><br><span class="line">                            references=[<span class="string">&#x27;the cat is on the mat&#x27;</span>],</span><br><span class="line">                            char_order=<span class="number">1</span>, word_order=<span class="number">0</span>, beta=<span class="number">3</span>, remove_whitespace=<span class="literal">True</span>).score)</span><br><span class="line"><span class="comment"># 48.484848484848484</span></span><br><span class="line"><span class="built_in">print</span>(sacrebleu.sentence_chrf(hypothesis=<span class="string">&#x27;the the the the the the the&#x27;</span>,</span><br><span class="line">                            references=[<span class="string">&#x27;the cat is on the mat&#x27;</span>],</span><br><span class="line">                            char_order=<span class="number">2</span>, word_order=<span class="number">0</span>, beta=<span class="number">3</span>, remove_whitespace=<span class="literal">True</span>).score)</span><br><span class="line"><span class="comment"># 37.145882975906794</span></span><br></pre></td></tr></table></figure></li>
-<li><p>计算语料级CHRF</p>
-<ul>
-<li>与<code>nltk</code>工具提供的计算方法不同，<code>sacrebleu</code>并不是计算出每个句子的CHRF，再求算术平均</li>
-<li><code>sacrebleu</code>在计算<code>i-gram</code>的准确率和召回率时，将语料中的参考句子<code>i-gram</code>长度、翻译句子<code>i-gram</code>长度、参考句子和翻译句子匹配<code>i-gram</code>数量分别进行相加，即分数中的分子和分子进行相加，分母和分母进行相加，与<code>nltk</code>中的分数直接进行相加不同，这与<code>sacrebleu</code>中求BLEU的方法有异曲同工之妙</li>
-</ul>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">ref1 = <span class="string">&#x27;It is a guide to action that ensures that the military will forever heed Party commands&#x27;</span></span><br><span class="line">ref2 = <span class="string">&#x27;It is the guiding principle which guarantees the military forces always being under the command of the Party&#x27;</span></span><br><span class="line">hyp1 = <span class="string">&#x27;It is a guide to action which ensures that the military always obeys the commands of the party&#x27;</span></span><br><span class="line">hyp2 = <span class="string">&#x27;It is to insure the troops forever hearing the activity guidebook that party direct&#x27;</span></span><br><span class="line"><span class="built_in">print</span>(sacrebleu.corpus_chrf(hypotheses=[hyp1, hyp2], references=[[ref1, ref2]], char_order=<span class="number">6</span>, word_order=<span class="number">0</span>, beta=<span class="number">3</span>).score)</span><br><span class="line"><span class="comment"># 39.364938843711016</span></span><br></pre></td></tr></table></figure>
-<ul>
-<li><p>将以上的代码作为示例，<code>sacrebleu</code>首先计算出每个句子各<code>n-gram</code>模型中的参考句子<code>n-gram</code>长度、翻译句子<code>n-gram</code>长度、参考句子和翻译句子匹配<code>n-gram</code>数量，如下所示</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[[77, 72, 65, 76, 71, 50, 75, 70, 44, 74, 69, 40, 73, 68, 36, 72, 67, 33], [70, 91, 60, 69, 90, 28, 68, 89, 12, 67, 88, 4, 66, 87, 1, 65, 86, 0]]</span><br></pre></td></tr></table></figure></li>
-<li><p>列表中的第一项代表第一个句子，列表中的第二项代表第二个句子，以第一个句子为例，列表项中共有18个元素，分别是翻译句子<code>1-gram</code>长度（翻译句子长度）、参考句子<code>1-gram</code>长度（参考句子长度）、翻译句子和参考句子匹配的<code>1-gram</code>数量...以此类推，一直到<code>6-gram</code></p></li>
-<li><p>将列表中的对应项进行相加，得出以下结果（相当于分子和分子相加，分母和分母相加）</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[147, 163, 125, 145, 161, 78, 143, 159, 56, 141, 157, 44, 139, 155, 37, 137, 153, 33]</span><br></pre></td></tr></table></figure></li>
-<li><p>然后求各<code>n-gram</code>的准确率和召回率，将准确率和召回率求算术平均（总和除以6），再用平均后的准确率和召回率求最终的CHRF，基础逻辑如下所示（仿照<code>sacrebleu</code>手搓的，可能有一些特殊情况不适用，比如分母不能为0）</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">data_list = [<span class="number">147</span>, <span class="number">163</span>, <span class="number">125</span>, <span class="number">145</span>, <span class="number">161</span>, <span class="number">78</span>, <span class="number">143</span>, <span class="number">159</span>, <span class="number">56</span>, <span class="number">141</span>, <span class="number">157</span>, <span class="number">44</span>, <span class="number">139</span>, <span class="number">155</span>, <span class="number">37</span>, <span class="number">137</span>, <span class="number">153</span>, <span class="number">33</span>]</span><br><span class="line">sum_prec, sum_rec = <span class="number">0</span>, <span class="number">0</span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>, <span class="number">6</span>):</span><br><span class="line">    index = <span class="number">3</span> * i</span><br><span class="line">    n_hyp = data_list[index]</span><br><span class="line">    n_ref = data_list[index + <span class="number">1</span>]</span><br><span class="line">    n_match = data_list[index + <span class="number">2</span>]</span><br><span class="line">    </span><br><span class="line">    n_prec = n_match / n_hyp</span><br><span class="line">    n_rec = n_match / n_ref</span><br><span class="line">    </span><br><span class="line">    sum_prec += n_prec</span><br><span class="line">    sum_rec += n_rec</span><br><span class="line">    </span><br><span class="line">    n_fscore = (<span class="number">1</span> + <span class="number">9</span>) * n_prec * n_rec / (<span class="number">9</span> * n_prec + n_rec)</span><br><span class="line">    sum_fscore = sum_fscore + n_fscore</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>((<span class="number">1</span> + <span class="number">9</span>) * (sum_prec / <span class="number">6</span>) * (sum_rec / <span class="number">6</span>) / (<span class="number">9</span> * (sum_prec / <span class="number">6</span>) + (sum_rec / <span class="number">6</span>)))</span><br><span class="line"><span class="comment"># 0.39364938843711017</span></span><br></pre></td></tr></table></figure></li>
-</ul></li>
-</ul></li>
-</ol>
-<h2 id="chrf-1">CHRF++</h2>
-<ol type="1">
-<li><p>之前的工作中显示，对于评分较差的句子，CHRF和WORDF分数的标准差是相似的——两个指标都分配了相对相似的（低）分数，但对于人类评分较高的句子，CHRF的偏差相较于WORDF的偏差要低得多，此外，人类评分越高，WORDF与CHRF的偏差的差异越大，这些结果表明，CHRF是优于WORDF的，尤其是在翻译质量较高的片段上</p></li>
-<li><p>但是考虑到CHRF的结果可能过于乐观，所以将CHRF和WORDF结合起来，得到CHRF++</p></li>
-<li><p>当单词<code>n-grams</code>与字符<code>n-grams</code>相加并取平均值时，就会得到CHRF++分数，<strong>这种组合的最佳<code>n-gram</code>长度对于字符<code>n-gram</code>来说是<code>n=6</code></strong>，与CHRF中字符<code>n-gram</code>的最佳长度相同，<strong>对于单词<code>n-gram</code>来说是<code>n=1</code>或<code>n=2</code></strong></p></li>
-<li><p>使用<code>sacrebleu</code>计算CHRF++</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="built_in">print</span>(sacrebleu.sentence_chrf(hypothesis=<span class="string">&#x27;the the the the the the the&#x27;</span>,</span><br><span class="line">                                  references=[<span class="string">&#x27;the cat is on the mat&#x27;</span>],</span><br><span class="line">                                  char_order=<span class="number">1</span>, word_order=<span class="number">1</span>, beta=<span class="number">3</span>, remove_whitespace=<span class="literal">True</span>).score)</span><br><span class="line"><span class="comment"># 40.65040650406503</span></span><br></pre></td></tr></table></figure>
-<ul>
-<li><p>为了方便计算，这里字符和单词都选择<code>1-gram</code>，首先可以得到以下统计结果</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[21, 16, 8, 7, 6, 2]</span><br></pre></td></tr></table></figure></li>
-<li><p>前三个数是字符级<code>1-gram</code>的统计结果，后三个数是单词级<code>1-gram</code>的统计结果（分别是翻译句子字符或单词<code>1-gram</code>长度、参考句子字符或单词<code>1-gram</code>长度、匹配的<code>1-gram</code>数量）</p></li>
-<li><p>分别计算准确率和召回率并求平均值（<strong>实际上<code>sacrebleu</code>中求平均值是除以<code>self.order</code>实现的，此时<code>self.order</code>等于列表长度除以3，本例中为<span class="math inline">\(6/3=2\)</span></strong>），得到最后的准确率和召回率，再计算CHRF++</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">prec = <span class="number">0.6666666666666666</span> / <span class="number">2</span></span><br><span class="line">rec = <span class="number">0.8333333333333333</span> / <span class="number">2</span></span><br><span class="line">(<span class="number">1</span> + <span class="number">9</span>) * prec * rec / (<span class="number">9</span> * prec + rec)</span><br><span class="line"><span class="comment"># 0.40650406504065034</span></span><br></pre></td></tr></table></figure></li>
-</ul></li>
-</ol>
-<p><strong>参考文献：</strong></p>
-<ol type="1">
-<li><a href="https://www.nltk.org/_modules/nltk/translate/chrf_score.html">NLTK :: nltk.translate.chrf_score</a></li>
-<li><a href="https://blog.csdn.net/weixin_43647120/article/details/114396261">NLG评估指标chrF、chrF++介绍_地大陈参志的博客-CSDN博客</a></li>
-<li><a href="https://github.com/mjpost/sacrebleu/blob/master/sacrebleu/metrics/chrf.py">sacrebleu/chrf.py at master · mjpost/sacrebleu (github.com)</a></li>
-<li><a href="https://aclanthology.org/W15-3049/">chrF: character n-gram F-score for automatic MT evaluation - ACL Anthology</a></li>
-<li><a href="https://aclanthology.org/W17-4770/">chrF++: words helping character n-grams - ACL Anthology</a></li>
-</ol>
-]]></content>
-      <categories>
-        <category>机器翻译</category>
-      </categories>
-      <tags>
-        <tag>机器翻译</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>LibRec学习笔记（一）：BiasedMF算法</title>
-    <url>/2022/04/04/LibRec%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%EF%BC%88%E4%B8%80%EF%BC%89%EF%BC%9ABiasedMF%E7%AE%97%E6%B3%95/</url>
-    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="\assets\css\APlayer.min.css"><script src="\assets\js\APlayer.min.js" class="aplayer-secondary-script-marker"></script><p>最近推荐系统导论课程需要使用LibRec库实现一些推荐算法，其实LibRec库已经封装了很多算法，并不需要再去实现，只需要调用命令行修改配置就可以运行，但为了更好地理解算法，我阅读了LibRec库的一些算法的源码，以下是BiaseMF算法在LibRec库中的实现，本文主要从三部分展开讲解，分别是预测公式、损失函数公式和更新公式。 <span id="more"></span></p>
-<h1 id="代码展示">代码展示</h1>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// SVDPlusPlusRecommender类继承BiasedMFRecommender父类</span></span><br><span class="line"><span class="keyword">package</span> net.librec.recommender.cf.rating;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.util.Iterator;</span><br><span class="line"><span class="keyword">import</span> net.librec.annotation.ModelData;</span><br><span class="line"><span class="keyword">import</span> net.librec.common.LibrecException;</span><br><span class="line"><span class="keyword">import</span> net.librec.math.structure.MatrixEntry;</span><br><span class="line"><span class="keyword">import</span> net.librec.math.structure.VectorBasedDenseVector;</span><br><span class="line"><span class="keyword">import</span> net.librec.recommender.MatrixFactorizationRecommender;</span><br><span class="line"></span><br><span class="line"><span class="meta">@ModelData(&#123;&quot;isRating&quot;, &quot;biasedMF&quot;, &quot;userFactors&quot;, &quot;itemFactors&quot;, &quot;userBiases&quot;, &quot;itemBiases&quot;&#125;)</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">BiasedMFRecommender</span> <span class="keyword">extends</span> <span class="title">MatrixFactorizationRecommender</span> </span>&#123;</span><br><span class="line">    <span class="keyword">protected</span> <span class="keyword">double</span> regBias;</span><br><span class="line">    <span class="keyword">protected</span> VectorBasedDenseVector userBiases;</span><br><span class="line">    <span class="keyword">protected</span> VectorBasedDenseVector itemBiases;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">BiasedMFRecommender</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">setup</span><span class="params">()</span> <span class="keyword">throws</span> LibrecException </span>&#123;</span><br><span class="line">        <span class="keyword">super</span>.setup();</span><br><span class="line">        <span class="keyword">this</span>.regBias = <span class="keyword">this</span>.conf.getDouble(<span class="string">&quot;rec.bias.regularization&quot;</span>, <span class="number">0.01D</span>);</span><br><span class="line">        <span class="comment">// 用户偏差向量</span></span><br><span class="line">        <span class="keyword">this</span>.userBiases = <span class="keyword">new</span> VectorBasedDenseVector(<span class="keyword">this</span>.numUsers);</span><br><span class="line">        <span class="comment">// 物品偏差向量</span></span><br><span class="line">        <span class="keyword">this</span>.itemBiases = <span class="keyword">new</span> VectorBasedDenseVector(<span class="keyword">this</span>.numItems);</span><br><span class="line">        <span class="comment">// 用户偏差初始化</span></span><br><span class="line">        <span class="keyword">this</span>.userBiases.init((<span class="keyword">double</span>)<span class="keyword">this</span>.initMean, (<span class="keyword">double</span>)<span class="keyword">this</span>.initStd);</span><br><span class="line">        <span class="comment">// 物品偏差初始化</span></span><br><span class="line">        <span class="keyword">this</span>.itemBiases.init((<span class="keyword">double</span>)<span class="keyword">this</span>.initMean, (<span class="keyword">double</span>)<span class="keyword">this</span>.initStd);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">trainModel</span><span class="params">()</span> <span class="keyword">throws</span> LibrecException </span>&#123;</span><br><span class="line">        <span class="keyword">for</span>(<span class="keyword">int</span> iter = <span class="number">1</span>; iter &lt;= <span class="keyword">this</span>.numIterations; ++iter) &#123;</span><br><span class="line">            <span class="comment">// 损失</span></span><br><span class="line">            <span class="keyword">this</span>.loss = <span class="number">0.0D</span>;</span><br><span class="line"></span><br><span class="line">            Iterator var2 = <span class="keyword">this</span>.trainMatrix.iterator();</span><br><span class="line"></span><br><span class="line">            <span class="keyword">while</span>(var2.hasNext()) &#123;</span><br><span class="line">                MatrixEntry matrixEntry = (MatrixEntry)var2.next();</span><br><span class="line">                <span class="keyword">int</span> userIdx = matrixEntry.row();</span><br><span class="line">                <span class="keyword">int</span> itemIdx = matrixEntry.column();</span><br><span class="line">                <span class="comment">// 实际评分</span></span><br><span class="line">                <span class="keyword">double</span> realRating = matrixEntry.get();</span><br><span class="line">                <span class="comment">// 预测评分</span></span><br><span class="line">                <span class="keyword">double</span> predictRating = <span class="keyword">this</span>.predict(userIdx, itemIdx);</span><br><span class="line">                <span class="comment">// 实际评分与预测评分的误差</span></span><br><span class="line">                <span class="keyword">double</span> error = realRating - predictRating;</span><br><span class="line">                <span class="keyword">this</span>.loss += error * error;</span><br><span class="line"></span><br><span class="line">                <span class="comment">// 根据当前用户ID得到当前用户偏差向量</span></span><br><span class="line">                <span class="keyword">double</span> userBiasValue = <span class="keyword">this</span>.userBiases.get(userIdx);</span><br><span class="line">                <span class="comment">// 用户偏置项的更新公式</span></span><br><span class="line">                <span class="keyword">this</span>.userBiases.plus(userIdx, (<span class="keyword">double</span>)<span class="keyword">this</span>.learnRate * (error - <span class="keyword">this</span>.regBias * userBiasValue));</span><br><span class="line"></span><br><span class="line">                <span class="keyword">this</span>.loss += <span class="keyword">this</span>.regBias * userBiasValue * userBiasValue;</span><br><span class="line">                <span class="comment">// 根据当前物品ID得到当前物品偏差向量</span></span><br><span class="line">                <span class="keyword">double</span> itemBiasValue = <span class="keyword">this</span>.itemBiases.get(itemIdx);</span><br><span class="line">                <span class="comment">// 物品偏置项的更新公式</span></span><br><span class="line">                <span class="keyword">this</span>.itemBiases.plus(itemIdx, (<span class="keyword">double</span>)<span class="keyword">this</span>.learnRate * (error - <span class="keyword">this</span>.regBias * itemBiasValue));</span><br><span class="line"></span><br><span class="line">                <span class="keyword">this</span>.loss += <span class="keyword">this</span>.regBias * itemBiasValue * itemBiasValue;</span><br><span class="line"></span><br><span class="line">                <span class="keyword">for</span>(<span class="keyword">int</span> factorIdx = <span class="number">0</span>; factorIdx &lt; <span class="keyword">this</span>.numFactors; ++factorIdx) &#123;</span><br><span class="line">                    <span class="keyword">double</span> userFactorValue = <span class="keyword">this</span>.userFactors.get(userIdx, factorIdx);</span><br><span class="line">                    <span class="keyword">double</span> itemFactorValue = <span class="keyword">this</span>.itemFactors.get(itemIdx, factorIdx);</span><br><span class="line">                    <span class="keyword">this</span>.userFactors.plus(userIdx, factorIdx, (<span class="keyword">double</span>)<span class="keyword">this</span>.learnRate * (error * itemFactorValue - (<span class="keyword">double</span>)<span class="keyword">this</span>.regUser * userFactorValue));</span><br><span class="line">                    <span class="keyword">this</span>.itemFactors.plus(itemIdx, factorIdx, (<span class="keyword">double</span>)<span class="keyword">this</span>.learnRate * (error * userFactorValue - (<span class="keyword">double</span>)<span class="keyword">this</span>.regItem * itemFactorValue));</span><br><span class="line">                    <span class="keyword">this</span>.loss += (<span class="keyword">double</span>)<span class="keyword">this</span>.regUser * userFactorValue * userFactorValue + (<span class="keyword">double</span>)<span class="keyword">this</span>.regItem * itemFactorValue * itemFactorValue;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">this</span>.loss *= <span class="number">0.5D</span>;</span><br><span class="line">            <span class="keyword">if</span> (<span class="keyword">this</span>.isConverged(iter) &amp;&amp; <span class="keyword">this</span>.earlyStop) &#123;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">this</span>.updateLRate(iter);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">double</span> <span class="title">predict</span><span class="params">(<span class="keyword">int</span> userIdx, <span class="keyword">int</span> itemIdx)</span> <span class="keyword">throws</span> LibrecException </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">this</span>.userFactors.row(userIdx).dot(<span class="keyword">this</span>.itemFactors.row(itemIdx)) + <span class="keyword">this</span>.userBiases.get(userIdx) + <span class="keyword">this</span>.itemBiases.get(itemIdx) + <span class="keyword">this</span>.globalMean;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h1 id="预测公式">预测公式</h1>
-<p><span class="math inline">\(\hat{r_{u i}}=\mu+b_{i}+b_{u}+p_{u} q_{i}^{T}\)</span></p>
-<p>其中，<span class="math inline">\(\mu\)</span>表示全局均值，在代码中使用<code>this.globalMean</code>表示，<span class="math inline">\(b_{i}\)</span>表示物品偏差项，在代码中使用<code>this.itemBiases.get(itemIdx)</code>表示，需要注意的是，物品偏置项需要根据物品ID进行索引，<span class="math inline">\(b_{u}\)</span>表示用户偏差项，在代码中使用<code>this.userBiases.get(userIdx)</code>表示，同样地，用户偏置项需要根据用户ID来进行索引，<span class="math inline">\(p_{u}\)</span>表示对用户评分矩阵进行矩阵分解后得到的用户向量，<span class="math inline">\(q_{i}\)</span>表示对用户评分矩阵进行分解后得到的物品向量。</p>
-<ul>
-<li>PS：这里说是用户向量和物品向量的原因是都是针对某一用户和物品进行计算。</li>
-</ul>
-<p>预测公式代码如下：</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">double</span> <span class="title">predict</span><span class="params">(<span class="keyword">int</span> userIdx, <span class="keyword">int</span> itemIdx)</span> <span class="keyword">throws</span> LibrecException </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">this</span>.userFactors.row(userIdx).dot(<span class="keyword">this</span>.itemFactors.row(itemIdx)) + <span class="keyword">this</span>.userBiases.get(userIdx) + <span class="keyword">this</span>.itemBiases.get(itemIdx) + <span class="keyword">this</span>.globalMean;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>传入<code>userIdx</code>和<code>itemIdx</code>的原因是需要明确特定用户和特定物品，才能进行预测评分，<code>userFactors</code>和<code>itemFactors</code>是对用户评分矩阵进行矩阵分解后得到的用户矩阵和物品矩阵，需要明确索引才能使用。</p>
-<h1 id="损失函数公式">损失函数公式</h1>
-<p><span class="math inline">\(\sum_{r_{u i} \in R_{\text {train }}}\left(r_{u i}-\hat{r}_{u i}\right)^{2}+\lambda\left(b_{i}^{2}+b_{u}^{2}+\left\|q_{i}\right\|^{2}+\left\|p_{u}\right\|^{2}\right)\)</span></p>
-<p>将用户对物品的特定评分与真实评分之间的差值的平方作为损失函数的一部分是显而易见的，在代码中体现如下：</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 实际评分</span></span><br><span class="line"><span class="keyword">double</span> realRating = matrixEntry.get();</span><br><span class="line"><span class="comment">// 预测评分</span></span><br><span class="line"><span class="keyword">double</span> predictRating = <span class="keyword">this</span>.predict(userIdx, itemIdx);</span><br><span class="line"><span class="comment">// 实际评分与预测评分的误差</span></span><br><span class="line"><span class="keyword">double</span> error = realRating - predictRating;</span><br><span class="line"><span class="keyword">this</span>.loss += error * error;</span><br></pre></td></tr></table></figure>
-<p>通过以上展示的<code>predict()</code>函数可以直接根据用户ID与物品ID求出预测评分，但值得琢磨的是，实际评分是如何得到的？</p>
-<p>可以看到，<code>MatrixEntry</code>接口是如下定义的，</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">MatrixEntry</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">int</span> <span class="title">row</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">int</span> <span class="title">column</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">double</span> <span class="title">get</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">set</span><span class="params">(<span class="keyword">double</span> var1)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">int</span> <span class="title">rowPosition</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">int</span> <span class="title">columnPosition</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>在<code>SequentialSparseMatrixEntry</code>类中实现了<code>MatrixEntry</code>接口的<code>get()</code>方法，</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">double</span> <span class="title">get</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">this</span>.tempVector.getAtPosition(<span class="keyword">this</span>.columnPosition);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>值得注意的是，在<code>SequentialSparseMatrixEntry</code>类中，<code>columnPosition</code>属性被初始化为<code>-1</code>，这就让我们联想到，标签的值总是被设置在最后一列，我们可以验证这个猜想，在代码中，<code>var2</code>被强制转换为<code>MatrixEntry</code>类型，而<code>var2</code>又是<code>trainMatrix</code>的一个迭代器，不出所料地，<code>trainMatrix</code>是·<code>SequentialAccessSparseMatrix</code>类型，所以程序中可以直接调用<code>get()</code>方法来获取数据集中的实际评分值。</p>
-<p>我们重新来回到损失函数的话题上，接下来需要关注正则项的那一部分，即</p>
-<p><span class="math inline">\(\lambda\left(b_{i}^{2}+b_{u}^{2}+\left|q_{i}\right|^{2}+\left|p_{u}\right|^{2}\right)\)</span></p>
-<p>首先我们关注<span class="math inline">\(\lambda(b_{i}^{2}+b_{u}^{2})\)</span>，这一部分的代码比较好写，根据索引找到特定的用户偏置向量和物品偏置向量就可以写出代码，代码如下所示，</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">double</span> userBiasValue = <span class="keyword">this</span>.userBiases.get(userIdx);</span><br><span class="line"><span class="keyword">this</span>.loss += <span class="keyword">this</span>.regBias * userBiasValue * userBiasValue;</span><br><span class="line"><span class="keyword">double</span> itemBiasValue = <span class="keyword">this</span>.itemBiases.get(itemIdx);</span><br><span class="line"><span class="keyword">this</span>.loss += <span class="keyword">this</span>.regBias * itemBiasValue * itemBiasValue;</span><br></pre></td></tr></table></figure>
-<p>接下来的一部分就可能比较难懂，在对用户评分矩阵进行分解时，我们有一个超参数<span class="math inline">\(K\)</span>，表示的是隐因子的个数，在电影的用户评分矩阵中，隐因子指的可能是喜剧片、动画片等内容，换言之，用户是因为这些隐因子才作出的这些评分，所以矩阵分解的公式可以表示如下，</p>
-<p><span class="math inline">\(\hat{r_{u i}}=p_{u} q_{i}^{T}=\sum_{k=1}^{K} p_{u k} q_{k i}^{T}=\sum_{k=1}^{K} p_{u k} q_{i k} \approx r_{u i}\)</span></p>
-<p>所以在代码中我们需要增加一层遍历，即从1到<span class="math inline">\(K\)</span>对隐因子的遍历，对应每一种隐因子ID和用户ID有不同的用户隐因子值，同样的，对于每一种隐因子ID和物品ID有不同的物品隐因子值，对于<span class="math inline">\(\lambda\left(\left|q_{ik}\right|^{2}+\left|p_{uk}\right|^{2}\right)\)</span>这一部分的代码如下所示，</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">for</span>(<span class="keyword">int</span> factorIdx = <span class="number">0</span>; factorIdx &lt; <span class="keyword">this</span>.numFactors; ++factorIdx) &#123;</span><br><span class="line">    <span class="keyword">double</span> userFactorValue = <span class="keyword">this</span>.userFactors.get(userIdx, factorIdx);</span><br><span class="line">    <span class="keyword">double</span> itemFactorValue = <span class="keyword">this</span>.itemFactors.get(itemIdx, factorIdx);</span><br><span class="line">    <span class="keyword">this</span>.loss += (<span class="keyword">double</span>)<span class="keyword">this</span>.regUser * userFactorValue * userFactorValue + (<span class="keyword">double</span>)<span class="keyword">this</span>.regItem * itemFactorValue * itemFactorValue;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>以上就是损失函数全部的内容。</p>
-<h1 id="更新公式">更新公式</h1>
-<p><span class="math inline">\(\begin{array}{l} b_{u} \leftarrow b_{u}+\gamma\left(e_{u i}-\lambda b_{u}\right) \\ b_{i} \leftarrow b_{i}+\gamma\left(e_{u i}-\lambda b_{i}\right) \\ p_{u} \leftarrow p_{u}+\gamma\left(e_{u i} \cdot q_{i}-\lambda p_{u}\right) \\ q_{i} \leftarrow q_{i}+\gamma\left(e_{u i} \cdot p_{u}-\lambda q_{i}\right) \end{array}\)</span></p>
-<p>有了预测函数和损失函数的铺垫，这一部分就可以直接上代码，函数变量基本是差不多的，</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">this</span>.userBiases.plus(userIdx, (<span class="keyword">double</span>)<span class="keyword">this</span>.learnRate * (error - <span class="keyword">this</span>.regBias * userBiasValue));</span><br><span class="line"><span class="keyword">this</span>.itemBiases.plus(itemIdx, (<span class="keyword">double</span>)<span class="keyword">this</span>.learnRate * (error - <span class="keyword">this</span>.regBias * itemBiasValu));</span><br><span class="line"><span class="keyword">for</span>(<span class="keyword">int</span> factorIdx = <span class="number">0</span>; factorIdx &lt; <span class="keyword">this</span>.numFactors; ++factorIdx) &#123;</span><br><span class="line">    <span class="keyword">double</span> userFactorValue = <span class="keyword">this</span>.userFactors.get(userIdx, factorIdx);</span><br><span class="line">    <span class="keyword">double</span> itemFactorValue = <span class="keyword">this</span>.itemFactors.get(itemIdx, factorIdx);</span><br><span class="line">    <span class="keyword">this</span>.userFactors.plus(userIdx, factorIdx, (<span class="keyword">double</span>)<span class="keyword">this</span>.learnRate * (error * itemFactorValue - (<span class="keyword">double</span>)<span class="keyword">this</span>.regUser * userFactorValue));</span><br><span class="line">    <span class="keyword">this</span>.itemFactors.plus(itemIdx, factorIdx, (<span class="keyword">double</span>)<span class="keyword">this</span>.learnRate * (error * userFactorValue - (<span class="keyword">double</span>)<span class="keyword">this</span>.regItem * itemFactorValue));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>只需要注意一点，<code>plus()</code>函数是需要知道具体索引位置才能进行更新的，所以需要传入索引参数。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// DenseVector类中的plus方法</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">plus</span><span class="params">(<span class="keyword">int</span> index, <span class="keyword">double</span> value)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">this</span>.set(index, value + <span class="keyword">this</span>.get(index));</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// DenseMatrix类中的plus方法</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">plus</span><span class="params">(<span class="keyword">int</span> row, <span class="keyword">int</span> column, <span class="keyword">double</span> value)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">double</span>[] var10000 = <span class="keyword">this</span>.values[row];</span><br><span class="line">    var10000[column] += value;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-]]></content>
-      <categories>
-        <category>推荐系统</category>
-      </categories>
-      <tags>
-        <tag>推荐系统</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>SOHO论文阅读</title>
-    <url>/2022/03/09/SOHO%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/</url>
-    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="\assets\css\APlayer.min.css"><script src="\assets\js\APlayer.min.js" class="aplayer-secondary-script-marker"></script><p>上一篇ViLBERT模型提出了使用two-stream的结构来分别处理图片和文本信息，然后再进行融合，在“vision-and-language”任务上还有其他模型使用了这种双流结构，因为其架构比单流结构更为复杂，所以架构的种类更加丰富，为了更深入地了解这种处理不同层次信息（图片和文本）的架构方式，我阅读了Seeing Out of tHe bOx:End-to-End Pre-training for Vision-Language Representation Learning这篇论文。特别地，这篇论文提出的视觉特征的提取方法也有其独到之处，能够不受目标特征局限性的影响。</p>
-<center>
-<img src="/2022/03/09/SOHO%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/001.png" width="600px">
-</center>
-<span id="more"></span>
-<p>论文地址和相关源码链接如下：</p>
-<p><a href="https://arxiv.org/abs/2104.03135" target="_blank">论文地址：https://arxiv.org/abs/2104.03135</a> <br> <a href="https://github.com/researchmm/soho" target="_blank">相关源码：https://github.com/researchmm/soho</a></p>
-<h3 id="摘要">摘要</h3>
-<p>文章研究了用于视觉语言预训练的卷积神经网络和transformer的联合学习，旨在从数百万的图像-文本对中学习跨模态对齐，截止文章发表，最先进的方法是提取突出的图像区域并逐步将区域与文字对齐，但是由于提取出的图像区域仅仅代表图像的一部分，所以理解对应的自然语言是有难度的。文章提出了SOHO模型，将整个图像作为输入，并以端到端方式学习视觉语言的联合表示，SOHO模型不需要边界框标注，这使得其推理的速度比基于区域的方法块10倍。特别地，SOHO通过视觉字典(VD)学习提取全面而紧凑的图像特征，以促进跨模态的理解。最终，文章将SOHO模型在四个视觉语言任务上进行实验，并得到不错的性能和准确率提升。</p>
-<h3 id="介绍">介绍</h3>
-<p>最近跨模态学习的研究工作不断增加，特别是在视觉语言预训练(VLPT)领域。显而易见地，视觉表示在VLPT模型中起着重要作用，有一些模型利用了基于区域的图像特征并取得了不错的效果，这些特征是由在视觉基因组数据集上预训练的目标检测器提取出来的，但是这种方法也有一些缺点：</p>
-<ol type="1">
-<li>区域专注于边界框内的物体，而忽略了边界框外的上下文信息。这些信息对于区域与区域之间的关系理解和推理非常重要。文章以下图为例说明了这个事实，图中可以很容易地检测到男人、女人和船目标，但是如果缺少边框外的上下文信息，就会误以为人们在划船，从而导致模型在下游任务应用时的错误。</li>
-</ol>
-<center>
-<img src="/2022/03/09/SOHO%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/002.png" width="500px">
-<p style="font-family:KaiTi">
-图1：模型在下游任务上的结果对比
-</p>
-</center>
-<ol start="2" type="1">
-<li>对图像的视觉理解被限制在预先定义的区域类别中。</li>
-<li>大多数区域特征是由检测模型提取的，存在质量低、噪声大、过采样等问题，并且依赖于大规模的box标注数据。</li>
-</ol>
-<p>除了区域图像特征提取方法外，一些工作也研究了采用弱监督的目标检测的方法、或是通过基于网格的卷积特征来学习视觉表征的方法，但存在性能不高、只针对单个任务设计等问题。</p>
-<p>为了克服基于区域的图像特征的局限性，更好地利用图像文本数据对进行跨模态理解，文章提出了一个端到端的视觉语言预训练框架SOHO，直接学习图像和文本的嵌入及其语义对齐。与现有的VLPT模型相比，SOHO采取了一个简单的管道，不需要复杂的视觉骨干进行预训练。相比于现有的基于区域的图像特征的方法，SOHO不需要标注类别或边界框，可以通过更广泛的图像-文本数据直接优化视觉表示来丰富视觉语义。</p>
-<p>文章选择采用像素级的视觉表征，但像素级的视觉表征比语言的嵌入更加多样化和密集化，并且缺乏明确的监督，给对齐学习增加了难度。为了解决上述问题，文章引入了<strong>视觉字典</strong>，它代表了视觉领域中更全面和紧凑的语义。为了学习视觉字典，文中设计了一个移动平均编码器，将具有类似视觉语义的像素进行分组。</p>
-<p>在预训练过程中，文章采用了Masked Vision Modeling (MVM) ，Masked Language Modeling（MLM），Image-Text Matching （ITM）三个任务来优化模型。</p>
-<p>文章的贡献可以总结如下：</p>
-<ol type="1">
-<li>文章提出了SOHO模型，这是第一个直接用图像-文本对学习跨模态表示的端到端VLPT模型之一。在不需要提取边界框的情况下，模型可以实现至少10倍的推理速度。</li>
-<li>为了更好地对齐图像和文本数据，我们提出了一个新的动态更新的视觉字典，它代表了图像中类似语义的视觉抽象。</li>
-<li>对四个下游任务进行实验，得到了性能和准确率提升。</li>
-</ol>
-<h3 id="相关工作">相关工作</h3>
-<h4 id="vision-language中的视觉表示">Vision-Language中的视觉表示</h4>
-<p>早期的工作采用CNN分类模型来提取视觉特征，后来，Anderson等人提出了在视觉基因数据集上预训练的BUTD检测模型，以提取突出的区域特征作为视觉输入，最近，一些工作提出在特定的Vision-Language任务上，用卷积神经网络可以直接学习网格特征形式的视觉表征。</p>
-<p>VideoBERT和bag of words文献也使用矢量量化来表示视觉信息。VD与相关作品的关键区别在于，我们用可训练的视觉编码器的输出动态更新基于VD的嵌入，而不是预先计算的输入特征（即VD是<strong>动态更新</strong>的）。VD的动态更新机制可以从视觉语言数据集中获取文本指导语义。因此，该模型可以直接用高级语义来优化视觉语言的理解和对齐。</p>
-<h4 id="vision-language的预训练">Vision-Language的预训练</h4>
-<p>许多视觉语言预训练工作已经被提出用来学习跨模态表征，它们可以被分为single-stream模型和two-stream模型，双流模型分别处理视觉和语言信息，并在之后通过另一个transformer层将它们融合；相反，单流模型使用BERT来学习检测边界框特征（可以理解为ROI特征）和文本嵌入特征的双向联合分布。这两种类型都使用基于Transformer的模型来学习视觉-语言联合嵌入特征。虽然他们忽略了视觉表征学习对视觉-语言任务也很重要。</p>
-<h3 id="方法">方法</h3>
-<p>SOHO是一个端到端的框架，它由一个基于CNN的可训练的视觉编码器、一个视觉字典嵌入模块和一个多层transformer组成，视觉编码器将图像作为输入并产生视觉特征，视觉字典嵌入模块被设计用来将不同的视觉语义信息聚集到视觉token中，transformer被用来融合视觉和语言模态的特征，并产生特定任务的输出。SOHO可以通过MVM、MLM和ITM任务进行端到端的预训练，并很容易地适应下游任务。SOHO的整体架构如下图所示，</p>
-<center>
-<img src="/2022/03/09/SOHO%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/003.png" width="700px">
-<p style="font-family:KaiTi">
-图2：SOHO模型架构
-</p>
-</center>
-<h4 id="可训练的视觉编码器">可训练的视觉编码器</h4>
-<p>基于区域的图像特征的表现能力受到预先定义的对象和属性类别的限制，并且不能学习到某些边界框外的上下文信息。为了保留所有视觉信息，文章建议使用一个可训练的CNN视觉编码器，将整个图像作为输入，产生图像级别的视觉特征，而不是区域级别的特征。由于不受边界框的限制，视觉编码器可以从预训练的损失函数或下游任务的损失函数中进行端到端的更新，进而进一步优化跨模态学习。给定一张图片<span class="math inline">\(\mathcal{I}\)</span>，可以根据以下公式得到其特征<span class="math inline">\(\mathcal{V}\)</span>，</p>
-<p><span class="math display">\[
-\mathcal{V}=E(\mathcal{I}, \theta) \in \mathbf{R}^{l \times c}
-\]</span></p>
-<p>其中<span class="math inline">\(l\)</span>表示嵌入特征向量的数量，<span class="math inline">\(c\)</span>表示嵌入特征向量维度，另外，将在ImageNet上预训练的ResNet加上<span class="math inline">\(1 \times 1\)</span>的卷积层和<span class="math inline">\(2 \times 2\)</span>最大池化层作为编码器<span class="math inline">\(E\)</span>的结构。</p>
-<h4 id="视觉字典">视觉字典</h4>
-<p>视觉特征编码器提取的视觉特征<span class="math inline">\(\mathcal{V}\)</span>比语言词标记更加多样和密集，这将给跨模态理解的学习带来困难。为了弥补其与语言token的差距，我们提出了一个视觉字典，通过将相似的视觉语义聚合到同一图像特征中来标记视觉特征。</p>
-<h5 id="视觉字典嵌入">视觉字典嵌入</h5>
-<p>文章将视觉字典定义为一个矩阵<span class="math inline">\(\mathcal{D} \in \mathbf{R}^{k \times c}\)</span>，包含<span class="math inline">\(k\)</span>个嵌入向量，每个<span class="math inline">\(c\)</span>维，第<span class="math inline">\(j\)</span>个嵌入向量被表示为<span class="math inline">\(d_{j}\)</span>，对于每一个视觉特征<span class="math inline">\(v_{i}\)</span>，文章通过在<span class="math inline">\(\mathcal{D}\)</span>中搜索最近邻来计算其映射索引<span class="math inline">\(h_{i}\)</span>，记为如下公式，</p>
-<p><span class="math display">\[
-h_{i}=\operatorname{argmin}_{j}\left\|v_{i}-d_{j}\right\|_{2}
-\]</span></p>
-<p>因此可以定义以下映射函数<span class="math inline">\(f\)</span>，将视觉特征<span class="math inline">\(v_{i}\)</span>映射到视觉字典矩阵<span class="math inline">\(\mathcal{D}\)</span>：</p>
-<p><span class="math display">\[
-f\left(v_{i}\right)=d_{h_{i}}
-\]</span></p>
-<p>其使用视觉字典中最近的嵌入向量来表示视觉特征，<span class="math inline">\(f^{-1}(j)\)</span>表示逆映射函数，将索引<span class="math inline">\(j\)</span>映射回一组视觉特征。</p>
-<h5 id="视觉字典的学习更新">视觉字典的学习更新</h5>
-<p>视觉字典矩阵被随机初始化，并在一个小批次中通过移动平均操作进一步更新，记为如下公式，</p>
-<p><span class="math display">\[
-\hat{d}_{j}=\gamma * d_{j}+(1-\gamma) * \frac{\sum_{h_{i}=j} v_{i}}{\left|f^{-1}(j)\right|}
-\]</span></p>
-<p>即保留一部分原有的<span class="math inline">\(d_{j}\)</span>，根据小批次中被归为<span class="math inline">\(h_{j}\)</span>索引的视觉特征进行更新。</p>
-<h5 id="梯度反向传播">梯度反向传播</h5>
-<p>由于argmin操作时不可微的，梯度反向传播将被视觉字典停止，为了使视觉编码器可训练，采用了以下方法进行更新，</p>
-<p><span class="math display">\[
-f\left(v_{i}\right)=s g\left[d_{h_{i}}-v_{i}\right]+v_{i}
-\]</span></p>
-<p>其中<span class="math inline">\(s g[\cdot]\)</span>为停止梯度运算符。</p>
-<p>视觉词典根据特征相似度对视觉特征图进行在线聚类，并通过聚类中心表示每个特征向量。具有相似语义的特征向量将被聚集到同一个聚类中，聚类的索引可以被视为一个虚拟的视觉语义标签。<strong>由于聚类可以受到视觉语言学习任务的影响，每个嵌入向量的学习语义更适合于跨模态的理解和对齐。</strong></p>
-<p>视觉字典面临着一个冷启动问题，直接将梯度从随机初始化的嵌入向量复制到视觉特征图上会导致不正确的模型优化方向（即模式崩溃）。因此，我们在前10个训练历时中冻结了视觉特征编码器中ResNet的参数。</p>
-<h4 id="预训练管道">预训练管道</h4>
-<p>文章应用多层transformer来学习融合视觉和语言特征的跨模态表征，为了学习视觉和语言相关任务的通用表征，文章采用自监督的方法，在一个大型的数据集上对模型进行预训练。除了通用的掩蔽语言建模和图像-文本匹配预训练任务外，文章还提出了一个新颖的基于视觉字典产生的虚拟视觉语义标签的掩蔽视觉建模预训练任务。</p>
-<h5 id="跨模态的transformer">跨模态的transformer</h5>
-<p>对于视觉表示，文章利用正弦函数计算的二维位置嵌入来编码视觉token的空间信息，对于文本内容，按照输入BERT时的嵌入方法对其进行文本进行嵌入，最终将VD嵌入和文本嵌入连接起来形成输入序列，用于跨模态学习，需要特别注意的是，VD嵌入与文本嵌入的向量长度一致。</p>
-<h5 id="掩蔽语言建模mlm">掩蔽语言建模(MLM)</h5>
-<p>掩蔽语言建模预训练任务鼓励模型构建语言token和可视化内容之间的映射关系，MLM的目标是根据其他词token<span class="math inline">\(\mathcal{W}_{\backslash i}\)</span>和所有的图像特征<span class="math inline">\(f(\mathcal{V})\)</span>，通过最小化负对数似然来预测遮蔽的词token：</p>
-<p><span class="math display">\[
-\mathcal{L}_{\mathrm{MLM}}=-\mathbb{E}_{(\mathcal{W}, f(\mathcal{V})) \sim D} \log p\left(w_{i} \mid \mathcal{W}_{\backslash i}, f(\mathcal{V})\right)
-\]</span></p>
-<h5 id="掩蔽视觉建模mvm">掩蔽视觉建模(MVM)</h5>
-<p>文章提出了基于视觉字典的掩蔽视觉建模，在将图像特征输入到transformer之前，随机进行遮蔽，MVM的目标是根据周围图像的特征<span class="math inline">\(f(\mathcal{V})_{\backslash j}\)</span>和所有的语言token<span class="math inline">\(W\)</span>，通过最小化负对数似然，预测被遮蔽图像的特征，</p>
-<p><span class="math display">\[
-\mathcal{L}_{\text {MVM }}=-\mathbb{E}_{(\mathcal{W}, f(\mathcal{V})) \sim D} \log p\left(f\left(v_{j}\right) \mid \mathcal{W}, f(\mathcal{V})_{\backslash j}\right)
-\]</span></p>
-<p>需要特别注意的是，在视觉特征图中，相邻的特征可能有相似的值，因此共享相同的视觉字典映射索引，这将导致模型以一种懒惰的方式直接复制周围特征的标签作为预测值，为了防止这种情况的出现，在遮蔽阶段，文章首先在视觉字典中随机选择一个标签索引，然后将索引对应的所有视觉特征进行遮蔽。</p>
-<h5 id="图像-文本匹配itm">图像-文本匹配(ITM)</h5>
-<p>为了增强跨模态匹配，文章采用图像文本匹配任务进行预训练，文章在[CLS]标签上应用二值分类器<span class="math inline">\(\phi(\cdot)\)</span>来预测输入图像和文本是否匹配，ITM任务由以下的损失函数驱动：</p>
-<p><span class="math display">\[
-\mathcal{L}_{\mathrm{ITM}}=-\mathbb{E}_{(\mathcal{W}, f(\mathcal{V})) \sim D} \log p(y \mid \phi(\mathcal{W}, f(\mathcal{V})))
-\]</span></p>
-<p>视觉特征编码器、基于VD的图像嵌入模块和跨模态transformer可以进行端到端的联合训练，文章给三个预训练目标分配相同的损失权重，因此，SOHO的预训练目标如下所示，</p>
-<p><span class="math display">\[
-\mathcal{L}_{\text {Pre-training }}=\mathcal{L}_{\mathrm{MLM}}+\mathcal{L}_{\mathrm{MVM}}+\mathcal{L}_{\mathrm{ITM}}
-\]</span></p>
-]]></content>
-      <categories>
-        <category>深度学习论文阅读</category>
-      </categories>
-      <tags>
-        <tag>多模态模型</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>ViLBERT论文阅读</title>
-    <url>/2022/03/08/ViLBERT%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/</url>
-    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="\assets\css\APlayer.min.css"><script src="\assets\js\APlayer.min.js" class="aplayer-secondary-script-marker"></script><p>BERT模型的提出使得大规模的预训练成为可能，与BERT模型仅仅处理文本模态不同，ViLBERT模型结合了图片和文本信息的特征，使用two-stream结构，基于大型的图像标题数据库训练与下游任务无关的通用模型，基于该模型通过少量调整即可实现通过标题检索图片、视觉问答等具体任务，最近在学习多模态特征有效的融合和对齐方法，于是对这篇文章进行了研读。</p>
-<center>
-<img src="/2022/03/08/ViLBERT%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/001.png" width="600px">
-</center>
-<span id="more"></span>
-<p>论文地址和相关源码链接如下，</p>
-<p><a href="https://arxiv.org/pdf/1908.02265.pdf" target="_blank">论文地址：https://arxiv.org/pdf/1908.02265.pdf</a> <br> <a href="https://github.com/facebookresearch/vilbert-multi-task" target="_blank">相关源码：https://github.com/facebookresearch/vilbert-multi-task</a></p>
-<h3 id="摘要">摘要</h3>
-<p>ViLBERT模型是一个学习与任务无关的图像文本特征联合表示的模型，文章将流行的针对文本模态的BERT架构扩展到一个多模态的two-stream模型架构，在不同的流中处理视觉和文本输入，并通过共同注意的transformer层进行信息交互。文章通过自动收集的大型概念性标题数据集上定义两个代理任务，来对模型进行预训练，然后将其转移到多个既定的下游视觉和语言任务中，包括视觉问题回答、视觉常识推理、指代表达和基于标题的图像检索任务，在进行下游任务时只对基础架构做少量的补充。文章观察到，与现有的特定任务模型相比，在所有的四个下游任务上都实现了最先进的改进。文章认为，其工作代表了一种转变，即不再把学习视觉和语言之间的grounding作为任务训练的一部分，而是将visual grounding作为一种可预训练和可转移的能力。</p>
-<blockquote>
-<p>PS: visual grounding涉及视觉和文本两个模态，输入是图片和对应的物体描述，输出是描述物体的box，与目标检测不同的是，输入多了语言信息，在对物体进行定位时，要先对语言模态的输入进行理解，并且和视觉模态的信息进行融合，最后利用得到的特征进行定位预测。</p>
-</blockquote>
-<h3 id="介绍">介绍</h3>
-<p>近年来，通过图像、视频等生成文本的研究已有了很多丰硕的成果，这些方法和任务可归结为“vision-and-language”。虽然这些任务都需要将自然语言和视觉特征结合，但是“vision-and-language”任务还没有一个统一的基础来提升这种结合能力。“vision-and-language”现在通常的做法是先分别预训练语言和视觉模型，然后通过任务进行基础知识的学习。通过这种方法学到的基础知识并不可靠，如果数据量不足或者是有bias的，那么模型的泛化能力会很差。</p>
-<p>首先对模型进行预训练，然后再在目标任务上进行微调的手段已经被广泛使用，ViLBERT也采用了这种先预训练后转移的方案，并在预训练时尽可能地学习视觉和文本之间的关系。</p>
-<p>为了学习这些联合的视觉-语言表征，我们借鉴了自监督学习方面的成功经验，这些成功通过训练模型来执行代理任务，从大量的无标签数据源中获取丰富的语义和结构信息，这些代理任务包括预测掩蔽词等等。为了通过类似的方法学习visual grounding，必须确定一个视觉和语言能够对齐的数据源来学习模态之间的关系，文章采用了概念性标题数据集。</p>
-<p>文章提出了一个联合模型ViLBERT，用于从成对的视觉语言数据中学习与目标任务无关的visual grounding。文章的方法扩展了最近的BERT语言模型来共同推理文本和图像，关键技术创新是为视觉和语言处理引入单独的流，通过共同注意的transformer层进行信息交互，这种结构可以适应每种模态的不同处理需求，并在不同深度的模态之间提供互动，文章在实验中证明，two-stream结构优于single-stream结构。模型结构如下图所示，</p>
-<center>
-<img src="/2022/03/08/ViLBERT%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/002.png" width="700px">
-<p style="font-family:KaiTi">
-图1：ViLBERT模型结构
-</p>
-</center>
-<p>文章使用两种代理任务来训练模型：</p>
-<ol type="1">
-<li>遮蔽部分图片区域和文本单词，根据上下文内容预测被遮蔽部分。</li>
-<li>预测文字和图片是否匹配。</li>
-</ol>
-<p>将预训练模型作为基础，用于四个目标视觉语言任务，分别是视觉问题回答、视觉常识推理、指代表达和基于标题的图像检索。</p>
-<h3 id="方法">方法</h3>
-<h4 id="bert">BERT</h4>
-<p>BERT模型时一个基于注意力机制的双向语言模型，当在大型语言语料库上进行预训练时，BERT已被证明对多种自然语言处理任务的迁移学习非常有效。</p>
-<p>ViLBERT修改了BERT的键值注意机制，开发了一个多模态的共同注意transformer模块，通过在多头注意中交换键值对，这种结构使视觉注意到的文本特征被纳入到视觉表征中，同时将文本注意大的视觉特征纳入到文本表征中，BERT结构的标准transformer模块和ViLBERT结构的共同注意transformer模块对比图如下所示，</p>
-<center>
-<img src="/2022/03/08/ViLBERT%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/003.png" width="600px">
-<p style="font-family:KaiTi">
-图2：标准transformer模块和共同注意transformer模块对比
-</p>
-</center>
-<p>下面简单地介绍BERT的输入文本表示和预训练任务。BERT的输入文本表示由三部分构成，分别是位置嵌入(position embedding)、段嵌入(segment embedding)和目标词嵌入(token embedding)。BERT的预训练任务包括掩蔽语言建模和下一句预测。具体的对于BERT模型的介绍可以参考原论文，传送门如下，</p>
-<p><a href="https://arxiv.org/pdf/1810.04805.pdf" target="_blank">传送门：https://arxiv.org/pdf/1810.04805.pdf</a></p>
-<h4 id="vilbert扩展bert以联合表示图像和文本">ViLBERT：扩展BERT以联合表示图像和文本</h4>
-<p>受BERT模型在语言建模方面的成功启发，我们希望开发类似的模型和训练任务，从成对的数据中学习语言和视觉内容的联合表示，具体来说，文章考虑联合表示静态图像和相应的描述性文本。</p>
-<p>文章首先叙述了一些直观的想法。可以首先将视觉输入的空间离散化，将这些视觉标记完全视为文本输入，并输入到预训练的BERT模型中，这种方法为single-stream方法。文章说明了single-stream方法的一些缺点：</p>
-<ol type="1">
-<li>最初的聚类可能会导致离散化错误，并失去重要的视觉细节。</li>
-<li>以上方法对两种模态的输入进行了相同的处理，忽略了它们可能由于其固有的复杂性或其输入表征的初始抽象水平而需要不同的处理水平。</li>
-<li>强迫预训练的权重去适应大量额外的视觉标记，可能会损害学到的BERT语言模型。</li>
-</ol>
-<p>基于以上缺点，文章开发了一个two-stream架构，分别对每个模态进行建模，然后通过基于注意力的互动来融合它们，这种方法允许每个模态的网络深度不同，并能在不同的深度上实现跨模态连接。</p>
-<p>如图1所示，ViLBERT学习的是静态图像及其对应描述文本的联合表征，分别对两种模态进行建模，然后通过一组基于注意力机制的信息交互将它们融合在一起。对每种模态都可使用不同深度的网络，并支持不同深度的跨模态交互。双流架构中的每个流都是由一系列的TRM(transformer block)和Co-TRM组成，可以观察到，流之间的信息交互被限制在特定层，文本特征需要先经过TRM模块处理才能进行信息交互，文章给出的解释是所选择的视觉特征已经相对高级，与句子中的单词相比，视觉特征需要有限的上下文聚合。</p>
-<h5 id="共同注意的transformer层">共同注意的transformer层</h5>
-<p>ViLBERT中引入了共同注意的transformer层，该模块为每个模态产生以其他模态为条件的注意力集合特征，实际上是在视觉流中执行以图像为条件的语言注意力，在语言流中执行以语言为条件的图像注意力。</p>
-<h5 id="图像表示">图像表示</h5>
-<p>从预先训练好的物体检测网络中提取边界框和它们的视觉特征来生成图像区域特征，与文本中的文字不同，图像区域缺乏自然排序，文章采用一个5维的向量对区域进行位置编码，五个维度的元素分别为归一化后的bounding boxes的左上角和右下角的坐标以及图像区域覆盖占比，然后使用映射将位置编码与视觉特征维数匹配，进行相加后得到图像区域特征。使用一个特定的IMG token作为图像序列的开始，并用它的输出表征整个图像。</p>
-<h5 id="预训练任务">预训练任务</h5>
-<p>训练ViLBERT模型时采用了两个预训练任务，分别是掩蔽多模态建模和多模态对齐预测，如下图所示，</p>
-<center>
-<img src="/2022/03/08/ViLBERT%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/004.png" width="600px">
-<p style="font-family:KaiTi">
-图3：ViLBERT预训练任务
-</p>
-</center>
-<p>掩蔽多模态建模任务来自于标准BERT中的掩蔽语言建模任务，屏蔽大约15%的单词和图像区域输入，并要求模型在剩余输入的情况下对屏蔽进行预测。在对图像进行掩蔽时，90%的概率是直接遮挡，另外10%的概率保持不变，文本的掩蔽方案与BERT一致。ViLBERT并不直接预测被掩蔽区域的图像区域特征值（原因：语言往往只能识别视觉内容的高级语义，而不太可能重建准确的图像特征），而是预测对应区域在语义类别上的分布（不预测位置信息），为了监督这一点，文章从用于特征提取的同一预训练检测模型中获取该区域的特征分布，训练模型以最小化这两个分布之间的KL散度。</p>
-<p>多模态对齐预测任务必须预测图像和文本是否对齐，即文本是否描述了图像，文章把输出的<span class="math inline">\(h_{IMG}\)</span>和<span class="math inline">\(h_{CLS}\)</span>作为视觉和语言输入的整体表示，借用视觉和语言模型的另一个常见结构，文章将整体表征计算为<span class="math inline">\(h_{IMG}\)</span>和<span class="math inline">\(h_{CLS}\)</span>之间的元素乘积，并添加一个线性层来进行图像和文字是否对齐的二元预测。</p>
-]]></content>
-      <categories>
-        <category>深度学习论文阅读</category>
-      </categories>
-      <tags>
-        <tag>多模态模型</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Hello World</title>
-    <url>/2020/09/06/hello-world/</url>
-    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="\assets\css\APlayer.min.css"><script src="\assets\js\APlayer.min.js" class="aplayer-secondary-script-marker"></script><p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<span id="more"></span>
-<h2 id="quick-start">Quick Start</h2>
-<h3 id="create-a-new-post">Create a new post</h3>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="run-server">Run server</h3>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="generate-static-files">Generate static files</h3>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="deploy-to-remote-sites">Deploy to remote sites</h3>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
-]]></content>
-      <tags>
-        <tag>hello world</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>test</title>
-    <url>/2020/09/06/test/</url>
-    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="\assets\css\APlayer.min.css"><script src="\assets\js\APlayer.min.js" class="aplayer-secondary-script-marker"></script>
-]]></content>
-      <tags>
-        <tag>test</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>《计算机网络：自顶向下方法》第一章笔记整理</title>
-    <url>/2021/02/02/%E3%80%8A%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C%EF%BC%9A%E8%87%AA%E9%A1%B6%E5%90%91%E4%B8%8B%E6%96%B9%E6%B3%95%E3%80%8B%E7%AC%AC%E4%B8%80%E7%AB%A0%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/</url>
-    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="\assets\css\APlayer.min.css"><script src="\assets\js\APlayer.min.js" class="aplayer-secondary-script-marker"></script><p>对大黑书《计算机网络：自顶向下方法》第一章进行笔记整理...... <span id="more"></span></p>
-<h1 id="计算机网络和因特网">计算机网络和因特网</h1>
-<h2 id="什么是internet">什么是Internet</h2>
-<ul>
-<li>从具体构成角度解释什么是互联网：</li>
-</ul>
-<ol type="1">
-<li><strong>节点</strong>：包括<strong>主机节点</strong>和<strong>数据交换节点</strong>，主机节点（<strong>端节点</strong>，包括PC、Server、笔记本、智能手机等）指的是主机及其上运行的应用程序，数据交换节点指的是<strong>路由器、交换机</strong>等网络交换设备<br></li>
-<li><strong>边</strong>：通信链路，通信链路中包括<strong>接入网链路</strong>和<strong>主干链路</strong>，接入网链路指的是主机连接到互联网的链路，主干链路指的是路由器之间的链路<br></li>
-<li><strong>协议</strong>：<strong>对等层的实体在通讯连接的过程中遵守的规则的集合</strong>，定义了在两个或多个通信实体之间交换的报文<strong>格式</strong>和<strong>次序</strong>，以及在报文传输和/ 或接收或其他事件方面所采取的的<strong>动作</strong>。互联网以TCP、IP等协议为支撑，另外，以TCP、IP等协议为支撑的也可能为内部网，与互联网不连。<br></li>
-<li><strong>端系统</strong>：端系统包括设备本身、支持设备能够通讯的网络操作系统、操作系统上驻留的网络应用程序，主机=端系统<br></li>
-<li><strong>Internet是网络的网络</strong><br></li>
-<li><strong>Internet标准</strong>:包括RFC和IETF<br></li>
-</ol>
-<ul>
-<li><p>从服务角度解释什么是互联网：</p>
-<ul>
-<li><strong>基础设施</strong>（应用层以下）和<strong>分布式的应用</strong>：<strong>基础设施为分布式应用提供通讯服务</strong>，提供的通讯服务分为两种，分别是面向连接的可靠服务和无连接的不可靠服务</li>
-</ul></li>
-</ul>
-<h2 id="网络边缘">网络边缘</h2>
-<ol type="1">
-<li><p>网络边缘指的是主机和应用程序，也可以解释为分布式应用和通讯基础设施的一部分。<br></p></li>
-<li><p>应用进程和应用进程之间：</p>
-<ul>
-<li>采用<strong>客户/服务器模式</strong>：客户端向服务器请求、接收服务，在此种模式中，客户端是主动的、后运行起来，服务器是被动的、先运行起来。此种模式的一个缺点是，在客户端很多的情况下，需要服务器农场，可扩展性很差。</li>
-<li>采用<strong>P2P模式</strong>（又称<strong>对等模式</strong>）：在此种模式中，很少有专门的服务器，每一个分布式的应用既是客户端又是服务器，请求资源和提供服务的节点都很多。</li>
-</ul></li>
-<li><p>基础设施提供的通讯服务：</p>
-<ul>
-<li>面向连接服务：目标是在端系统之间传输数据，在数据传输之前先握手做好准备。TCP提供的服务是可靠的（确认和重传），具有流量控制（发送方不会淹没接收方）、拥塞控制（能够感知路径是否拥塞来调节传输速度）的特点。使用TCP的应用有HTTP（Web）、FTP（文件传送）、Telnet（远程登录）、SMTP（email）。<em>（注：区分面向连接和有连接，面向连接只有端系统知道，有连接网络中的节点也知道）</em></li>
-<li>无连接服务：目标是在端系统之间传输数据。UDP的特点是无连接、不可靠、无流量控制、无拥塞控制。使用UDP的应用包括流媒体、远程会议、DNS和Internet电话。</li>
-</ul></li>
-</ol>
-<h2 id="网络核心">网络核心</h2>
-<ol type="1">
-<li><p>网络核心：路由器的网状网络<br></p></li>
-<li><p>数据通过网络进行传输的方式包括<strong>电路交换</strong>和<strong>分组交换</strong>。<br></p></li>
-<li><p><strong>电路交换</strong>：为每个呼叫预留一条专有电路</p>
-<ul>
-<li>电路交换独享资源，<strong>不共享</strong>，提供性能保障。</li>
-<li>如果呼叫没有数据传送，被分配的资源就会被浪费。</li>
-<li>通常被传统电话网络采用。</li>
-<li>网络资源（如带宽）被分成片，有频分（FDM）、时分（TDM）、波分的方法。</li>
-<li>电路交换不适合计算机之间的通信，具体表现在连接建立时间长；计算机之间的通信有突发性（不是一直都在通信），如果使用电路交换，则浪费的片较多。 <img src="https://img-blog.csdnimg.cn/20210201220529741.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3JhaW55X3VuaXZlcnNl,size_16,color_FFFFFF,t_70" alt="电路交换"> 图中，每段链路有4条线路，该呼叫采用了上面链路的第2个线路，右边链路的第1个线路。</li>
-</ul></li>
-<li><p><strong>分组交换</strong>：以分组为单位存储-转发方式</p>
-<ul>
-<li>节点之间的通讯链路不再细分为pieces</li>
-<li>主机与主机之间的通讯数据分成一个个packet</li>
-<li>以packet为单位在每个交换节点中存储、转发，并且每次只用某两个交换节点之间的一条通讯链路，此时其他主机对的通信可以使用其他链路，<strong>资源共享</strong>，按需使用</li>
-<li>分组交换在每个节点的延迟比电路交换长得多（存储-转发时间+排队延迟）</li>
-<li><strong>存储-转发</strong>：被传输到下一个链路之前，整个分组必须到达路由器，在一个速率为R bps的链路，一个长度为L bits的分组的存储转发延迟为L/R s</li>
-<li><strong>排队延迟和丢失</strong>：如果到达速率&gt;链路的输出速率，分组将会排队等待传输，如果路由器的缓存用完了，分组将会抛弃</li>
-<li><strong>统计多路复用</strong>：<img src="https://img-blog.csdnimg.cn/20210202123344874.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3JhaW55X3VuaXZlcnNl,size_16,color_FFFFFF,t_70" alt="统计多路复用"> 分组交换划分时间片没有固定模式，如图所示，可以先为A划分时间片，中间有一段空闲，再为B划分时间片</li>
-<li>分组的存储转发一段一段从源端传到目标端，按照有无网络层的连接，分为<strong>数据报网络</strong>和<strong>虚电路网络</strong>，数据报的工作原理为在通信之前，无需建立起一个连接，有数据就传输，每一个分组都独立路由（路径不一样，可能会失序），路由器根据分组的目标地址进行路由</li>
-</ul></li>
-<li><p>网络交换的核心功能：</p>
-<ul>
-<li>路由：决定分组采用的源到目标的路径</li>
-<li>转发：将分组从路由器的输入链路转入到输出链路</li>
-</ul></li>
-<li><p>分组交换和电路交换对比：</p>
-<ul>
-<li>同样的网络资源，分组交换允许更多用户使用网络</li>
-<li>分组交换资源共享，简单，不必建立呼叫，适合于突发数据传输，但过度使用会造成网络拥塞</li>
-</ul></li>
-</ol>
-<h2 id="接入网和物理媒体">接入网和物理媒体</h2>
-<ol type="1">
-<li><strong>住宅接入</strong>：modem，将上网数据调制加载音频信号上，在电话线上传输，在局端将其中的数据解调出来，反之亦然。此种方式在打电话的同时不能上网
-<ul>
-<li>接入网：DSL，带宽分为语音通信，上行传输和下行传输（上行比下行小）。DSL线路上的数据被传到互联网，DSL线路上的语音被传到电话网</li>
-<li>接入网：线缆网络，有线电视信号线缆双向改造，带宽分为广播电视、上行传输和下行传输，各客户共享到线缆头端的接入网络（与DSL不同，DSL每个用户一个专用线路到CO）</li>
-</ul></li>
-<li>住宅接入：电缆模式
-<ul>
-<li>接入网：家庭网络<img src="https://img-blog.csdnimg.cn/20210202133021232.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3JhaW55X3VuaXZlcnNl,size_16,color_FFFFFF,t_70" alt="家庭网络"></li>
-</ul></li>
-<li><strong>企业接入网络</strong>：无线接入网络，分为无线LANs和广域无线接入。</li>
-<li><strong>物理媒体</strong>：分为<strong>导引性媒体</strong>和<strong>非导引性媒体</strong>，其中导引性媒体包括<strong>同轴电缆</strong>、<strong>光纤</strong>和<strong>双绞线</strong>，非导引性媒体包括无线电。</li>
-</ol>
-<h2 id="internet结构和isp">Internet结构和ISP</h2>
-<ol type="1">
-<li>互联网网络结构：网络的网络
-<ul>
-<li>端系统通过接入ISPs连接到互联网</li>
-<li>接入ISPs相应的必须是互联的，保证任何两个端系统可相互发送分组到对方<img src="https://img-blog.csdnimg.cn/20210202134721946.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3JhaW55X3VuaXZlcnNl,size_16,color_FFFFFF,t_70" alt="互联网网络结构"><img src="https://img-blog.csdnimg.cn/20210202134829333.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3JhaW55X3VuaXZlcnNl,size_16,color_FFFFFF,t_70" alt="互联网网络结构"></li>
-<li>第一层ISP：国家/国际覆盖，速率极高（带宽较宽），直接与其他第一层ISP相连，与大量的第二层ISP和其他客户相连；第二层ISP：更小些（通常是区域性的）的ISP；第三层ISP与其他本地ISP。</li>
-<li>POP：高层ISP面向客户网络的接入点，涉及费用结算；对等接入：2个ISP对等互接，不涉及费用结算；IXP：多个对等ISP互联互通之处，通常不涉及费用结算。</li>
-</ul></li>
-</ol>
-<h2 id="分组延时丢失和吞吐量">分组延时、丢失和吞吐量</h2>
-<ol type="1">
-<li>分组延时和丢失的产生：在路由器缓冲区的分组队列分组到达链路的速率超过了链路输出的能力</li>
-<li>四种分组延时：
-<ul>
-<li><strong>节点处理延时</strong>：检查bit级差错，检查分组首部和决定将分组导向何处</li>
-<li><strong>排队延时</strong>：在输出链路上等待传输的时间，依赖于路由器的拥塞程度</li>
-<li><strong>传输延时</strong>：将分组发送到链路上的时间 L/R（分组长度/链路带宽）</li>
-<li><strong>传播延时</strong>：d/s（物理链路的长度/在媒体上的传播速度）</li>
-<li><strong>节点延时为以上四种延时相加</strong></li>
-</ul></li>
-<li>Traceroute诊断程序：提供从源端，经过路由器，到目的的延时测量（和TTL有关，TTL每经过一个路由器减1，TTL减为0时报告原主机）</li>
-<li>分组丢失：
-<ul>
-<li>产生原因：链路的队列缓冲区容量有限，当分组达到一个满的队列时，该分组将会丢失</li>
-<li>分组丢失后有三种情况：由上一个节点重传；原主机重传；原主机不重传</li>
-</ul></li>
-<li><strong>吞吐量</strong>：在源端和目标端之间传输的速率，分为瞬间吞吐量和平均吞吐量（短板效应）</li>
-</ol>
-<h2 id="协议层次及服务模型">协议层次及服务模型</h2>
-<ol type="1">
-<li><strong>层次化方式实现复杂网络功能</strong>：本层协议实体相互交互执行本层的协议动作，目的是实现本层功能，通过接口为上层提供更好的服务，在实现本层协议的时候，直接利用了下层所提供的的服务</li>
-<li><strong>协议的目的是为了向上层提供更好的服务，协议通过层间接口访问下层所提供的服务来实现</strong></li>
-<li>服务和服务访问点：
-<ul>
-<li><strong>服务</strong>：低层实体向上层实体提供它们之间的通信的能力</li>
-<li><strong>原语</strong>：上层使用下层服务的形式，高层使用低层的服务，以及低层向高层提供服务都是通过服务访问原语来进行交互的</li>
-<li><strong>服务访问点（SAP）</strong>：上层使用下层提供的服务通过层间的接口—地点（可以用来区分不同的服务用户） 服务用户通过SAP告诉服务提供者访问什么服务；服务提供者通过原语告诉服务用户提供什么服务</li>
-</ul></li>
-<li>服务的类型：
-<ul>
-<li>面向连接的服务</li>
-<li>无连接的服务：两个应用进程在进行实质性通讯前不需要握手</li>
-</ul></li>
-<li>服务与协议：
-<ul>
-<li>关系：本层协议实现时需借助下层提供服务，实现本层协议的目的是为了向上层提供更好的服务</li>
-<li>区别：服务是低层实体向上层实体提供它们之间的通信的能力，是通过原语来操作的，垂直；协议是对等层实体之间在相互通信的过程中，需要遵循的规则的集合，水平</li>
-</ul></li>
-<li><strong>数据单元（DU）</strong>：<img src="https://img-blog.csdnimg.cn/20210202192330704.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3JhaW55X3VuaXZlcnNl,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></li>
-<li>Internet协议栈：
-<ul>
-<li>应用层：为人类用户或者其他应用进程提供网络应用服务</li>
-<li>传输层：提供进程到进程的数据传输，另外将不可靠的通信变成可靠的通信</li>
-<li>网络层：在链路层点到点的基础上提供端到端的数据传输</li>
-<li>链路层：在相邻两点间传输以帧为单位的数据</li>
-<li>物理层：在线路上传输bit</li>
-</ul></li>
-<li>ISO/OSI参考模型：在应用层和传输层中间新增了表示层和会话层</li>
-<li>封装和解封装</li>
-<li>各层次的协议数据单元： - 应用层：报文 - 传输层：报文段：TCP段，UDP数据报 - 网络层：分组（如果无连接方式：数据报） - 链路层：帧 - 物理层：位</li>
-</ol>
-<h2 id="历史">历史</h2>
-<ol type="1">
-<li>1960年以前采用线路交换网络</li>
-<li>1961-1972 早期的分组交换概念</li>
-<li>1972-1980 专用网络和网络互联</li>
-<li>1980-1990 体系结构变化，网络数量激增，应用丰富</li>
-<li>1990, 2000’s 商业化, Web, 新的应用</li>
-<li>2005-现在 移动互联时代</li>
-</ol>
-]]></content>
-      <categories>
-        <category>计算机网络</category>
-      </categories>
-      <tags>
-        <tag>计算机网络</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>《计算机网络：自顶向下方法》第六章笔记整理</title>
-    <url>/2021/03/12/%E3%80%8A%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C%EF%BC%9A%E8%87%AA%E9%A1%B6%E5%90%91%E4%B8%8B%E6%96%B9%E6%B3%95%E3%80%8B%E7%AC%AC%E5%85%AD%E7%AB%A0%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/</url>
-    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="\assets\css\APlayer.min.css"><script src="\assets\js\APlayer.min.js" class="aplayer-secondary-script-marker"></script><p>对大黑书《计算机网络：自顶向下方法》第六章进行笔记整理...... <span id="more"></span></p>
-<h2 id="引证和服务">引证和服务</h2>
-<h3 id="网络节点的连接方式">网络节点的连接方式</h3>
-<ol type="1">
-<li>点到点的网络（广域网采用）</li>
-<li>多点连接（局域网）</li>
-</ol>
-<h3 id="节点主机路由器">节点：主机/路由器</h3>
-<ol type="1">
-<li>链路：沿着通信路径、连接相邻节点通信信道的是链路，分为有线链路、无线链路、局域网和共享性链路。
-<ul>
-<li>链路层负责从一个节点通过链路将帧中的数据报发送到相邻物理节点（以帧为单位）。</li>
-<li>数据报在不同的链路上以不同的链路协议传送（例如第一跳是以太网，中间链路是帧中继链路，最后一跳是802.11）。</li>
-<li>不同的链路协议提供不同的服务。 ### 链路层提供服务 （一般化的链路层服务，不是所有的链路层都提供这些服务，一个特定的链路层只提供其中一部分的服务）</li>
-</ul></li>
-<li>成帧、链路接入：
-<ul>
-<li>将数据报封装在帧中，加上帧头部、帧尾部。</li>
-<li>如果采用的是共享性介质，信道接入获得信道访问权。</li>
-<li>在帧头部使用MAC地址来表示源和目的。</li>
-</ul></li>
-<li>在相邻两个节点完成可靠数据传输：
-<ul>
-<li>在低出错率的链路上（光纤和双绞线电缆）很少使用。</li>
-<li>在无线链路经常使用，出错率高（防止源端重发）。</li>
-</ul></li>
-<li>流量控制</li>
-<li>差错检测、纠正</li>
-<li>半双工和全双工
-<ul>
-<li>半双工：链路可以双向传输，但一次只有一个方向。</li>
-</ul></li>
-</ol>
-<h3 id="链路层功能实现">链路层功能实现</h3>
-<ol type="1">
-<li>在适配器（网卡）上实现或者在一个芯片组上，网卡可以同时发同时接。</li>
-</ol>
-<h2 id="差错检测和纠正">差错检测和纠正</h2>
-<h3 id="奇偶校验">奇偶校验</h3>
-<ol type="1">
-<li>单bit奇偶校验</li>
-<li>二维bit奇偶校验</li>
-</ol>
-<h3 id="internet校验和">Internet校验和</h3>
-<ol type="1">
-<li>加起来取反码</li>
-</ol>
-<h3 id="crc循环冗余检测">CRC（循环冗余检测）</h3>
-<ol type="1">
-<li>模二运算</li>
-<li>位串的两种表示（二进制和多项式）</li>
-<li>生成多项式</li>
-<li>发送方和接收方的发送接收校验过程</li>
-</ol>
-<h2 id="多点访问协议">多点访问协议</h2>
-<h3 id="两种类型的链路一个子网内部链路连接形式">两种类型的链路（一个子网内部链路连接形式）</h3>
-<ol type="1">
-<li>点对点
-<ul>
-<li>拨号访问的PPP</li>
-<li>以太网交换机和主机之间的点对点链路</li>
-</ul></li>
-<li>广播（共享链路或媒体）
-<ul>
-<li>传统以太网</li>
-<li>HFC上行链路</li>
-<li>802.11无线局域网</li>
-</ul></li>
-</ol>
-<h3 id="单个共享的广播型链路">单个共享的广播型链路</h3>
-<ol type="1">
-<li>2个或更多的站点同时传送产生冲突；</li>
-<li>分布式算法决定节点如何使用共享信道，即决定哪个节点什么时候可以发送；</li>
-<li>关于共享控制的通信必须借助信道本身传输。</li>
-</ol>
-<h3 id="理想的多路访问协议">理想的多路访问协议</h3>
-<ol type="1">
-<li>当一个节点要发送时，以最大速率发送；当M个节点要发送时，每个节点以M分之一的最大速率发送。</li>
-<li>完全分布，没有特殊节点协调发送，没有时钟和时隙的同步。</li>
-<li>简单。</li>
-</ol>
-<h3 id="mac协议分类">MAC协议分类</h3>
-<h4 id="信道划分协议tdmafdmacdma">信道划分协议：TDMA、FDMA、CDMA</h4>
-<h4 id="随机访问协议">随机访问协议</h4>
-<h5 id="时隙aloha">时隙ALOHA</h5>
-<ol type="1">
-<li>假设：所有帧是等长的；时间被划分为相等的时隙，每个时隙可发送一帧；节点只在时隙开始时发送帧；节点在时隙上是同步的；如果两个或多个节点在一个时隙传输，所有的站点都能检测到冲突。</li>
-<li>运行：当节点获取新的帧，在下一个时隙传输；
-<ul>
-<li>Re1:传输时没有检测到冲突，成功，节点能够在下一时隙发送新帧；</li>
-<li>Re2:传输时检测到冲突，失败，节点在每一个随后的时隙以概率P重传帧直至成功。</li>
-</ul></li>
-<li>优点：
-<ul>
-<li>节点可以以信道带宽全速连续传输；</li>
-<li>高度分布；</li>
-<li>简单</li>
-</ul></li>
-<li>缺点：
-<ul>
-<li>存在冲突，浪费时隙；</li>
-<li>即使有帧要发送，仍然有可能存在空闲的时隙；</li>
-<li>发现冲突也必须要传完；</li>
-<li>需要时钟上同步；</li>
-</ul></li>
-</ol>
-<h5 id="纯aloha非时隙">纯ALOHA（非时隙）</h5>
-<ol type="1">
-<li>简单，无需在时钟上同步。</li>
-<li>当有帧需要传输，马上传输。</li>
-<li>冲突的概率增加。</li>
-</ol>
-<h5 id="csma">CSMA</h5>
-<ol type="1">
-<li>CSMA/CD
-<ul>
-<li>发送前侦听信息，发送时侦听信息</li>
-<li>以太网CSMA/CD算法
-<ul>
-<li>（1）适配器获取数据报，创建帧；</li>
-<li>（2） 发送前，侦听信道CS，如果闲，则开始传送帧，如果忙，则一直等到闲再发送；</li>
-<li>（3）发送过程中，冲突检测CD，如果没有冲突，则成功，如果检测到冲突，则放弃，之后尝试重发；</li>
-<li>（4） 发送方适配器检测到冲突，除放弃外，还发送一个Jam信号，所有听到冲突的适配器也是如此；（强化冲突）</li>
-<li>（5） 如果放弃，适配器进入指数退避状态；（二进制指数退避算法）</li>
-</ul></li>
-</ul></li>
-<li>无线局域网中的MAC协议：CSMA/CA</li>
-</ol>
-<h4 id="轮流mac协议">轮流MAC协议</h4>
-<ol type="1">
-<li><p>信道划分MAC协议：共享信道在高负载时是有效的和公平的；在低负载时效率低下。</p></li>
-<li><p>随机访问协议：在低负载时效率高，单个节点可以完全利用信道全部带宽；高负载时，冲突开销较大，效率极低，时间很多浪费在冲突中。</p></li>
-<li><p>轮流协议在高负载和低负载时都很好，但太复杂。</p>
-<p>轮询：</p>
-<ul>
-<li>主节点邀请从节点依次传送</li>
-<li>缺点：
-<ul>
-<li>轮询开销：轮询本身消耗信道带宽；</li>
-<li>等待时间：每个节点需要等到主节点轮询后开始传输，即使只有一个节点，也需要等到轮询一周之后才能发送；</li>
-<li>单点故障：主节点失效时造成整个系统无法工作；</li>
-</ul></li>
-</ul>
-<p>令牌传递：</p>
-<ul>
-<li>控制令牌循环从一个节点到下一个节点传递</li>
-<li>令牌报文：特殊的帧</li>
-<li>传输数据时传输一圈，直到重新回到发送节点再将令牌传给下一个节点</li>
-<li>缺点：
-<ul>
-<li>令牌开销：本身消耗带宽</li>
-<li>延迟：只有等到抓住令牌，才可传输</li>
-<li>单点故障：令牌丢失系统级故障，整个系统无法传输（复杂机制重新生成令牌）</li>
-</ul></li>
-</ul></li>
-</ol>
-<h2 id="lans">LANS</h2>
-<h3 id="mac地址和arp">MAC地址和ARP</h3>
-<ol type="1">
-<li>32比特IP地址
-<ul>
-<li>网络层地址</li>
-<li>用于使数据报到达目的子网，前n-1跳</li>
-<li>从而到达子网中的目标节点，最后一跳</li>
-</ul></li>
-<li>LAN地址
-<ul>
-<li>用于使帧从一个网卡传递到与其物理连接的另一个网卡（在同一个物理网络中）</li>
-<li>48比特MAC地址固化在适配器的ROM，有时也可以通过软件设定</li>
-<li>理论上全球任何两个网卡的MAC地址都不相同</li>
-<li>MAC地址由IEEE管理和分配，制造商购入MAC地址空间 ### ARP： Address Resolution Protocol</li>
-</ul></li>
-<li>在LAN的每个IP节点都有一个ARP表，ARP表中包括一些LAN节点IP/MAC地址的映射</li>
-<li>运行过程</li>
-</ol>
-<h2 id="以太网">以太网</h2>
-<ol type="1">
-<li>以太网是目前最主流的LAN技术
-<ul>
-<li>总线：所有节点在一个碰撞域内，一次只允许一个节点发送；可靠性差，如果介质破损，截面形成信号的反射，发送节点误以为是冲突，总是冲突</li>
-<li>星形：
-<ul>
-<li>连接选择：hub或switch</li>
-<li>现在一般是交换机在中心</li>
-<li>每个节点以及相连的交换机端口使用（独立的）以太网协议，不会和其他节点的发送产生碰撞</li>
-</ul></li>
-</ul></li>
-<li>以太帧结构</li>
-</ol>
-<ul>
-<li>前导码：用来同步接收方和发送方的时钟速率，使得接收方将自己的时钟调到发送方的时钟，从而可以按照发送端的时钟来接收所发送的帧</li>
-</ul>
-<ol start="3" type="1">
-<li>无连接、不可靠的服务</li>
-<li>以太网使用CSMA/CD</li>
-<li>10BaseT和100BaseT
-<ul>
-<li>T代表双绞线</li>
-<li>节点连接到hub上</li>
-<li>节点和hub间的最大距离是100m</li>
-</ul></li>
-<li>HUB</li>
-</ol>
-<ul>
-<li>HUB本质上是物理层的中继器。
-<ul>
-<li>从一个端口收，转发到其他所有端口。</li>
-<li>速率一致。</li>
-<li>没有帧的缓存。</li>
-<li>提供网络管理功能。</li>
-</ul></li>
-</ul>
-<ol start="7" type="1">
-<li>Manchester编码（物理层）
-<ul>
-<li>在10BaseT中使用。</li>
-<li>每一个比特的位时中间有一个信号跳变。</li>
-<li>允许在接收方和发送方节点之间进行时钟同步，节点间不需要集中的和全局的时钟。 10Mbps，使用20M带宽，效率50%，可以采用4b5b编码。</li>
-</ul></li>
-<li>千兆以太网
-<ul>
-<li>采用标准的以太帧格式。</li>
-<li>允许点对点链路和共享广播信道。</li>
-<li>物理编码：8b10b编码。</li>
-<li>共享模式：继续使用CSMA/CD MAC技术，节点间需要较短距离以提高利用率。</li>
-<li>交换模式：全双工千兆可用于点对点链路。</li>
-</ul></li>
-</ol>
-<h2 id="集线器和交换机">集线器和交换机</h2>
-<ol type="1">
-<li>集线器：
-<ul>
-<li>网段：可以允许一个站点发送的网络范围。
-<ul>
-<li>在一个碰撞域，同时只允许一个站点在发送。</li>
-<li>如果有两个节点在发送，则会碰撞。</li>
-<li>通常拥有相同的前缀，让IP子网更详细的前缀。</li>
-</ul></li>
-<li>所有以hub连到一起的站点处在一个网段，处在一个碰撞域，骨干hub将所有的网段连到了一起。</li>
-<li>通过hub可扩展节点间的最大距离。</li>
-<li>通过hub，不能将10BaseT和100BaseT的网路连接到一起。</li>
-</ul></li>
-<li>交换机
-<ul>
-<li>链路层设备</li>
-<li>透明</li>
-<li>即插即用，自学习</li>
-</ul></li>
-</ol>
-]]></content>
-      <categories>
-        <category>计算机网络</category>
-      </categories>
-      <tags>
-        <tag>计算机网络</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>《计算机网络：自顶向下方法》第四章笔记整理</title>
-    <url>/2021/03/30/%E3%80%8A%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C%EF%BC%9A%E8%87%AA%E9%A1%B6%E5%90%91%E4%B8%8B%E7%BD%91%E7%BB%9C%E3%80%8B%E7%AC%AC%E5%9B%9B%E7%AB%A0%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/</url>
-    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="\assets\css\APlayer.min.css"><script src="\assets\js\APlayer.min.js" class="aplayer-secondary-script-marker"></script><p>对大黑书《计算机网络：自顶向下方法》第四章进行笔记整理...... <span id="more"></span></p>
-<h2 id="导论">导论</h2>
-<h3 id="网络层服务">网络层服务</h3>
-<ol type="1">
-<li>在发送主机和接收主机之间传送段（segment）。<br></li>
-<li>在发送端将段封装到数据报中，在接收端将段上交给传输层实体。<br></li>
-<li>网络层协议存在于每一个主机和路由器。<br></li>
-<li>路由器检查每一个经过它的IP数据报的头部。</li>
-</ol>
-<h3 id="网络层的关键功能">网络层的关键功能</h3>
-<ol type="1">
-<li>转发：将分组从路由器的输入接口转发到合适的输出接口。<br></li>
-<li>路由：使用路由算法来决定分组从发送主机到目标接收主机的路径。</li>
-</ol>
-<h3 id="数据平面和控制平面">数据平面和控制平面</h3>
-<h4 id="数据平面">数据平面</h4>
-<ol type="1">
-<li>本地，每个路由器功能<br></li>
-<li>决定从路由器输入端口到达的分组如何转发到输出端口<br></li>
-<li>转发功能：传统方式是基于目标地址和转发表；SDN方式是基于多个字段和转发表</li>
-</ol>
-<h4 id="控制平面">控制平面</h4>
-<ol type="1">
-<li>网络范围内的逻辑<br></li>
-<li>决定数据报如何在路由器之间路由，决定数据报从源到目标主机之间的端到端路径<br></li>
-<li>两个控制平面方法：传统的路由算法在路由器中被实现；SDN在远程的服务器中实现</li>
-</ol>
-<h3 id="传统方式">传统方式</h3>
-<ol type="1">
-<li><p>在每一个路由器中的单独路由器算法元件，在控制平面进行交互<br></p></li>
-<li><p>路由和转发的相互作用：</p>
-<ul>
-<li>控制平面：路由算法决定端到端路径<br></li>
-<li>数据平面：IP协议根据转发表决定了IP数据报在此路由器上的局部转发</li>
-</ul></li>
-</ol>
-<h3 id="sdn方式逻辑集中的控制平面">SDN方式：逻辑集中的控制平面</h3>
-<ol type="1">
-<li>一个不同的（通常是远程的）控制器与本地控制代理（CAs）交互</li>
-</ol>
-<h3 id="网络服务模型">网络服务模型</h3>
-<p>从发送方主机到接收方主机传输数据报的通道，<br> 对于单个数据报的服务：可靠传送；延迟保证<br> 对于数据报流的服务：保序数据报传送；保证流的最小带宽；分组之间的延迟差</p>
-<h3 id="连接建立">连接建立</h3>
-<p>在分组传输之前，在两个主机之间，在通过一些路由器所构成的路径上建立一个网络层连接（涉及到路由器）</p>
-<h2 id="路由器组成">路由器组成</h2>
-<h3 id="路由器结构概况">路由器结构概况</h3>
-<p>高层面通用路由器体系架构<br> 1. 路由：运行路由选择算法/协议（RIP，OSPF，BGP）——生成路由表<br> 2. 转发：从输入到输出链路交换数据报——根据路由表进行分组的转发 <img src="https://img-blog.csdnimg.cn/20210330184838153.png" alt="在这里插入图片描述"></p>
-<h3 id="输入端口功能">输入端口功能</h3>
-<ol type="1">
-<li><p>物理层：Bit级的接收<br></p></li>
-<li><p>数据链路层：链路层协议动作、解封装<br></p></li>
-<li><p>网络层：分布式交换<br></p>
-<ul>
-<li>根据数据报头部的信息如：目的地址，在输入端口内存中的转发表中查找合适的输出端口</li>
-<li>基于目标的转发：仅仅依赖于IP数据报的目标IP地址（最长前缀匹配）</li>
-<li>通用转发：基于头部字段的任意集合进行转发</li>
-</ul></li>
-</ol>
-<h3 id="输入端口缓存">输入端口缓存</h3>
-<ol type="1">
-<li>当交换机构的速率小于输入端口的汇聚速率时，在输入端口可能要排队（排队延迟以及由于输入缓存溢出造成丢失）<br></li>
-<li>HOL blocking：排在队头的数据报阻止了队列中其他数据报向前移动 <img src="https://img-blog.csdnimg.cn/20210330185758172.png" alt="在这里插入图片描述"></li>
-</ol>
-<h3 id="交换结构">交换结构</h3>
-<ol type="1">
-<li>将分组从输入缓存区传输到合适的输出端口<br></li>
-<li>交换速率：分组可以按照该速率从输入传输到输出<br></li>
-<li>三种典型的交换机构</li>
-</ol>
-<h4 id="通过内存交换">通过内存交换</h4>
-<ol type="1">
-<li>在CPU直接控制下的交换，采用传统的计算机<br></li>
-<li>分组被拷贝到系统内存，CPU从分组头部提取出目标地址，查找转发表，找到对应的输出端口，拷贝到输出端口<br></li>
-<li>转发速率被内存的带宽限制（数据报通过BUS两遍）<br></li>
-<li>一次只能转发一个分组 <img src="https://img-blog.csdnimg.cn/20210330190501677.png" alt="在这里插入图片描述"></li>
-</ol>
-<h4 id="通过总线交换">通过总线交换</h4>
-<ol type="1">
-<li>数据报通过共享总线，从输入端口转发到输出端口<br></li>
-<li>总线竞争：交换速度受限于总线带宽<br></li>
-<li>一次处理一个分组 <img src="https://img-blog.csdnimg.cn/20210330191022409.png" alt="在这里插入图片描述"></li>
-</ol>
-<h4 id="通过互联网络crossbar等的交换">通过互联网络（crossbar等）的交换</h4>
-<ol type="1">
-<li>同时并发转发多个分组，克服总线带宽限制<br></li>
-<li>榕树网络，纵横网络和其他的互联网络被开发，将多个处理器连接成多处理器<br></li>
-<li>高级设计：将数据报分片为固定长度的信元，通过交换网络交换 <img src="https://img-blog.csdnimg.cn/20210330191343346.png" alt="在这里插入图片描述"></li>
-</ol>
-<h3 id="输出端口">输出端口</h3>
-<ol type="1">
-<li>当数据报从交换机构的到达速度比传输速率快，就需要输出端口缓存（数据报可能会被丢弃，由于拥塞，缓冲区没有空间）<br></li>
-<li>由调度规则选择排队的数据报进行传输（不一定先到先传）</li>
-</ol>
-<h4 id="调度机制">调度机制</h4>
-<ol type="1">
-<li>调度：选择下一个要通过链路传输的分组<br></li>
-<li>FIFO scheduling：按照分组到来的次序发送<br></li>
-<li>丢弃策略：丢弃刚到达的分组、根据优先权丢失/移除分组，随机地丢弃/移除<br></li>
-<li>调度策略</li>
-</ol>
-<h5 id="调度策略优先权">调度策略：优先权</h5>
-<p>发送最高优先权的分组</p>
-<h2 id="ipinternet协议">IP：Internet协议</h2>
-<h3 id="互联网的网络层">互联网的网络层</h3>
-<figure>
-<img src="https://img-blog.csdnimg.cn/20210330192430417.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3JhaW55X3VuaXZlcnNl,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><figcaption aria-hidden="true">在这里插入图片描述</figcaption>
-</figure>
-<h3 id="ip数据报格式">IP数据报格式</h3>
-<figure>
-<img src="https://img-blog.csdnimg.cn/20210330192548897.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3JhaW55X3VuaXZlcnNl,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><figcaption aria-hidden="true">在这里插入图片描述</figcaption>
-</figure>
-<h3 id="ip分片和重组">IP分片和重组</h3>
-<ol type="1">
-<li><p>网络链路有MTU（最大传输单元）——链路层帧所携带的最大数据长度（不同的链路类型有不同的MTU）<br></p></li>
-<li><p>大的IP数据报在网络上被分片</p>
-<ul>
-<li>一个数据报被分割成若干个小的数据报（有相同的ID，不同的偏移量，最后一个分片标记为0）</li>
-<li>重组分片只在最终的目标主机进行</li>
-<li>IP头部的信息被用于标识，排序相关分片</li>
-</ul></li>
-<li><p>例子 <img src="https://img-blog.csdnimg.cn/20210330195240725.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3JhaW55X3VuaXZlcnNl,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p></li>
-</ol>
-<h3 id="ip编址">IP编址</h3>
-<h4 id="引论">引论</h4>
-<ol type="1">
-<li><p>IP地址：32位标示，对主机或者路由器的接口编址<br></p></li>
-<li><p>接口：主机/路由器和物理链路的连接处</p>
-<ul>
-<li>路由器通常拥有多个接口</li>
-<li>主机也有可能有多个接口</li>
-<li>IP地址和每一个接口关联</li>
-</ul></li>
-</ol>
-<p><strong>3. 一个IP地址和一个接口相关联</strong></p>
-<h4 id="子网subnets">子网（subnets）</h4>
-<ol type="1">
-<li>IP地址：</li>
-</ol>
-<ul>
-<li>子网部分（高位bits）</li>
-<li>主机部分（低位bits）</li>
-</ul>
-<ol start="2" type="1">
-<li>一个子网内的节点（主机或者路由器）它们的IP地址的高位部分相同，这些节点构成的网络的一部分叫做子网<br></li>
-<li>无需路由器介入，子网内各主机可以在物理上相互直接到达<br></li>
-<li>判断子网的方法（将每一个接口从主机或者路由器上分开）</li>
-</ol>
-<h4 id="ip地址分类">IP地址分类</h4>
-<figure>
-<img src="https://img-blog.csdnimg.cn/20210330202049353.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3JhaW55X3VuaXZlcnNl,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><figcaption aria-hidden="true">在这里插入图片描述</figcaption>
-</figure>
-<ol type="1">
-<li><p>特殊IP地址：</p>
-<ul>
-<li>子网部分全为0，本网络</li>
-<li>主机部分全为0，本主机</li>
-<li>主机部分全为1，广播地址，这个网络的所有主机</li>
-</ul></li>
-<li><p>内网（专用）IP地址</p>
-<ul>
-<li>专用地址：地址空间的一部分供专用地址使用</li>
-<li>永远不会被当做公用地址来分配，不会与公用地址重复（只在局部网络中意义，区分不同的设备）</li>
-<li>路由器不对目标地址是专用地址的分组进行转发</li>
-</ul></li>
-</ol>
-<h4 id="cidr-无类域间路由">CIDR 无类域间路由</h4>
-<ol type="1">
-<li>子网部分可以在任意的位置<br></li>
-<li>地址格式：a.b.c.d/x，其中x是地址中子网号的长度，例如，200.23.16.0/23</li>
-</ol>
-<h4 id="子网掩码">子网掩码</h4>
-<ol type="1">
-<li>32bits，1代表子网部分，0代表主机部分</li>
-</ol>
-<h6 id="转发表和转发算法">转发表和转发算法</h6>
-<p>获取IP数据报的目标地址，对于转发表中的每一个表项，如果如 (IP Des addr) &amp; (mask)==destination, 则按照表项对应的接口转发该数据报；如果都没有找到，则使用默认表项转发数据报</p>
-<h4 id="获取ip地址的过程">获取IP地址的过程</h4>
-<ol type="1">
-<li><p>主机获得IP地址</p>
-<ul>
-<li><p>系统管理员将地址配置在一个文件中</p></li>
-<li><p><strong>DHCP</strong>：从服务器中动态获得一个IP地址（即插即用）</p>
-<ul>
-<li><p>允许主机在加入网络的时候，动态地从服务器那里获得IP地址</p></li>
-<li><p>DHCP工作概况：</p>
-<ul>
-<li>主机广播“DHCP discover”报文</li>
-<li>DHCP服务器用“DHCP offer”提供报文响应</li>
-<li>主机请求IP地址：发送“DHCP request”报文</li>
-<li>DHCP服务器发送地址：“DHCP ack”报文</li>
-</ul></li>
-</ul></li>
-</ul></li>
-<li><p>获取一个网络的子网部分</p>
-<ul>
-<li><p>从ISP获得地址块中分配一个小地址块</p></li>
-<li><p><strong>层次编址</strong> <img src="https://img-blog.csdnimg.cn/20210330212245799.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3JhaW55X3VuaXZlcnNl,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p></li>
-</ul></li>
-</ol>
-<h4 id="nat网络地址转换">NAT：网络地址转换</h4>
-<ol type="1">
-<li><p>所有离开本地网络的数据报具有一个相同的源地址NAT IP address，但是具有不同的端口号<br></p></li>
-<li><p>本地网络只有一个有效IP地址</p>
-<ul>
-<li>不需要从ISP分配一块地址，可用一个IP地址用于所有的（局域网）设备</li>
-<li>可以在局域网改变设备的地址情况下而无需通知外界</li>
-<li>可以改变ISP（地址变化）而不需改变内部的设备地址</li>
-<li>局域网内部的设备没有明确的地址，对外是不可见的</li>
-</ul></li>
-<li><p>实现</p>
-<ul>
-<li>外出数据包：替换源地址和端口号为NAT IP地址和新的端口号，目标IP和端口不变</li>
-<li>记住每个转换替换对（在NAT转换表中）</li>
-<li>进入数据包：替换目标IP地址和端口号，采用存储在NAT表中的mapping表项</li>
-</ul></li>
-</ol>
-<h4 id="ipv6">IPv6</h4>
-<ol type="1">
-<li>固定的40字节头部，数据报传输过程中，不允许分片<br></li>
-<li>IPv4到IPv6的平移</li>
-</ol>
-]]></content>
-      <categories>
-        <category>计算机网络</category>
-      </categories>
-      <tags>
-        <tag>计算机网络</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>BLEU评估指标</title>
     <url>/2022/12/28/BLEU%E8%AF%84%E4%BC%B0%E6%8C%87%E6%A0%87/</url>
     <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="\assets\css\APlayer.min.css"><script src="\assets\js\APlayer.min.js" class="aplayer-secondary-script-marker"></script><p>BLEU评估指标在机器翻译任务中经常使用，本文主要对BLEU评估指标的计算过程以及计算工具的使用进行总结。 <span id="more"></span></p>
@@ -2032,6 +1006,268 @@ B L E U=B P \times \exp \left(\sum_{n=1}^{4} 0.25* \log P_{n}\right)
       </tags>
   </entry>
   <entry>
+    <title>CHRF评估指标</title>
+    <url>/2022/12/30/CHRF%E8%AF%84%E4%BC%B0%E6%8C%87%E6%A0%87/</url>
+    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="\assets\css\APlayer.min.css"><script src="\assets\js\APlayer.min.js" class="aplayer-secondary-script-marker"></script><p>不同于BLEU评估指标，CHRF评估指标可以衡量字符级的准确度和流畅度，改进后的CHRF评估指标（CHRF++）将字符级和单词级融合在一起，更全面的评估文本的生成质量，本文主要对CHRF和CHRF++评估指标的手动计算过程和使用<code>nltk</code>和<code>sacrebleu</code>工具的计算原理作出总结和说明。 <span id="more"></span></p>
+<h2 id="chrf">CHRF</h2>
+<ol type="1">
+<li><p>CHRF指标从字符级别对译文质量进行评估，它考虑了一些形态—句法现象，除此之外，与其他评估指标相比，它很简单，不需要任何额外的工具或知识来源，它完全独立于语言，也独立于分词过程。</p></li>
+<li><p>CHRF计算公式： <span class="math display">\[
+\mathrm{chrF} \beta=\left(1+\beta^{2}\right) \frac{\mathrm{chrP} \cdot \mathrm{chrR}}{\beta^{2} \cdot \mathrm{chrP}+\mathrm{chrR}}
+\]</span></p>
+<ul>
+<li><span class="math inline">\(\mathrm{chrP}\)</span>是精确度，指翻译句子和参考译文句子匹配的字符级<code>n-gram</code>在翻译句子中占的比例</li>
+<li><span class="math inline">\(\mathrm{chrR}\)</span>是召回率，指翻译句子和参考译文句子匹配的字符级<code>n-gram</code>在参考译文句子中占的比例</li>
+<li><span class="math inline">\(\beta\)</span>可以控制召回率和精确度两个指标的重要性（召回率比准确率重要<span class="math inline">\(\beta\)</span>倍），当<span class="math inline">\(\beta=1\)</span>时二者同样重要</li>
+</ul></li>
+<li><p>使用<code>nltk</code>计算<code>CHRF</code></p>
+<ul>
+<li><p>当<code>n-gram</code>词组长度为1时（词组的最小长度为1，最大长度也为1，<span class="math inline">\(\beta=3\)</span>）</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> nltk.translate.chrf_score <span class="keyword">import</span> sentence_chrf</span><br><span class="line"></span><br><span class="line">ref = <span class="string">&#x27;the cat is on the mat&#x27;</span>.split()</span><br><span class="line">hyp = <span class="string">&#x27;the the the the the the the&#x27;</span>.split()</span><br><span class="line">sentence_chrf(ref, hyp, min_len=<span class="number">1</span>, max_len=<span class="number">1</span>, beta=<span class="number">3.0</span>)</span><br><span class="line"><span class="comment"># 0.48484848484848486</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li><p>计算TP：重复出现的<code>1-gram</code>有<code>&#123;t, h, e&#125;</code>，总共有8次</p></li>
+<li><p>计算TP + FP：翻译句子的长度为21</p></li>
+<li><p>计算TP + TN：参考译文句子的长度为16</p></li>
+<li><p><span class="math inline">\(\mathrm{chrP}=8/21,\mathrm{chrR}=8/16\)</span> <span class="math display">\[
+\mathrm{chrF}=(1 + 3^2)\frac{\frac{8}{21}*\frac{1}{2}}{3^2*\frac{8}{21}+\frac{1}{2}}=\frac{16}{33}=0.48484848484848485
+\]</span></p></li>
+</ul></li>
+<li><p>拓展到<code>max_len=2</code>的情况，此时<code>n-gram</code>词组的最小长度为1，最大长度为2，<span class="math inline">\(\beta=3\)</span></p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> nltk.translate.chrf_score <span class="keyword">import</span> sentence_chrf</span><br><span class="line">ref = <span class="string">&#x27;the cat is on the mat&#x27;</span>.split()</span><br><span class="line">hyp = <span class="string">&#x27;the the the the the the the&#x27;</span>.split()</span><br><span class="line"><span class="built_in">print</span>(sentence_chrf(ref, hyp, min_len=<span class="number">1</span>, max_len=<span class="number">2</span>, beta=<span class="number">3.0</span>))</span><br><span class="line"><span class="comment"># 0.37145650048875856</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li><p>计算<code>1-gram</code>的情况：此时<code>F-score=0.48484848484848486</code>（和CHRF计算相同）</p></li>
+<li><p>计算<code>2-gram</code>的情况：</p>
+<ul>
+<li><p>计算TP：重复出现的<code>2-gram</code>有<code>&#123;th, he&#125;</code>，总共有4次</p></li>
+<li><p>计算TP + FP： 翻译句子分成<code>2-gram</code>的长度为20</p></li>
+<li><p>计算TP + TN：参考译文句子分成<code>2-gram</code>的长度为15</p></li>
+<li><p><span class="math inline">\(\mathrm{chrP}=4/20,\mathrm{chrR}=4/15\)</span> <span class="math display">\[
+\mathrm{chrF_{2-gram}}=(1 + 3^2)\frac{\frac{1}{5}*\frac{4}{15}}{3^2*\frac{1}{5}+\frac{4}{15}}=\frac{8}{31}=0.25806451612903225
+\]</span></p></li>
+</ul></li>
+<li><p>计算总的CHRF <span class="math display">\[
+\mathrm{chrF}=\frac{0.48484848484848486+0.25806451612903225}{2}=0.37145650048875856
+\]</span></p></li>
+</ul></li>
+<li><p>计算语料级的CHRF（以上都是句子级的CHRF）：基本思想是计算出每个句子的CHRF，然后再求算术平均</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">ref1 = <span class="built_in">str</span>(<span class="string">&#x27;It is a guide to action that ensures that the military will forever heed Party commands&#x27;</span>).split()</span><br><span class="line">ref2 = <span class="built_in">str</span>(<span class="string">&#x27;It is the guiding principle which guarantees the military forces always being under the command of the Party&#x27;</span>).split()</span><br><span class="line">hyp1 = <span class="built_in">str</span>(<span class="string">&#x27;It is a guide to action which ensures that the military always obeys the commands of the party&#x27;</span>).split()</span><br><span class="line">hyp2 = <span class="built_in">str</span>(<span class="string">&#x27;It is to insure the troops forever hearing the activity guidebook that party direct&#x27;</span>).split()</span><br><span class="line">corpus_chrf([ref1, ref2], [hyp1, hyp2]) </span><br><span class="line"><span class="comment"># 0.4166529443281564</span></span><br><span class="line"></span><br><span class="line">(sentence_chrf(ref1, hyp1) + sentence_chrf(ref2, hyp2)) / <span class="number">2</span></span><br><span class="line"><span class="comment"># 0.4166529443281564</span></span><br></pre></td></tr></table></figure></li>
+</ul></li>
+<li><p>使用<code>sacrebleu</code>计算<code>CHRF</code></p>
+<ul>
+<li><p>计算句子级CHRF</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="built_in">print</span>(sacrebleu.sentence_chrf(hypothesis=<span class="string">&#x27;the the the the the the the&#x27;</span>,</span><br><span class="line">                            references=[<span class="string">&#x27;the cat is on the mat&#x27;</span>],</span><br><span class="line">                            char_order=<span class="number">1</span>, word_order=<span class="number">0</span>, beta=<span class="number">3</span>, remove_whitespace=<span class="literal">True</span>).score)</span><br><span class="line"><span class="comment"># 48.484848484848484</span></span><br><span class="line"><span class="built_in">print</span>(sacrebleu.sentence_chrf(hypothesis=<span class="string">&#x27;the the the the the the the&#x27;</span>,</span><br><span class="line">                            references=[<span class="string">&#x27;the cat is on the mat&#x27;</span>],</span><br><span class="line">                            char_order=<span class="number">2</span>, word_order=<span class="number">0</span>, beta=<span class="number">3</span>, remove_whitespace=<span class="literal">True</span>).score)</span><br><span class="line"><span class="comment"># 37.145882975906794</span></span><br></pre></td></tr></table></figure></li>
+<li><p>计算语料级CHRF</p>
+<ul>
+<li>与<code>nltk</code>工具提供的计算方法不同，<code>sacrebleu</code>并不是计算出每个句子的CHRF，再求算术平均</li>
+<li><code>sacrebleu</code>在计算<code>i-gram</code>的准确率和召回率时，将语料中的参考句子<code>i-gram</code>长度、翻译句子<code>i-gram</code>长度、参考句子和翻译句子匹配<code>i-gram</code>数量分别进行相加，即分数中的分子和分子进行相加，分母和分母进行相加，与<code>nltk</code>中的分数直接进行相加不同，这与<code>sacrebleu</code>中求BLEU的方法有异曲同工之妙</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">ref1 = <span class="string">&#x27;It is a guide to action that ensures that the military will forever heed Party commands&#x27;</span></span><br><span class="line">ref2 = <span class="string">&#x27;It is the guiding principle which guarantees the military forces always being under the command of the Party&#x27;</span></span><br><span class="line">hyp1 = <span class="string">&#x27;It is a guide to action which ensures that the military always obeys the commands of the party&#x27;</span></span><br><span class="line">hyp2 = <span class="string">&#x27;It is to insure the troops forever hearing the activity guidebook that party direct&#x27;</span></span><br><span class="line"><span class="built_in">print</span>(sacrebleu.corpus_chrf(hypotheses=[hyp1, hyp2], references=[[ref1, ref2]], char_order=<span class="number">6</span>, word_order=<span class="number">0</span>, beta=<span class="number">3</span>).score)</span><br><span class="line"><span class="comment"># 39.364938843711016</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li><p>将以上的代码作为示例，<code>sacrebleu</code>首先计算出每个句子各<code>n-gram</code>模型中的参考句子<code>n-gram</code>长度、翻译句子<code>n-gram</code>长度、参考句子和翻译句子匹配<code>n-gram</code>数量，如下所示</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[[77, 72, 65, 76, 71, 50, 75, 70, 44, 74, 69, 40, 73, 68, 36, 72, 67, 33], [70, 91, 60, 69, 90, 28, 68, 89, 12, 67, 88, 4, 66, 87, 1, 65, 86, 0]]</span><br></pre></td></tr></table></figure></li>
+<li><p>列表中的第一项代表第一个句子，列表中的第二项代表第二个句子，以第一个句子为例，列表项中共有18个元素，分别是翻译句子<code>1-gram</code>长度（翻译句子长度）、参考句子<code>1-gram</code>长度（参考句子长度）、翻译句子和参考句子匹配的<code>1-gram</code>数量...以此类推，一直到<code>6-gram</code></p></li>
+<li><p>将列表中的对应项进行相加，得出以下结果（相当于分子和分子相加，分母和分母相加）</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[147, 163, 125, 145, 161, 78, 143, 159, 56, 141, 157, 44, 139, 155, 37, 137, 153, 33]</span><br></pre></td></tr></table></figure></li>
+<li><p>然后求各<code>n-gram</code>的准确率和召回率，将准确率和召回率求算术平均（总和除以6），再用平均后的准确率和召回率求最终的CHRF，基础逻辑如下所示（仿照<code>sacrebleu</code>手搓的，可能有一些特殊情况不适用，比如分母不能为0）</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">data_list = [<span class="number">147</span>, <span class="number">163</span>, <span class="number">125</span>, <span class="number">145</span>, <span class="number">161</span>, <span class="number">78</span>, <span class="number">143</span>, <span class="number">159</span>, <span class="number">56</span>, <span class="number">141</span>, <span class="number">157</span>, <span class="number">44</span>, <span class="number">139</span>, <span class="number">155</span>, <span class="number">37</span>, <span class="number">137</span>, <span class="number">153</span>, <span class="number">33</span>]</span><br><span class="line">sum_prec, sum_rec = <span class="number">0</span>, <span class="number">0</span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>, <span class="number">6</span>):</span><br><span class="line">    index = <span class="number">3</span> * i</span><br><span class="line">    n_hyp = data_list[index]</span><br><span class="line">    n_ref = data_list[index + <span class="number">1</span>]</span><br><span class="line">    n_match = data_list[index + <span class="number">2</span>]</span><br><span class="line">    </span><br><span class="line">    n_prec = n_match / n_hyp</span><br><span class="line">    n_rec = n_match / n_ref</span><br><span class="line">    </span><br><span class="line">    sum_prec += n_prec</span><br><span class="line">    sum_rec += n_rec</span><br><span class="line">    </span><br><span class="line">    n_fscore = (<span class="number">1</span> + <span class="number">9</span>) * n_prec * n_rec / (<span class="number">9</span> * n_prec + n_rec)</span><br><span class="line">    sum_fscore = sum_fscore + n_fscore</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>((<span class="number">1</span> + <span class="number">9</span>) * (sum_prec / <span class="number">6</span>) * (sum_rec / <span class="number">6</span>) / (<span class="number">9</span> * (sum_prec / <span class="number">6</span>) + (sum_rec / <span class="number">6</span>)))</span><br><span class="line"><span class="comment"># 0.39364938843711017</span></span><br></pre></td></tr></table></figure></li>
+</ul></li>
+</ul></li>
+</ol>
+<h2 id="chrf-1">CHRF++</h2>
+<ol type="1">
+<li><p>之前的工作中显示，对于评分较差的句子，CHRF和WORDF分数的标准差是相似的——两个指标都分配了相对相似的（低）分数，但对于人类评分较高的句子，CHRF的偏差相较于WORDF的偏差要低得多，此外，人类评分越高，WORDF与CHRF的偏差的差异越大，这些结果表明，CHRF是优于WORDF的，尤其是在翻译质量较高的片段上</p></li>
+<li><p>但是考虑到CHRF的结果可能过于乐观，所以将CHRF和WORDF结合起来，得到CHRF++</p></li>
+<li><p>当单词<code>n-grams</code>与字符<code>n-grams</code>相加并取平均值时，就会得到CHRF++分数，<strong>这种组合的最佳<code>n-gram</code>长度对于字符<code>n-gram</code>来说是<code>n=6</code></strong>，与CHRF中字符<code>n-gram</code>的最佳长度相同，<strong>对于单词<code>n-gram</code>来说是<code>n=1</code>或<code>n=2</code></strong></p></li>
+<li><p>使用<code>sacrebleu</code>计算CHRF++</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="built_in">print</span>(sacrebleu.sentence_chrf(hypothesis=<span class="string">&#x27;the the the the the the the&#x27;</span>,</span><br><span class="line">                                  references=[<span class="string">&#x27;the cat is on the mat&#x27;</span>],</span><br><span class="line">                                  char_order=<span class="number">1</span>, word_order=<span class="number">1</span>, beta=<span class="number">3</span>, remove_whitespace=<span class="literal">True</span>).score)</span><br><span class="line"><span class="comment"># 40.65040650406503</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li><p>为了方便计算，这里字符和单词都选择<code>1-gram</code>，首先可以得到以下统计结果</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[21, 16, 8, 7, 6, 2]</span><br></pre></td></tr></table></figure></li>
+<li><p>前三个数是字符级<code>1-gram</code>的统计结果，后三个数是单词级<code>1-gram</code>的统计结果（分别是翻译句子字符或单词<code>1-gram</code>长度、参考句子字符或单词<code>1-gram</code>长度、匹配的<code>1-gram</code>数量）</p></li>
+<li><p>分别计算准确率和召回率并求平均值（<strong>实际上<code>sacrebleu</code>中求平均值是除以<code>self.order</code>实现的，此时<code>self.order</code>等于列表长度除以3，本例中为<span class="math inline">\(6/3=2\)</span></strong>），得到最后的准确率和召回率，再计算CHRF++</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">prec = <span class="number">0.6666666666666666</span> / <span class="number">2</span></span><br><span class="line">rec = <span class="number">0.8333333333333333</span> / <span class="number">2</span></span><br><span class="line">(<span class="number">1</span> + <span class="number">9</span>) * prec * rec / (<span class="number">9</span> * prec + rec)</span><br><span class="line"><span class="comment"># 0.40650406504065034</span></span><br></pre></td></tr></table></figure></li>
+</ul></li>
+</ol>
+<p><strong>参考文献：</strong></p>
+<ol type="1">
+<li><a href="https://www.nltk.org/_modules/nltk/translate/chrf_score.html">NLTK :: nltk.translate.chrf_score</a></li>
+<li><a href="https://blog.csdn.net/weixin_43647120/article/details/114396261">NLG评估指标chrF、chrF++介绍_地大陈参志的博客-CSDN博客</a></li>
+<li><a href="https://github.com/mjpost/sacrebleu/blob/master/sacrebleu/metrics/chrf.py">sacrebleu/chrf.py at master · mjpost/sacrebleu (github.com)</a></li>
+<li><a href="https://aclanthology.org/W15-3049/">chrF: character n-gram F-score for automatic MT evaluation - ACL Anthology</a></li>
+<li><a href="https://aclanthology.org/W17-4770/">chrF++: words helping character n-grams - ACL Anthology</a></li>
+</ol>
+]]></content>
+      <categories>
+        <category>机器翻译</category>
+      </categories>
+      <tags>
+        <tag>机器翻译</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>LibRec学习笔记（一）：BiasedMF算法</title>
+    <url>/2022/04/04/LibRec%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%EF%BC%88%E4%B8%80%EF%BC%89%EF%BC%9ABiasedMF%E7%AE%97%E6%B3%95/</url>
+    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="\assets\css\APlayer.min.css"><script src="\assets\js\APlayer.min.js" class="aplayer-secondary-script-marker"></script><p>最近推荐系统导论课程需要使用LibRec库实现一些推荐算法，其实LibRec库已经封装了很多算法，并不需要再去实现，只需要调用命令行修改配置就可以运行，但为了更好地理解算法，我阅读了LibRec库的一些算法的源码，以下是BiaseMF算法在LibRec库中的实现，本文主要从三部分展开讲解，分别是预测公式、损失函数公式和更新公式。 <span id="more"></span></p>
+<h1 id="代码展示">代码展示</h1>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// SVDPlusPlusRecommender类继承BiasedMFRecommender父类</span></span><br><span class="line"><span class="keyword">package</span> net.librec.recommender.cf.rating;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.util.Iterator;</span><br><span class="line"><span class="keyword">import</span> net.librec.annotation.ModelData;</span><br><span class="line"><span class="keyword">import</span> net.librec.common.LibrecException;</span><br><span class="line"><span class="keyword">import</span> net.librec.math.structure.MatrixEntry;</span><br><span class="line"><span class="keyword">import</span> net.librec.math.structure.VectorBasedDenseVector;</span><br><span class="line"><span class="keyword">import</span> net.librec.recommender.MatrixFactorizationRecommender;</span><br><span class="line"></span><br><span class="line"><span class="meta">@ModelData(&#123;&quot;isRating&quot;, &quot;biasedMF&quot;, &quot;userFactors&quot;, &quot;itemFactors&quot;, &quot;userBiases&quot;, &quot;itemBiases&quot;&#125;)</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">BiasedMFRecommender</span> <span class="keyword">extends</span> <span class="title">MatrixFactorizationRecommender</span> </span>&#123;</span><br><span class="line">    <span class="keyword">protected</span> <span class="keyword">double</span> regBias;</span><br><span class="line">    <span class="keyword">protected</span> VectorBasedDenseVector userBiases;</span><br><span class="line">    <span class="keyword">protected</span> VectorBasedDenseVector itemBiases;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">BiasedMFRecommender</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">setup</span><span class="params">()</span> <span class="keyword">throws</span> LibrecException </span>&#123;</span><br><span class="line">        <span class="keyword">super</span>.setup();</span><br><span class="line">        <span class="keyword">this</span>.regBias = <span class="keyword">this</span>.conf.getDouble(<span class="string">&quot;rec.bias.regularization&quot;</span>, <span class="number">0.01D</span>);</span><br><span class="line">        <span class="comment">// 用户偏差向量</span></span><br><span class="line">        <span class="keyword">this</span>.userBiases = <span class="keyword">new</span> VectorBasedDenseVector(<span class="keyword">this</span>.numUsers);</span><br><span class="line">        <span class="comment">// 物品偏差向量</span></span><br><span class="line">        <span class="keyword">this</span>.itemBiases = <span class="keyword">new</span> VectorBasedDenseVector(<span class="keyword">this</span>.numItems);</span><br><span class="line">        <span class="comment">// 用户偏差初始化</span></span><br><span class="line">        <span class="keyword">this</span>.userBiases.init((<span class="keyword">double</span>)<span class="keyword">this</span>.initMean, (<span class="keyword">double</span>)<span class="keyword">this</span>.initStd);</span><br><span class="line">        <span class="comment">// 物品偏差初始化</span></span><br><span class="line">        <span class="keyword">this</span>.itemBiases.init((<span class="keyword">double</span>)<span class="keyword">this</span>.initMean, (<span class="keyword">double</span>)<span class="keyword">this</span>.initStd);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">trainModel</span><span class="params">()</span> <span class="keyword">throws</span> LibrecException </span>&#123;</span><br><span class="line">        <span class="keyword">for</span>(<span class="keyword">int</span> iter = <span class="number">1</span>; iter &lt;= <span class="keyword">this</span>.numIterations; ++iter) &#123;</span><br><span class="line">            <span class="comment">// 损失</span></span><br><span class="line">            <span class="keyword">this</span>.loss = <span class="number">0.0D</span>;</span><br><span class="line"></span><br><span class="line">            Iterator var2 = <span class="keyword">this</span>.trainMatrix.iterator();</span><br><span class="line"></span><br><span class="line">            <span class="keyword">while</span>(var2.hasNext()) &#123;</span><br><span class="line">                MatrixEntry matrixEntry = (MatrixEntry)var2.next();</span><br><span class="line">                <span class="keyword">int</span> userIdx = matrixEntry.row();</span><br><span class="line">                <span class="keyword">int</span> itemIdx = matrixEntry.column();</span><br><span class="line">                <span class="comment">// 实际评分</span></span><br><span class="line">                <span class="keyword">double</span> realRating = matrixEntry.get();</span><br><span class="line">                <span class="comment">// 预测评分</span></span><br><span class="line">                <span class="keyword">double</span> predictRating = <span class="keyword">this</span>.predict(userIdx, itemIdx);</span><br><span class="line">                <span class="comment">// 实际评分与预测评分的误差</span></span><br><span class="line">                <span class="keyword">double</span> error = realRating - predictRating;</span><br><span class="line">                <span class="keyword">this</span>.loss += error * error;</span><br><span class="line"></span><br><span class="line">                <span class="comment">// 根据当前用户ID得到当前用户偏差向量</span></span><br><span class="line">                <span class="keyword">double</span> userBiasValue = <span class="keyword">this</span>.userBiases.get(userIdx);</span><br><span class="line">                <span class="comment">// 用户偏置项的更新公式</span></span><br><span class="line">                <span class="keyword">this</span>.userBiases.plus(userIdx, (<span class="keyword">double</span>)<span class="keyword">this</span>.learnRate * (error - <span class="keyword">this</span>.regBias * userBiasValue));</span><br><span class="line"></span><br><span class="line">                <span class="keyword">this</span>.loss += <span class="keyword">this</span>.regBias * userBiasValue * userBiasValue;</span><br><span class="line">                <span class="comment">// 根据当前物品ID得到当前物品偏差向量</span></span><br><span class="line">                <span class="keyword">double</span> itemBiasValue = <span class="keyword">this</span>.itemBiases.get(itemIdx);</span><br><span class="line">                <span class="comment">// 物品偏置项的更新公式</span></span><br><span class="line">                <span class="keyword">this</span>.itemBiases.plus(itemIdx, (<span class="keyword">double</span>)<span class="keyword">this</span>.learnRate * (error - <span class="keyword">this</span>.regBias * itemBiasValue));</span><br><span class="line"></span><br><span class="line">                <span class="keyword">this</span>.loss += <span class="keyword">this</span>.regBias * itemBiasValue * itemBiasValue;</span><br><span class="line"></span><br><span class="line">                <span class="keyword">for</span>(<span class="keyword">int</span> factorIdx = <span class="number">0</span>; factorIdx &lt; <span class="keyword">this</span>.numFactors; ++factorIdx) &#123;</span><br><span class="line">                    <span class="keyword">double</span> userFactorValue = <span class="keyword">this</span>.userFactors.get(userIdx, factorIdx);</span><br><span class="line">                    <span class="keyword">double</span> itemFactorValue = <span class="keyword">this</span>.itemFactors.get(itemIdx, factorIdx);</span><br><span class="line">                    <span class="keyword">this</span>.userFactors.plus(userIdx, factorIdx, (<span class="keyword">double</span>)<span class="keyword">this</span>.learnRate * (error * itemFactorValue - (<span class="keyword">double</span>)<span class="keyword">this</span>.regUser * userFactorValue));</span><br><span class="line">                    <span class="keyword">this</span>.itemFactors.plus(itemIdx, factorIdx, (<span class="keyword">double</span>)<span class="keyword">this</span>.learnRate * (error * userFactorValue - (<span class="keyword">double</span>)<span class="keyword">this</span>.regItem * itemFactorValue));</span><br><span class="line">                    <span class="keyword">this</span>.loss += (<span class="keyword">double</span>)<span class="keyword">this</span>.regUser * userFactorValue * userFactorValue + (<span class="keyword">double</span>)<span class="keyword">this</span>.regItem * itemFactorValue * itemFactorValue;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">this</span>.loss *= <span class="number">0.5D</span>;</span><br><span class="line">            <span class="keyword">if</span> (<span class="keyword">this</span>.isConverged(iter) &amp;&amp; <span class="keyword">this</span>.earlyStop) &#123;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">this</span>.updateLRate(iter);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">double</span> <span class="title">predict</span><span class="params">(<span class="keyword">int</span> userIdx, <span class="keyword">int</span> itemIdx)</span> <span class="keyword">throws</span> LibrecException </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">this</span>.userFactors.row(userIdx).dot(<span class="keyword">this</span>.itemFactors.row(itemIdx)) + <span class="keyword">this</span>.userBiases.get(userIdx) + <span class="keyword">this</span>.itemBiases.get(itemIdx) + <span class="keyword">this</span>.globalMean;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="预测公式">预测公式</h1>
+<p><span class="math inline">\(\hat{r_{u i}}=\mu+b_{i}+b_{u}+p_{u} q_{i}^{T}\)</span></p>
+<p>其中，<span class="math inline">\(\mu\)</span>表示全局均值，在代码中使用<code>this.globalMean</code>表示，<span class="math inline">\(b_{i}\)</span>表示物品偏差项，在代码中使用<code>this.itemBiases.get(itemIdx)</code>表示，需要注意的是，物品偏置项需要根据物品ID进行索引，<span class="math inline">\(b_{u}\)</span>表示用户偏差项，在代码中使用<code>this.userBiases.get(userIdx)</code>表示，同样地，用户偏置项需要根据用户ID来进行索引，<span class="math inline">\(p_{u}\)</span>表示对用户评分矩阵进行矩阵分解后得到的用户向量，<span class="math inline">\(q_{i}\)</span>表示对用户评分矩阵进行分解后得到的物品向量。</p>
+<ul>
+<li>PS：这里说是用户向量和物品向量的原因是都是针对某一用户和物品进行计算。</li>
+</ul>
+<p>预测公式代码如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">double</span> <span class="title">predict</span><span class="params">(<span class="keyword">int</span> userIdx, <span class="keyword">int</span> itemIdx)</span> <span class="keyword">throws</span> LibrecException </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">this</span>.userFactors.row(userIdx).dot(<span class="keyword">this</span>.itemFactors.row(itemIdx)) + <span class="keyword">this</span>.userBiases.get(userIdx) + <span class="keyword">this</span>.itemBiases.get(itemIdx) + <span class="keyword">this</span>.globalMean;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>传入<code>userIdx</code>和<code>itemIdx</code>的原因是需要明确特定用户和特定物品，才能进行预测评分，<code>userFactors</code>和<code>itemFactors</code>是对用户评分矩阵进行矩阵分解后得到的用户矩阵和物品矩阵，需要明确索引才能使用。</p>
+<h1 id="损失函数公式">损失函数公式</h1>
+<p><span class="math inline">\(\sum_{r_{u i} \in R_{\text {train }}}\left(r_{u i}-\hat{r}_{u i}\right)^{2}+\lambda\left(b_{i}^{2}+b_{u}^{2}+\left\|q_{i}\right\|^{2}+\left\|p_{u}\right\|^{2}\right)\)</span></p>
+<p>将用户对物品的特定评分与真实评分之间的差值的平方作为损失函数的一部分是显而易见的，在代码中体现如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 实际评分</span></span><br><span class="line"><span class="keyword">double</span> realRating = matrixEntry.get();</span><br><span class="line"><span class="comment">// 预测评分</span></span><br><span class="line"><span class="keyword">double</span> predictRating = <span class="keyword">this</span>.predict(userIdx, itemIdx);</span><br><span class="line"><span class="comment">// 实际评分与预测评分的误差</span></span><br><span class="line"><span class="keyword">double</span> error = realRating - predictRating;</span><br><span class="line"><span class="keyword">this</span>.loss += error * error;</span><br></pre></td></tr></table></figure>
+<p>通过以上展示的<code>predict()</code>函数可以直接根据用户ID与物品ID求出预测评分，但值得琢磨的是，实际评分是如何得到的？</p>
+<p>可以看到，<code>MatrixEntry</code>接口是如下定义的，</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">MatrixEntry</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">int</span> <span class="title">row</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">int</span> <span class="title">column</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">double</span> <span class="title">get</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">set</span><span class="params">(<span class="keyword">double</span> var1)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">int</span> <span class="title">rowPosition</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">int</span> <span class="title">columnPosition</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在<code>SequentialSparseMatrixEntry</code>类中实现了<code>MatrixEntry</code>接口的<code>get()</code>方法，</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">double</span> <span class="title">get</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">this</span>.tempVector.getAtPosition(<span class="keyword">this</span>.columnPosition);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>值得注意的是，在<code>SequentialSparseMatrixEntry</code>类中，<code>columnPosition</code>属性被初始化为<code>-1</code>，这就让我们联想到，标签的值总是被设置在最后一列，我们可以验证这个猜想，在代码中，<code>var2</code>被强制转换为<code>MatrixEntry</code>类型，而<code>var2</code>又是<code>trainMatrix</code>的一个迭代器，不出所料地，<code>trainMatrix</code>是·<code>SequentialAccessSparseMatrix</code>类型，所以程序中可以直接调用<code>get()</code>方法来获取数据集中的实际评分值。</p>
+<p>我们重新来回到损失函数的话题上，接下来需要关注正则项的那一部分，即</p>
+<p><span class="math inline">\(\lambda\left(b_{i}^{2}+b_{u}^{2}+\left|q_{i}\right|^{2}+\left|p_{u}\right|^{2}\right)\)</span></p>
+<p>首先我们关注<span class="math inline">\(\lambda(b_{i}^{2}+b_{u}^{2})\)</span>，这一部分的代码比较好写，根据索引找到特定的用户偏置向量和物品偏置向量就可以写出代码，代码如下所示，</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">double</span> userBiasValue = <span class="keyword">this</span>.userBiases.get(userIdx);</span><br><span class="line"><span class="keyword">this</span>.loss += <span class="keyword">this</span>.regBias * userBiasValue * userBiasValue;</span><br><span class="line"><span class="keyword">double</span> itemBiasValue = <span class="keyword">this</span>.itemBiases.get(itemIdx);</span><br><span class="line"><span class="keyword">this</span>.loss += <span class="keyword">this</span>.regBias * itemBiasValue * itemBiasValue;</span><br></pre></td></tr></table></figure>
+<p>接下来的一部分就可能比较难懂，在对用户评分矩阵进行分解时，我们有一个超参数<span class="math inline">\(K\)</span>，表示的是隐因子的个数，在电影的用户评分矩阵中，隐因子指的可能是喜剧片、动画片等内容，换言之，用户是因为这些隐因子才作出的这些评分，所以矩阵分解的公式可以表示如下，</p>
+<p><span class="math inline">\(\hat{r_{u i}}=p_{u} q_{i}^{T}=\sum_{k=1}^{K} p_{u k} q_{k i}^{T}=\sum_{k=1}^{K} p_{u k} q_{i k} \approx r_{u i}\)</span></p>
+<p>所以在代码中我们需要增加一层遍历，即从1到<span class="math inline">\(K\)</span>对隐因子的遍历，对应每一种隐因子ID和用户ID有不同的用户隐因子值，同样的，对于每一种隐因子ID和物品ID有不同的物品隐因子值，对于<span class="math inline">\(\lambda\left(\left|q_{ik}\right|^{2}+\left|p_{uk}\right|^{2}\right)\)</span>这一部分的代码如下所示，</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">for</span>(<span class="keyword">int</span> factorIdx = <span class="number">0</span>; factorIdx &lt; <span class="keyword">this</span>.numFactors; ++factorIdx) &#123;</span><br><span class="line">    <span class="keyword">double</span> userFactorValue = <span class="keyword">this</span>.userFactors.get(userIdx, factorIdx);</span><br><span class="line">    <span class="keyword">double</span> itemFactorValue = <span class="keyword">this</span>.itemFactors.get(itemIdx, factorIdx);</span><br><span class="line">    <span class="keyword">this</span>.loss += (<span class="keyword">double</span>)<span class="keyword">this</span>.regUser * userFactorValue * userFactorValue + (<span class="keyword">double</span>)<span class="keyword">this</span>.regItem * itemFactorValue * itemFactorValue;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>以上就是损失函数全部的内容。</p>
+<h1 id="更新公式">更新公式</h1>
+<p><span class="math inline">\(\begin{array}{l} b_{u} \leftarrow b_{u}+\gamma\left(e_{u i}-\lambda b_{u}\right) \\ b_{i} \leftarrow b_{i}+\gamma\left(e_{u i}-\lambda b_{i}\right) \\ p_{u} \leftarrow p_{u}+\gamma\left(e_{u i} \cdot q_{i}-\lambda p_{u}\right) \\ q_{i} \leftarrow q_{i}+\gamma\left(e_{u i} \cdot p_{u}-\lambda q_{i}\right) \end{array}\)</span></p>
+<p>有了预测函数和损失函数的铺垫，这一部分就可以直接上代码，函数变量基本是差不多的，</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">this</span>.userBiases.plus(userIdx, (<span class="keyword">double</span>)<span class="keyword">this</span>.learnRate * (error - <span class="keyword">this</span>.regBias * userBiasValue));</span><br><span class="line"><span class="keyword">this</span>.itemBiases.plus(itemIdx, (<span class="keyword">double</span>)<span class="keyword">this</span>.learnRate * (error - <span class="keyword">this</span>.regBias * itemBiasValu));</span><br><span class="line"><span class="keyword">for</span>(<span class="keyword">int</span> factorIdx = <span class="number">0</span>; factorIdx &lt; <span class="keyword">this</span>.numFactors; ++factorIdx) &#123;</span><br><span class="line">    <span class="keyword">double</span> userFactorValue = <span class="keyword">this</span>.userFactors.get(userIdx, factorIdx);</span><br><span class="line">    <span class="keyword">double</span> itemFactorValue = <span class="keyword">this</span>.itemFactors.get(itemIdx, factorIdx);</span><br><span class="line">    <span class="keyword">this</span>.userFactors.plus(userIdx, factorIdx, (<span class="keyword">double</span>)<span class="keyword">this</span>.learnRate * (error * itemFactorValue - (<span class="keyword">double</span>)<span class="keyword">this</span>.regUser * userFactorValue));</span><br><span class="line">    <span class="keyword">this</span>.itemFactors.plus(itemIdx, factorIdx, (<span class="keyword">double</span>)<span class="keyword">this</span>.learnRate * (error * userFactorValue - (<span class="keyword">double</span>)<span class="keyword">this</span>.regItem * itemFactorValue));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>只需要注意一点，<code>plus()</code>函数是需要知道具体索引位置才能进行更新的，所以需要传入索引参数。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// DenseVector类中的plus方法</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">plus</span><span class="params">(<span class="keyword">int</span> index, <span class="keyword">double</span> value)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">this</span>.set(index, value + <span class="keyword">this</span>.get(index));</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// DenseMatrix类中的plus方法</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">plus</span><span class="params">(<span class="keyword">int</span> row, <span class="keyword">int</span> column, <span class="keyword">double</span> value)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">double</span>[] var10000 = <span class="keyword">this</span>.values[row];</span><br><span class="line">    var10000[column] += value;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>推荐系统</category>
+      </categories>
+      <tags>
+        <tag>推荐系统</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>SOHO论文阅读</title>
+    <url>/2022/03/09/SOHO%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/</url>
+    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="\assets\css\APlayer.min.css"><script src="\assets\js\APlayer.min.js" class="aplayer-secondary-script-marker"></script><p>上一篇ViLBERT模型提出了使用two-stream的结构来分别处理图片和文本信息，然后再进行融合，在“vision-and-language”任务上还有其他模型使用了这种双流结构，因为其架构比单流结构更为复杂，所以架构的种类更加丰富，为了更深入地了解这种处理不同层次信息（图片和文本）的架构方式，我阅读了Seeing Out of tHe bOx:End-to-End Pre-training for Vision-Language Representation Learning这篇论文。特别地，这篇论文提出的视觉特征的提取方法也有其独到之处，能够不受目标特征局限性的影响。</p>
+<center>
+<img src="/2022/03/09/SOHO%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/001.png" width="600px">
+</center>
+<span id="more"></span>
+<p>论文地址和相关源码链接如下：</p>
+<p><a href="https://arxiv.org/abs/2104.03135" target="_blank">论文地址：https://arxiv.org/abs/2104.03135</a> <br> <a href="https://github.com/researchmm/soho" target="_blank">相关源码：https://github.com/researchmm/soho</a></p>
+<h3 id="摘要">摘要</h3>
+<p>文章研究了用于视觉语言预训练的卷积神经网络和transformer的联合学习，旨在从数百万的图像-文本对中学习跨模态对齐，截止文章发表，最先进的方法是提取突出的图像区域并逐步将区域与文字对齐，但是由于提取出的图像区域仅仅代表图像的一部分，所以理解对应的自然语言是有难度的。文章提出了SOHO模型，将整个图像作为输入，并以端到端方式学习视觉语言的联合表示，SOHO模型不需要边界框标注，这使得其推理的速度比基于区域的方法块10倍。特别地，SOHO通过视觉字典(VD)学习提取全面而紧凑的图像特征，以促进跨模态的理解。最终，文章将SOHO模型在四个视觉语言任务上进行实验，并得到不错的性能和准确率提升。</p>
+<h3 id="介绍">介绍</h3>
+<p>最近跨模态学习的研究工作不断增加，特别是在视觉语言预训练(VLPT)领域。显而易见地，视觉表示在VLPT模型中起着重要作用，有一些模型利用了基于区域的图像特征并取得了不错的效果，这些特征是由在视觉基因组数据集上预训练的目标检测器提取出来的，但是这种方法也有一些缺点：</p>
+<ol type="1">
+<li>区域专注于边界框内的物体，而忽略了边界框外的上下文信息。这些信息对于区域与区域之间的关系理解和推理非常重要。文章以下图为例说明了这个事实，图中可以很容易地检测到男人、女人和船目标，但是如果缺少边框外的上下文信息，就会误以为人们在划船，从而导致模型在下游任务应用时的错误。</li>
+</ol>
+<center>
+<img src="/2022/03/09/SOHO%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/002.png" width="500px">
+<p style="font-family:KaiTi">
+图1：模型在下游任务上的结果对比
+</p>
+</center>
+<ol start="2" type="1">
+<li>对图像的视觉理解被限制在预先定义的区域类别中。</li>
+<li>大多数区域特征是由检测模型提取的，存在质量低、噪声大、过采样等问题，并且依赖于大规模的box标注数据。</li>
+</ol>
+<p>除了区域图像特征提取方法外，一些工作也研究了采用弱监督的目标检测的方法、或是通过基于网格的卷积特征来学习视觉表征的方法，但存在性能不高、只针对单个任务设计等问题。</p>
+<p>为了克服基于区域的图像特征的局限性，更好地利用图像文本数据对进行跨模态理解，文章提出了一个端到端的视觉语言预训练框架SOHO，直接学习图像和文本的嵌入及其语义对齐。与现有的VLPT模型相比，SOHO采取了一个简单的管道，不需要复杂的视觉骨干进行预训练。相比于现有的基于区域的图像特征的方法，SOHO不需要标注类别或边界框，可以通过更广泛的图像-文本数据直接优化视觉表示来丰富视觉语义。</p>
+<p>文章选择采用像素级的视觉表征，但像素级的视觉表征比语言的嵌入更加多样化和密集化，并且缺乏明确的监督，给对齐学习增加了难度。为了解决上述问题，文章引入了<strong>视觉字典</strong>，它代表了视觉领域中更全面和紧凑的语义。为了学习视觉字典，文中设计了一个移动平均编码器，将具有类似视觉语义的像素进行分组。</p>
+<p>在预训练过程中，文章采用了Masked Vision Modeling (MVM) ，Masked Language Modeling（MLM），Image-Text Matching （ITM）三个任务来优化模型。</p>
+<p>文章的贡献可以总结如下：</p>
+<ol type="1">
+<li>文章提出了SOHO模型，这是第一个直接用图像-文本对学习跨模态表示的端到端VLPT模型之一。在不需要提取边界框的情况下，模型可以实现至少10倍的推理速度。</li>
+<li>为了更好地对齐图像和文本数据，我们提出了一个新的动态更新的视觉字典，它代表了图像中类似语义的视觉抽象。</li>
+<li>对四个下游任务进行实验，得到了性能和准确率提升。</li>
+</ol>
+<h3 id="相关工作">相关工作</h3>
+<h4 id="vision-language中的视觉表示">Vision-Language中的视觉表示</h4>
+<p>早期的工作采用CNN分类模型来提取视觉特征，后来，Anderson等人提出了在视觉基因数据集上预训练的BUTD检测模型，以提取突出的区域特征作为视觉输入，最近，一些工作提出在特定的Vision-Language任务上，用卷积神经网络可以直接学习网格特征形式的视觉表征。</p>
+<p>VideoBERT和bag of words文献也使用矢量量化来表示视觉信息。VD与相关作品的关键区别在于，我们用可训练的视觉编码器的输出动态更新基于VD的嵌入，而不是预先计算的输入特征（即VD是<strong>动态更新</strong>的）。VD的动态更新机制可以从视觉语言数据集中获取文本指导语义。因此，该模型可以直接用高级语义来优化视觉语言的理解和对齐。</p>
+<h4 id="vision-language的预训练">Vision-Language的预训练</h4>
+<p>许多视觉语言预训练工作已经被提出用来学习跨模态表征，它们可以被分为single-stream模型和two-stream模型，双流模型分别处理视觉和语言信息，并在之后通过另一个transformer层将它们融合；相反，单流模型使用BERT来学习检测边界框特征（可以理解为ROI特征）和文本嵌入特征的双向联合分布。这两种类型都使用基于Transformer的模型来学习视觉-语言联合嵌入特征。虽然他们忽略了视觉表征学习对视觉-语言任务也很重要。</p>
+<h3 id="方法">方法</h3>
+<p>SOHO是一个端到端的框架，它由一个基于CNN的可训练的视觉编码器、一个视觉字典嵌入模块和一个多层transformer组成，视觉编码器将图像作为输入并产生视觉特征，视觉字典嵌入模块被设计用来将不同的视觉语义信息聚集到视觉token中，transformer被用来融合视觉和语言模态的特征，并产生特定任务的输出。SOHO可以通过MVM、MLM和ITM任务进行端到端的预训练，并很容易地适应下游任务。SOHO的整体架构如下图所示，</p>
+<center>
+<img src="/2022/03/09/SOHO%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/003.png" width="700px">
+<p style="font-family:KaiTi">
+图2：SOHO模型架构
+</p>
+</center>
+<h4 id="可训练的视觉编码器">可训练的视觉编码器</h4>
+<p>基于区域的图像特征的表现能力受到预先定义的对象和属性类别的限制，并且不能学习到某些边界框外的上下文信息。为了保留所有视觉信息，文章建议使用一个可训练的CNN视觉编码器，将整个图像作为输入，产生图像级别的视觉特征，而不是区域级别的特征。由于不受边界框的限制，视觉编码器可以从预训练的损失函数或下游任务的损失函数中进行端到端的更新，进而进一步优化跨模态学习。给定一张图片<span class="math inline">\(\mathcal{I}\)</span>，可以根据以下公式得到其特征<span class="math inline">\(\mathcal{V}\)</span>，</p>
+<p><span class="math display">\[
+\mathcal{V}=E(\mathcal{I}, \theta) \in \mathbf{R}^{l \times c}
+\]</span></p>
+<p>其中<span class="math inline">\(l\)</span>表示嵌入特征向量的数量，<span class="math inline">\(c\)</span>表示嵌入特征向量维度，另外，将在ImageNet上预训练的ResNet加上<span class="math inline">\(1 \times 1\)</span>的卷积层和<span class="math inline">\(2 \times 2\)</span>最大池化层作为编码器<span class="math inline">\(E\)</span>的结构。</p>
+<h4 id="视觉字典">视觉字典</h4>
+<p>视觉特征编码器提取的视觉特征<span class="math inline">\(\mathcal{V}\)</span>比语言词标记更加多样和密集，这将给跨模态理解的学习带来困难。为了弥补其与语言token的差距，我们提出了一个视觉字典，通过将相似的视觉语义聚合到同一图像特征中来标记视觉特征。</p>
+<h5 id="视觉字典嵌入">视觉字典嵌入</h5>
+<p>文章将视觉字典定义为一个矩阵<span class="math inline">\(\mathcal{D} \in \mathbf{R}^{k \times c}\)</span>，包含<span class="math inline">\(k\)</span>个嵌入向量，每个<span class="math inline">\(c\)</span>维，第<span class="math inline">\(j\)</span>个嵌入向量被表示为<span class="math inline">\(d_{j}\)</span>，对于每一个视觉特征<span class="math inline">\(v_{i}\)</span>，文章通过在<span class="math inline">\(\mathcal{D}\)</span>中搜索最近邻来计算其映射索引<span class="math inline">\(h_{i}\)</span>，记为如下公式，</p>
+<p><span class="math display">\[
+h_{i}=\operatorname{argmin}_{j}\left\|v_{i}-d_{j}\right\|_{2}
+\]</span></p>
+<p>因此可以定义以下映射函数<span class="math inline">\(f\)</span>，将视觉特征<span class="math inline">\(v_{i}\)</span>映射到视觉字典矩阵<span class="math inline">\(\mathcal{D}\)</span>：</p>
+<p><span class="math display">\[
+f\left(v_{i}\right)=d_{h_{i}}
+\]</span></p>
+<p>其使用视觉字典中最近的嵌入向量来表示视觉特征，<span class="math inline">\(f^{-1}(j)\)</span>表示逆映射函数，将索引<span class="math inline">\(j\)</span>映射回一组视觉特征。</p>
+<h5 id="视觉字典的学习更新">视觉字典的学习更新</h5>
+<p>视觉字典矩阵被随机初始化，并在一个小批次中通过移动平均操作进一步更新，记为如下公式，</p>
+<p><span class="math display">\[
+\hat{d}_{j}=\gamma * d_{j}+(1-\gamma) * \frac{\sum_{h_{i}=j} v_{i}}{\left|f^{-1}(j)\right|}
+\]</span></p>
+<p>即保留一部分原有的<span class="math inline">\(d_{j}\)</span>，根据小批次中被归为<span class="math inline">\(h_{j}\)</span>索引的视觉特征进行更新。</p>
+<h5 id="梯度反向传播">梯度反向传播</h5>
+<p>由于argmin操作时不可微的，梯度反向传播将被视觉字典停止，为了使视觉编码器可训练，采用了以下方法进行更新，</p>
+<p><span class="math display">\[
+f\left(v_{i}\right)=s g\left[d_{h_{i}}-v_{i}\right]+v_{i}
+\]</span></p>
+<p>其中<span class="math inline">\(s g[\cdot]\)</span>为停止梯度运算符。</p>
+<p>视觉词典根据特征相似度对视觉特征图进行在线聚类，并通过聚类中心表示每个特征向量。具有相似语义的特征向量将被聚集到同一个聚类中，聚类的索引可以被视为一个虚拟的视觉语义标签。<strong>由于聚类可以受到视觉语言学习任务的影响，每个嵌入向量的学习语义更适合于跨模态的理解和对齐。</strong></p>
+<p>视觉字典面临着一个冷启动问题，直接将梯度从随机初始化的嵌入向量复制到视觉特征图上会导致不正确的模型优化方向（即模式崩溃）。因此，我们在前10个训练历时中冻结了视觉特征编码器中ResNet的参数。</p>
+<h4 id="预训练管道">预训练管道</h4>
+<p>文章应用多层transformer来学习融合视觉和语言特征的跨模态表征，为了学习视觉和语言相关任务的通用表征，文章采用自监督的方法，在一个大型的数据集上对模型进行预训练。除了通用的掩蔽语言建模和图像-文本匹配预训练任务外，文章还提出了一个新颖的基于视觉字典产生的虚拟视觉语义标签的掩蔽视觉建模预训练任务。</p>
+<h5 id="跨模态的transformer">跨模态的transformer</h5>
+<p>对于视觉表示，文章利用正弦函数计算的二维位置嵌入来编码视觉token的空间信息，对于文本内容，按照输入BERT时的嵌入方法对其进行文本进行嵌入，最终将VD嵌入和文本嵌入连接起来形成输入序列，用于跨模态学习，需要特别注意的是，VD嵌入与文本嵌入的向量长度一致。</p>
+<h5 id="掩蔽语言建模mlm">掩蔽语言建模(MLM)</h5>
+<p>掩蔽语言建模预训练任务鼓励模型构建语言token和可视化内容之间的映射关系，MLM的目标是根据其他词token<span class="math inline">\(\mathcal{W}_{\backslash i}\)</span>和所有的图像特征<span class="math inline">\(f(\mathcal{V})\)</span>，通过最小化负对数似然来预测遮蔽的词token：</p>
+<p><span class="math display">\[
+\mathcal{L}_{\mathrm{MLM}}=-\mathbb{E}_{(\mathcal{W}, f(\mathcal{V})) \sim D} \log p\left(w_{i} \mid \mathcal{W}_{\backslash i}, f(\mathcal{V})\right)
+\]</span></p>
+<h5 id="掩蔽视觉建模mvm">掩蔽视觉建模(MVM)</h5>
+<p>文章提出了基于视觉字典的掩蔽视觉建模，在将图像特征输入到transformer之前，随机进行遮蔽，MVM的目标是根据周围图像的特征<span class="math inline">\(f(\mathcal{V})_{\backslash j}\)</span>和所有的语言token<span class="math inline">\(W\)</span>，通过最小化负对数似然，预测被遮蔽图像的特征，</p>
+<p><span class="math display">\[
+\mathcal{L}_{\text {MVM }}=-\mathbb{E}_{(\mathcal{W}, f(\mathcal{V})) \sim D} \log p\left(f\left(v_{j}\right) \mid \mathcal{W}, f(\mathcal{V})_{\backslash j}\right)
+\]</span></p>
+<p>需要特别注意的是，在视觉特征图中，相邻的特征可能有相似的值，因此共享相同的视觉字典映射索引，这将导致模型以一种懒惰的方式直接复制周围特征的标签作为预测值，为了防止这种情况的出现，在遮蔽阶段，文章首先在视觉字典中随机选择一个标签索引，然后将索引对应的所有视觉特征进行遮蔽。</p>
+<h5 id="图像-文本匹配itm">图像-文本匹配(ITM)</h5>
+<p>为了增强跨模态匹配，文章采用图像文本匹配任务进行预训练，文章在[CLS]标签上应用二值分类器<span class="math inline">\(\phi(\cdot)\)</span>来预测输入图像和文本是否匹配，ITM任务由以下的损失函数驱动：</p>
+<p><span class="math display">\[
+\mathcal{L}_{\mathrm{ITM}}=-\mathbb{E}_{(\mathcal{W}, f(\mathcal{V})) \sim D} \log p(y \mid \phi(\mathcal{W}, f(\mathcal{V})))
+\]</span></p>
+<p>视觉特征编码器、基于VD的图像嵌入模块和跨模态transformer可以进行端到端的联合训练，文章给三个预训练目标分配相同的损失权重，因此，SOHO的预训练目标如下所示，</p>
+<p><span class="math display">\[
+\mathcal{L}_{\text {Pre-training }}=\mathcal{L}_{\mathrm{MLM}}+\mathcal{L}_{\mathrm{MVM}}+\mathcal{L}_{\mathrm{ITM}}
+\]</span></p>
+]]></content>
+      <categories>
+        <category>深度学习论文阅读</category>
+      </categories>
+      <tags>
+        <tag>多模态模型</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>LibRec学习笔记（二）：SVD++算法</title>
     <url>/2022/04/04/LibRec%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%EF%BC%88%E4%BA%8C%EF%BC%89-SVD-%E7%AE%97%E6%B3%95/</url>
     <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="\assets\css\APlayer.min.css"><script src="\assets\js\APlayer.min.js" class="aplayer-secondary-script-marker"></script><p>上一篇我们具体介绍了BiasedMF算法在LibRec库中的实现，实际上是为了本篇介绍SVD++算法实现做铺垫，在代码中我们也可以看到，<code>SVDPlusPlusRecommender</code>类继承了<code>BiasedMFRecommender</code>类，本篇主要也是从三个方面展开，分别是预测公式、损失函数公式和更新公式。 <span id="more"></span> <figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">package</span> net.librec.recommender.cf.rating;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.util.Iterator;</span><br><span class="line"><span class="keyword">import</span> net.librec.annotation.ModelData;</span><br><span class="line"><span class="keyword">import</span> net.librec.common.LibrecException;</span><br><span class="line"><span class="keyword">import</span> net.librec.math.structure.DenseMatrix;</span><br><span class="line"><span class="keyword">import</span> net.librec.math.structure.DenseVector;</span><br><span class="line"><span class="keyword">import</span> net.librec.math.structure.SequentialSparseVector;</span><br><span class="line"><span class="keyword">import</span> net.librec.math.structure.VectorBasedDenseVector;</span><br><span class="line"><span class="keyword">import</span> net.librec.math.structure.Vector.VectorEntry;</span><br><span class="line"></span><br><span class="line"><span class="meta">@ModelData(&#123;&quot;isRating&quot;, &quot;svdplusplus&quot;, &quot;userFactors&quot;, &quot;itemFactors&quot;, &quot;userBiases&quot;, &quot;itemBiases&quot;, &quot;impItemFactors&quot;, &quot;trainMatrix&quot;&#125;)</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">SVDPlusPlusRecommender</span> <span class="keyword">extends</span> <span class="title">BiasedMFRecommender</span> </span>&#123;</span><br><span class="line">    <span class="keyword">protected</span> DenseMatrix impItemFactors;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">double</span> regImpItem;</span><br><span class="line">    <span class="keyword">private</span> DenseVector factorVector;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">SVDPlusPlusRecommender</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">setup</span><span class="params">()</span> <span class="keyword">throws</span> LibrecException </span>&#123;</span><br><span class="line">        <span class="keyword">super</span>.setup();</span><br><span class="line">        <span class="keyword">this</span>.regImpItem = <span class="keyword">this</span>.conf.getDouble(<span class="string">&quot;rec.impItem.regularization&quot;</span>, <span class="number">0.015D</span>);</span><br><span class="line">        <span class="comment">// 物品隐因子偏置向量 对应公式中的y</span></span><br><span class="line">        <span class="keyword">this</span>.impItemFactors = <span class="keyword">new</span> DenseMatrix(<span class="keyword">this</span>.numItems, <span class="keyword">this</span>.numFactors);</span><br><span class="line">        <span class="comment">// 物品隐因子偏置向量初始化</span></span><br><span class="line">        <span class="keyword">this</span>.impItemFactors.init((<span class="keyword">double</span>)<span class="keyword">this</span>.initMean, (<span class="keyword">double</span>)<span class="keyword">this</span>.initStd);</span><br><span class="line">        <span class="keyword">this</span>.factorVector = <span class="keyword">new</span> VectorBasedDenseVector(<span class="keyword">this</span>.numFactors);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">trainModel</span><span class="params">()</span> <span class="keyword">throws</span> LibrecException </span>&#123;</span><br><span class="line">        <span class="keyword">for</span>(<span class="keyword">int</span> iterationStep = <span class="number">1</span>; iterationStep &lt;= <span class="keyword">this</span>.numIterations; ++iterationStep) &#123;</span><br><span class="line">            <span class="keyword">this</span>.loss = <span class="number">0.0D</span>;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">for</span>(<span class="keyword">int</span> userIndex = <span class="number">0</span>; userIndex &lt; <span class="keyword">this</span>.numUsers; ++userIndex) &#123;</span><br><span class="line">                SequentialSparseVector userVector = <span class="keyword">this</span>.trainMatrix.row(userIndex);</span><br><span class="line">                <span class="keyword">if</span> (userVector.size() != <span class="number">0</span>) &#123;</span><br><span class="line">                    <span class="keyword">double</span>[] steps = <span class="keyword">new</span> <span class="keyword">double</span>[<span class="keyword">this</span>.numFactors];</span><br><span class="line">                    <span class="keyword">this</span>.factorVector.assign((indexx, value) -&gt; &#123;</span><br><span class="line">                        <span class="keyword">return</span> <span class="number">0.0D</span>;</span><br><span class="line">                    &#125;);</span><br><span class="line">                    Iterator var5 = userVector.iterator();</span><br><span class="line"></span><br><span class="line">                    <span class="keyword">while</span>(var5.hasNext()) &#123;</span><br><span class="line">                        VectorEntry vectorEntry = (VectorEntry)var5.next();</span><br><span class="line">                        <span class="keyword">this</span>.factorVector.assign((indexx, value) -&gt; &#123;</span><br><span class="line">                            <span class="keyword">return</span> <span class="keyword">this</span>.impItemFactors.row(vectorEntry.index()).get(indexx) + value;</span><br><span class="line">                        &#125;);</span><br><span class="line">                    &#125;</span><br><span class="line"></span><br><span class="line">                    <span class="keyword">double</span> scale = Math.pow((<span class="keyword">double</span>)userVector.getNumEntries(), -<span class="number">0.5D</span>);</span><br><span class="line">                    <span class="keyword">this</span>.factorVector.assign((indexx, value) -&gt; &#123;</span><br><span class="line">                        <span class="keyword">return</span> value * scale;</span><br><span class="line">                    &#125;);</span><br><span class="line">                    Iterator var7 = userVector.iterator();</span><br><span class="line"></span><br><span class="line">                    <span class="keyword">double</span> factor;</span><br><span class="line">                    <span class="keyword">while</span>(var7.hasNext()) &#123;</span><br><span class="line">                        VectorEntry vectorEntry = (VectorEntry)var7.next();</span><br><span class="line">                        <span class="keyword">int</span> itemIndex = vectorEntry.index();</span><br><span class="line">                        <span class="keyword">double</span> error = vectorEntry.get() - <span class="keyword">this</span>.predict(userIndex, itemIndex, <span class="keyword">this</span>.factorVector);</span><br><span class="line">                        <span class="keyword">this</span>.loss += error * error;</span><br><span class="line">                        factor = <span class="keyword">this</span>.userBiases.get(userIndex);</span><br><span class="line">                        <span class="keyword">this</span>.userBiases.plus(userIndex, (<span class="keyword">double</span>)<span class="keyword">this</span>.learnRate * (error - <span class="keyword">this</span>.regBias * factor));</span><br><span class="line">                        <span class="keyword">this</span>.loss += <span class="keyword">this</span>.regBias * factor * factor;</span><br><span class="line">                        <span class="keyword">double</span> itemBias = <span class="keyword">this</span>.itemBiases.get(itemIndex);</span><br><span class="line">                        <span class="keyword">this</span>.itemBiases.plus(itemIndex, (<span class="keyword">double</span>)<span class="keyword">this</span>.learnRate * (error - <span class="keyword">this</span>.regBias * itemBias));</span><br><span class="line">                        <span class="keyword">this</span>.loss += <span class="keyword">this</span>.regBias * itemBias * itemBias;</span><br><span class="line"></span><br><span class="line">                        <span class="keyword">for</span>(<span class="keyword">int</span> factorIndex = <span class="number">0</span>; factorIndex &lt; <span class="keyword">this</span>.numFactors; ++factorIndex) &#123;</span><br><span class="line">                            <span class="keyword">double</span> userFactor = <span class="keyword">this</span>.userFactors.get(userIndex, factorIndex);</span><br><span class="line">                            <span class="keyword">double</span> itemFactor = <span class="keyword">this</span>.itemFactors.get(itemIndex, factorIndex);</span><br><span class="line">                            <span class="keyword">this</span>.userFactors.plus(userIndex, factorIndex, (<span class="keyword">double</span>)<span class="keyword">this</span>.learnRate * (error * itemFactor - (<span class="keyword">double</span>)<span class="keyword">this</span>.regUser * userFactor));</span><br><span class="line">                            <span class="keyword">this</span>.itemFactors.plus(itemIndex, factorIndex, (<span class="keyword">double</span>)<span class="keyword">this</span>.learnRate * (error * (userFactor + <span class="keyword">this</span>.factorVector.get(factorIndex)) - (<span class="keyword">double</span>)<span class="keyword">this</span>.regItem * itemFactor));</span><br><span class="line">                            <span class="keyword">this</span>.loss += (<span class="keyword">double</span>)<span class="keyword">this</span>.regUser * userFactor * userFactor + (<span class="keyword">double</span>)<span class="keyword">this</span>.regItem * itemFactor * itemFactor;</span><br><span class="line">                            steps[factorIndex] += error * itemFactor * scale;</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125;</span><br><span class="line"></span><br><span class="line">                    <span class="keyword">int</span> size = userVector.getNumEntries();</span><br><span class="line">                    Iterator var23 = userVector.iterator();</span><br><span class="line"></span><br><span class="line">                    <span class="keyword">while</span>(var23.hasNext()) &#123;</span><br><span class="line">                        VectorEntry vectorEntry = (VectorEntry)var23.next();</span><br><span class="line">                        <span class="keyword">int</span> index = vectorEntry.index();</span><br><span class="line"></span><br><span class="line">                        <span class="keyword">for</span>(<span class="keyword">int</span> factorIndex = <span class="number">0</span>; factorIndex &lt; <span class="keyword">this</span>.numFactors; ++factorIndex) &#123;</span><br><span class="line">                            factor = <span class="keyword">this</span>.impItemFactors.get(index, factorIndex);</span><br><span class="line">                            <span class="keyword">this</span>.impItemFactors.plus(index, factorIndex, (<span class="keyword">double</span>)<span class="keyword">this</span>.learnRate * (steps[factorIndex] - <span class="keyword">this</span>.regImpItem * factor * (<span class="keyword">double</span>)size));</span><br><span class="line">                            <span class="keyword">this</span>.loss += <span class="keyword">this</span>.regImpItem * factor * factor * (<span class="keyword">double</span>)size;</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">this</span>.loss *= <span class="number">0.5D</span>;</span><br><span class="line">            <span class="keyword">if</span> (<span class="keyword">this</span>.isConverged(iterationStep) &amp;&amp; <span class="keyword">this</span>.earlyStop) &#123;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">this</span>.updateLRate(iterationStep);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">double</span> <span class="title">predict</span><span class="params">(<span class="keyword">int</span> userIndex, <span class="keyword">int</span> itemIndex, DenseVector factorVector)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">double</span> value = <span class="keyword">this</span>.userBiases.get(userIndex) + <span class="keyword">this</span>.itemBiases.get(itemIndex) + <span class="keyword">this</span>.globalMean;</span><br><span class="line">        DenseVector userFactorVector = <span class="keyword">this</span>.userFactors.row(userIndex);</span><br><span class="line">        DenseVector itemFactorVector = <span class="keyword">this</span>.itemFactors.row(itemIndex);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">for</span>(<span class="keyword">int</span> index = <span class="number">0</span>; index &lt; <span class="keyword">this</span>.numFactors; ++index) &#123;</span><br><span class="line">            value += (factorVector.get(index) + userFactorVector.get(index)) * itemFactorVector.get(index);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> value;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">double</span> <span class="title">predict</span><span class="params">(<span class="keyword">int</span> userIndex, <span class="keyword">int</span> itemIndex)</span> </span>&#123;</span><br><span class="line">        SequentialSparseVector userVector = <span class="keyword">this</span>.trainMatrix.row(userIndex);</span><br><span class="line">        <span class="keyword">this</span>.factorVector.assign((index, value) -&gt; &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="number">0.0D</span>;</span><br><span class="line">        &#125;);</span><br><span class="line">        Iterator var4 = userVector.iterator();</span><br><span class="line"></span><br><span class="line">        <span class="keyword">while</span>(var4.hasNext()) &#123;</span><br><span class="line">            VectorEntry vectorEntry = (VectorEntry)var4.next();</span><br><span class="line">            <span class="keyword">this</span>.factorVector.assign((index, value) -&gt; &#123;</span><br><span class="line">                <span class="keyword">return</span> <span class="keyword">this</span>.impItemFactors.row(vectorEntry.index()).get(index) + value;</span><br><span class="line">            &#125;);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">double</span> scale = Math.sqrt((<span class="keyword">double</span>)userVector.getNumEntries());</span><br><span class="line">        <span class="keyword">if</span> (scale &gt; <span class="number">0.0D</span>) &#123;</span><br><span class="line">            <span class="keyword">this</span>.factorVector.assign((index, value) -&gt; &#123;</span><br><span class="line">                <span class="keyword">return</span> value / scale;</span><br><span class="line">            &#125;);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">this</span>.predict(userIndex, itemIndex, <span class="keyword">this</span>.factorVector);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
@@ -2105,6 +1341,82 @@ B L E U=B P \times \exp \left(\sum_{n=1}^{4} 0.25* \log P_{n}\right)
       </categories>
       <tags>
         <tag>推荐系统</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>ViLBERT论文阅读</title>
+    <url>/2022/03/08/ViLBERT%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/</url>
+    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="\assets\css\APlayer.min.css"><script src="\assets\js\APlayer.min.js" class="aplayer-secondary-script-marker"></script><p>BERT模型的提出使得大规模的预训练成为可能，与BERT模型仅仅处理文本模态不同，ViLBERT模型结合了图片和文本信息的特征，使用two-stream结构，基于大型的图像标题数据库训练与下游任务无关的通用模型，基于该模型通过少量调整即可实现通过标题检索图片、视觉问答等具体任务，最近在学习多模态特征有效的融合和对齐方法，于是对这篇文章进行了研读。</p>
+<center>
+<img src="/2022/03/08/ViLBERT%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/001.png" width="600px">
+</center>
+<span id="more"></span>
+<p>论文地址和相关源码链接如下，</p>
+<p><a href="https://arxiv.org/pdf/1908.02265.pdf" target="_blank">论文地址：https://arxiv.org/pdf/1908.02265.pdf</a> <br> <a href="https://github.com/facebookresearch/vilbert-multi-task" target="_blank">相关源码：https://github.com/facebookresearch/vilbert-multi-task</a></p>
+<h3 id="摘要">摘要</h3>
+<p>ViLBERT模型是一个学习与任务无关的图像文本特征联合表示的模型，文章将流行的针对文本模态的BERT架构扩展到一个多模态的two-stream模型架构，在不同的流中处理视觉和文本输入，并通过共同注意的transformer层进行信息交互。文章通过自动收集的大型概念性标题数据集上定义两个代理任务，来对模型进行预训练，然后将其转移到多个既定的下游视觉和语言任务中，包括视觉问题回答、视觉常识推理、指代表达和基于标题的图像检索任务，在进行下游任务时只对基础架构做少量的补充。文章观察到，与现有的特定任务模型相比，在所有的四个下游任务上都实现了最先进的改进。文章认为，其工作代表了一种转变，即不再把学习视觉和语言之间的grounding作为任务训练的一部分，而是将visual grounding作为一种可预训练和可转移的能力。</p>
+<blockquote>
+<p>PS: visual grounding涉及视觉和文本两个模态，输入是图片和对应的物体描述，输出是描述物体的box，与目标检测不同的是，输入多了语言信息，在对物体进行定位时，要先对语言模态的输入进行理解，并且和视觉模态的信息进行融合，最后利用得到的特征进行定位预测。</p>
+</blockquote>
+<h3 id="介绍">介绍</h3>
+<p>近年来，通过图像、视频等生成文本的研究已有了很多丰硕的成果，这些方法和任务可归结为“vision-and-language”。虽然这些任务都需要将自然语言和视觉特征结合，但是“vision-and-language”任务还没有一个统一的基础来提升这种结合能力。“vision-and-language”现在通常的做法是先分别预训练语言和视觉模型，然后通过任务进行基础知识的学习。通过这种方法学到的基础知识并不可靠，如果数据量不足或者是有bias的，那么模型的泛化能力会很差。</p>
+<p>首先对模型进行预训练，然后再在目标任务上进行微调的手段已经被广泛使用，ViLBERT也采用了这种先预训练后转移的方案，并在预训练时尽可能地学习视觉和文本之间的关系。</p>
+<p>为了学习这些联合的视觉-语言表征，我们借鉴了自监督学习方面的成功经验，这些成功通过训练模型来执行代理任务，从大量的无标签数据源中获取丰富的语义和结构信息，这些代理任务包括预测掩蔽词等等。为了通过类似的方法学习visual grounding，必须确定一个视觉和语言能够对齐的数据源来学习模态之间的关系，文章采用了概念性标题数据集。</p>
+<p>文章提出了一个联合模型ViLBERT，用于从成对的视觉语言数据中学习与目标任务无关的visual grounding。文章的方法扩展了最近的BERT语言模型来共同推理文本和图像，关键技术创新是为视觉和语言处理引入单独的流，通过共同注意的transformer层进行信息交互，这种结构可以适应每种模态的不同处理需求，并在不同深度的模态之间提供互动，文章在实验中证明，two-stream结构优于single-stream结构。模型结构如下图所示，</p>
+<center>
+<img src="/2022/03/08/ViLBERT%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/002.png" width="700px">
+<p style="font-family:KaiTi">
+图1：ViLBERT模型结构
+</p>
+</center>
+<p>文章使用两种代理任务来训练模型：</p>
+<ol type="1">
+<li>遮蔽部分图片区域和文本单词，根据上下文内容预测被遮蔽部分。</li>
+<li>预测文字和图片是否匹配。</li>
+</ol>
+<p>将预训练模型作为基础，用于四个目标视觉语言任务，分别是视觉问题回答、视觉常识推理、指代表达和基于标题的图像检索。</p>
+<h3 id="方法">方法</h3>
+<h4 id="bert">BERT</h4>
+<p>BERT模型时一个基于注意力机制的双向语言模型，当在大型语言语料库上进行预训练时，BERT已被证明对多种自然语言处理任务的迁移学习非常有效。</p>
+<p>ViLBERT修改了BERT的键值注意机制，开发了一个多模态的共同注意transformer模块，通过在多头注意中交换键值对，这种结构使视觉注意到的文本特征被纳入到视觉表征中，同时将文本注意大的视觉特征纳入到文本表征中，BERT结构的标准transformer模块和ViLBERT结构的共同注意transformer模块对比图如下所示，</p>
+<center>
+<img src="/2022/03/08/ViLBERT%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/003.png" width="600px">
+<p style="font-family:KaiTi">
+图2：标准transformer模块和共同注意transformer模块对比
+</p>
+</center>
+<p>下面简单地介绍BERT的输入文本表示和预训练任务。BERT的输入文本表示由三部分构成，分别是位置嵌入(position embedding)、段嵌入(segment embedding)和目标词嵌入(token embedding)。BERT的预训练任务包括掩蔽语言建模和下一句预测。具体的对于BERT模型的介绍可以参考原论文，传送门如下，</p>
+<p><a href="https://arxiv.org/pdf/1810.04805.pdf" target="_blank">传送门：https://arxiv.org/pdf/1810.04805.pdf</a></p>
+<h4 id="vilbert扩展bert以联合表示图像和文本">ViLBERT：扩展BERT以联合表示图像和文本</h4>
+<p>受BERT模型在语言建模方面的成功启发，我们希望开发类似的模型和训练任务，从成对的数据中学习语言和视觉内容的联合表示，具体来说，文章考虑联合表示静态图像和相应的描述性文本。</p>
+<p>文章首先叙述了一些直观的想法。可以首先将视觉输入的空间离散化，将这些视觉标记完全视为文本输入，并输入到预训练的BERT模型中，这种方法为single-stream方法。文章说明了single-stream方法的一些缺点：</p>
+<ol type="1">
+<li>最初的聚类可能会导致离散化错误，并失去重要的视觉细节。</li>
+<li>以上方法对两种模态的输入进行了相同的处理，忽略了它们可能由于其固有的复杂性或其输入表征的初始抽象水平而需要不同的处理水平。</li>
+<li>强迫预训练的权重去适应大量额外的视觉标记，可能会损害学到的BERT语言模型。</li>
+</ol>
+<p>基于以上缺点，文章开发了一个two-stream架构，分别对每个模态进行建模，然后通过基于注意力的互动来融合它们，这种方法允许每个模态的网络深度不同，并能在不同的深度上实现跨模态连接。</p>
+<p>如图1所示，ViLBERT学习的是静态图像及其对应描述文本的联合表征，分别对两种模态进行建模，然后通过一组基于注意力机制的信息交互将它们融合在一起。对每种模态都可使用不同深度的网络，并支持不同深度的跨模态交互。双流架构中的每个流都是由一系列的TRM(transformer block)和Co-TRM组成，可以观察到，流之间的信息交互被限制在特定层，文本特征需要先经过TRM模块处理才能进行信息交互，文章给出的解释是所选择的视觉特征已经相对高级，与句子中的单词相比，视觉特征需要有限的上下文聚合。</p>
+<h5 id="共同注意的transformer层">共同注意的transformer层</h5>
+<p>ViLBERT中引入了共同注意的transformer层，该模块为每个模态产生以其他模态为条件的注意力集合特征，实际上是在视觉流中执行以图像为条件的语言注意力，在语言流中执行以语言为条件的图像注意力。</p>
+<h5 id="图像表示">图像表示</h5>
+<p>从预先训练好的物体检测网络中提取边界框和它们的视觉特征来生成图像区域特征，与文本中的文字不同，图像区域缺乏自然排序，文章采用一个5维的向量对区域进行位置编码，五个维度的元素分别为归一化后的bounding boxes的左上角和右下角的坐标以及图像区域覆盖占比，然后使用映射将位置编码与视觉特征维数匹配，进行相加后得到图像区域特征。使用一个特定的IMG token作为图像序列的开始，并用它的输出表征整个图像。</p>
+<h5 id="预训练任务">预训练任务</h5>
+<p>训练ViLBERT模型时采用了两个预训练任务，分别是掩蔽多模态建模和多模态对齐预测，如下图所示，</p>
+<center>
+<img src="/2022/03/08/ViLBERT%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/004.png" width="600px">
+<p style="font-family:KaiTi">
+图3：ViLBERT预训练任务
+</p>
+</center>
+<p>掩蔽多模态建模任务来自于标准BERT中的掩蔽语言建模任务，屏蔽大约15%的单词和图像区域输入，并要求模型在剩余输入的情况下对屏蔽进行预测。在对图像进行掩蔽时，90%的概率是直接遮挡，另外10%的概率保持不变，文本的掩蔽方案与BERT一致。ViLBERT并不直接预测被掩蔽区域的图像区域特征值（原因：语言往往只能识别视觉内容的高级语义，而不太可能重建准确的图像特征），而是预测对应区域在语义类别上的分布（不预测位置信息），为了监督这一点，文章从用于特征提取的同一预训练检测模型中获取该区域的特征分布，训练模型以最小化这两个分布之间的KL散度。</p>
+<p>多模态对齐预测任务必须预测图像和文本是否对齐，即文本是否描述了图像，文章把输出的<span class="math inline">\(h_{IMG}\)</span>和<span class="math inline">\(h_{CLS}\)</span>作为视觉和语言输入的整体表示，借用视觉和语言模型的另一个常见结构，文章将整体表征计算为<span class="math inline">\(h_{IMG}\)</span>和<span class="math inline">\(h_{CLS}\)</span>之间的元素乘积，并添加一个线性层来进行图像和文字是否对齐的二元预测。</p>
+]]></content>
+      <categories>
+        <category>深度学习论文阅读</category>
+      </categories>
+      <tags>
+        <tag>多模态模型</tag>
       </tags>
   </entry>
   <entry>
@@ -2360,6 +1672,694 @@ B L E U=B P \times \exp \left(\sum_{n=1}^{4} 0.25* \log P_{n}\right)
       </categories>
       <tags>
         <tag>Transformer</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>test</title>
+    <url>/2020/09/06/test/</url>
+    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="\assets\css\APlayer.min.css"><script src="\assets\js\APlayer.min.js" class="aplayer-secondary-script-marker"></script>
+]]></content>
+      <tags>
+        <tag>test</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Hello World</title>
+    <url>/2020/09/06/hello-world/</url>
+    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="\assets\css\APlayer.min.css"><script src="\assets\js\APlayer.min.js" class="aplayer-secondary-script-marker"></script><p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
+<span id="more"></span>
+<h2 id="quick-start">Quick Start</h2>
+<h3 id="create-a-new-post">Create a new post</h3>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
+<h3 id="run-server">Run server</h3>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
+<h3 id="generate-static-files">Generate static files</h3>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
+<h3 id="deploy-to-remote-sites">Deploy to remote sites</h3>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
+]]></content>
+      <tags>
+        <tag>hello world</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>《计算机网络：自顶向下方法》第一章笔记整理</title>
+    <url>/2021/02/02/%E3%80%8A%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C%EF%BC%9A%E8%87%AA%E9%A1%B6%E5%90%91%E4%B8%8B%E6%96%B9%E6%B3%95%E3%80%8B%E7%AC%AC%E4%B8%80%E7%AB%A0%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/</url>
+    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="\assets\css\APlayer.min.css"><script src="\assets\js\APlayer.min.js" class="aplayer-secondary-script-marker"></script><p>对大黑书《计算机网络：自顶向下方法》第一章进行笔记整理...... <span id="more"></span></p>
+<h1 id="计算机网络和因特网">计算机网络和因特网</h1>
+<h2 id="什么是internet">什么是Internet</h2>
+<ul>
+<li>从具体构成角度解释什么是互联网：</li>
+</ul>
+<ol type="1">
+<li><strong>节点</strong>：包括<strong>主机节点</strong>和<strong>数据交换节点</strong>，主机节点（<strong>端节点</strong>，包括PC、Server、笔记本、智能手机等）指的是主机及其上运行的应用程序，数据交换节点指的是<strong>路由器、交换机</strong>等网络交换设备<br></li>
+<li><strong>边</strong>：通信链路，通信链路中包括<strong>接入网链路</strong>和<strong>主干链路</strong>，接入网链路指的是主机连接到互联网的链路，主干链路指的是路由器之间的链路<br></li>
+<li><strong>协议</strong>：<strong>对等层的实体在通讯连接的过程中遵守的规则的集合</strong>，定义了在两个或多个通信实体之间交换的报文<strong>格式</strong>和<strong>次序</strong>，以及在报文传输和/ 或接收或其他事件方面所采取的的<strong>动作</strong>。互联网以TCP、IP等协议为支撑，另外，以TCP、IP等协议为支撑的也可能为内部网，与互联网不连。<br></li>
+<li><strong>端系统</strong>：端系统包括设备本身、支持设备能够通讯的网络操作系统、操作系统上驻留的网络应用程序，主机=端系统<br></li>
+<li><strong>Internet是网络的网络</strong><br></li>
+<li><strong>Internet标准</strong>:包括RFC和IETF<br></li>
+</ol>
+<ul>
+<li><p>从服务角度解释什么是互联网：</p>
+<ul>
+<li><strong>基础设施</strong>（应用层以下）和<strong>分布式的应用</strong>：<strong>基础设施为分布式应用提供通讯服务</strong>，提供的通讯服务分为两种，分别是面向连接的可靠服务和无连接的不可靠服务</li>
+</ul></li>
+</ul>
+<h2 id="网络边缘">网络边缘</h2>
+<ol type="1">
+<li><p>网络边缘指的是主机和应用程序，也可以解释为分布式应用和通讯基础设施的一部分。<br></p></li>
+<li><p>应用进程和应用进程之间：</p>
+<ul>
+<li>采用<strong>客户/服务器模式</strong>：客户端向服务器请求、接收服务，在此种模式中，客户端是主动的、后运行起来，服务器是被动的、先运行起来。此种模式的一个缺点是，在客户端很多的情况下，需要服务器农场，可扩展性很差。</li>
+<li>采用<strong>P2P模式</strong>（又称<strong>对等模式</strong>）：在此种模式中，很少有专门的服务器，每一个分布式的应用既是客户端又是服务器，请求资源和提供服务的节点都很多。</li>
+</ul></li>
+<li><p>基础设施提供的通讯服务：</p>
+<ul>
+<li>面向连接服务：目标是在端系统之间传输数据，在数据传输之前先握手做好准备。TCP提供的服务是可靠的（确认和重传），具有流量控制（发送方不会淹没接收方）、拥塞控制（能够感知路径是否拥塞来调节传输速度）的特点。使用TCP的应用有HTTP（Web）、FTP（文件传送）、Telnet（远程登录）、SMTP（email）。<em>（注：区分面向连接和有连接，面向连接只有端系统知道，有连接网络中的节点也知道）</em></li>
+<li>无连接服务：目标是在端系统之间传输数据。UDP的特点是无连接、不可靠、无流量控制、无拥塞控制。使用UDP的应用包括流媒体、远程会议、DNS和Internet电话。</li>
+</ul></li>
+</ol>
+<h2 id="网络核心">网络核心</h2>
+<ol type="1">
+<li><p>网络核心：路由器的网状网络<br></p></li>
+<li><p>数据通过网络进行传输的方式包括<strong>电路交换</strong>和<strong>分组交换</strong>。<br></p></li>
+<li><p><strong>电路交换</strong>：为每个呼叫预留一条专有电路</p>
+<ul>
+<li>电路交换独享资源，<strong>不共享</strong>，提供性能保障。</li>
+<li>如果呼叫没有数据传送，被分配的资源就会被浪费。</li>
+<li>通常被传统电话网络采用。</li>
+<li>网络资源（如带宽）被分成片，有频分（FDM）、时分（TDM）、波分的方法。</li>
+<li>电路交换不适合计算机之间的通信，具体表现在连接建立时间长；计算机之间的通信有突发性（不是一直都在通信），如果使用电路交换，则浪费的片较多。 <img src="https://img-blog.csdnimg.cn/20210201220529741.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3JhaW55X3VuaXZlcnNl,size_16,color_FFFFFF,t_70" alt="电路交换"> 图中，每段链路有4条线路，该呼叫采用了上面链路的第2个线路，右边链路的第1个线路。</li>
+</ul></li>
+<li><p><strong>分组交换</strong>：以分组为单位存储-转发方式</p>
+<ul>
+<li>节点之间的通讯链路不再细分为pieces</li>
+<li>主机与主机之间的通讯数据分成一个个packet</li>
+<li>以packet为单位在每个交换节点中存储、转发，并且每次只用某两个交换节点之间的一条通讯链路，此时其他主机对的通信可以使用其他链路，<strong>资源共享</strong>，按需使用</li>
+<li>分组交换在每个节点的延迟比电路交换长得多（存储-转发时间+排队延迟）</li>
+<li><strong>存储-转发</strong>：被传输到下一个链路之前，整个分组必须到达路由器，在一个速率为R bps的链路，一个长度为L bits的分组的存储转发延迟为L/R s</li>
+<li><strong>排队延迟和丢失</strong>：如果到达速率&gt;链路的输出速率，分组将会排队等待传输，如果路由器的缓存用完了，分组将会抛弃</li>
+<li><strong>统计多路复用</strong>：<img src="https://img-blog.csdnimg.cn/20210202123344874.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3JhaW55X3VuaXZlcnNl,size_16,color_FFFFFF,t_70" alt="统计多路复用"> 分组交换划分时间片没有固定模式，如图所示，可以先为A划分时间片，中间有一段空闲，再为B划分时间片</li>
+<li>分组的存储转发一段一段从源端传到目标端，按照有无网络层的连接，分为<strong>数据报网络</strong>和<strong>虚电路网络</strong>，数据报的工作原理为在通信之前，无需建立起一个连接，有数据就传输，每一个分组都独立路由（路径不一样，可能会失序），路由器根据分组的目标地址进行路由</li>
+</ul></li>
+<li><p>网络交换的核心功能：</p>
+<ul>
+<li>路由：决定分组采用的源到目标的路径</li>
+<li>转发：将分组从路由器的输入链路转入到输出链路</li>
+</ul></li>
+<li><p>分组交换和电路交换对比：</p>
+<ul>
+<li>同样的网络资源，分组交换允许更多用户使用网络</li>
+<li>分组交换资源共享，简单，不必建立呼叫，适合于突发数据传输，但过度使用会造成网络拥塞</li>
+</ul></li>
+</ol>
+<h2 id="接入网和物理媒体">接入网和物理媒体</h2>
+<ol type="1">
+<li><strong>住宅接入</strong>：modem，将上网数据调制加载音频信号上，在电话线上传输，在局端将其中的数据解调出来，反之亦然。此种方式在打电话的同时不能上网
+<ul>
+<li>接入网：DSL，带宽分为语音通信，上行传输和下行传输（上行比下行小）。DSL线路上的数据被传到互联网，DSL线路上的语音被传到电话网</li>
+<li>接入网：线缆网络，有线电视信号线缆双向改造，带宽分为广播电视、上行传输和下行传输，各客户共享到线缆头端的接入网络（与DSL不同，DSL每个用户一个专用线路到CO）</li>
+</ul></li>
+<li>住宅接入：电缆模式
+<ul>
+<li>接入网：家庭网络<img src="https://img-blog.csdnimg.cn/20210202133021232.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3JhaW55X3VuaXZlcnNl,size_16,color_FFFFFF,t_70" alt="家庭网络"></li>
+</ul></li>
+<li><strong>企业接入网络</strong>：无线接入网络，分为无线LANs和广域无线接入。</li>
+<li><strong>物理媒体</strong>：分为<strong>导引性媒体</strong>和<strong>非导引性媒体</strong>，其中导引性媒体包括<strong>同轴电缆</strong>、<strong>光纤</strong>和<strong>双绞线</strong>，非导引性媒体包括无线电。</li>
+</ol>
+<h2 id="internet结构和isp">Internet结构和ISP</h2>
+<ol type="1">
+<li>互联网网络结构：网络的网络
+<ul>
+<li>端系统通过接入ISPs连接到互联网</li>
+<li>接入ISPs相应的必须是互联的，保证任何两个端系统可相互发送分组到对方<img src="https://img-blog.csdnimg.cn/20210202134721946.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3JhaW55X3VuaXZlcnNl,size_16,color_FFFFFF,t_70" alt="互联网网络结构"><img src="https://img-blog.csdnimg.cn/20210202134829333.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3JhaW55X3VuaXZlcnNl,size_16,color_FFFFFF,t_70" alt="互联网网络结构"></li>
+<li>第一层ISP：国家/国际覆盖，速率极高（带宽较宽），直接与其他第一层ISP相连，与大量的第二层ISP和其他客户相连；第二层ISP：更小些（通常是区域性的）的ISP；第三层ISP与其他本地ISP。</li>
+<li>POP：高层ISP面向客户网络的接入点，涉及费用结算；对等接入：2个ISP对等互接，不涉及费用结算；IXP：多个对等ISP互联互通之处，通常不涉及费用结算。</li>
+</ul></li>
+</ol>
+<h2 id="分组延时丢失和吞吐量">分组延时、丢失和吞吐量</h2>
+<ol type="1">
+<li>分组延时和丢失的产生：在路由器缓冲区的分组队列分组到达链路的速率超过了链路输出的能力</li>
+<li>四种分组延时：
+<ul>
+<li><strong>节点处理延时</strong>：检查bit级差错，检查分组首部和决定将分组导向何处</li>
+<li><strong>排队延时</strong>：在输出链路上等待传输的时间，依赖于路由器的拥塞程度</li>
+<li><strong>传输延时</strong>：将分组发送到链路上的时间 L/R（分组长度/链路带宽）</li>
+<li><strong>传播延时</strong>：d/s（物理链路的长度/在媒体上的传播速度）</li>
+<li><strong>节点延时为以上四种延时相加</strong></li>
+</ul></li>
+<li>Traceroute诊断程序：提供从源端，经过路由器，到目的的延时测量（和TTL有关，TTL每经过一个路由器减1，TTL减为0时报告原主机）</li>
+<li>分组丢失：
+<ul>
+<li>产生原因：链路的队列缓冲区容量有限，当分组达到一个满的队列时，该分组将会丢失</li>
+<li>分组丢失后有三种情况：由上一个节点重传；原主机重传；原主机不重传</li>
+</ul></li>
+<li><strong>吞吐量</strong>：在源端和目标端之间传输的速率，分为瞬间吞吐量和平均吞吐量（短板效应）</li>
+</ol>
+<h2 id="协议层次及服务模型">协议层次及服务模型</h2>
+<ol type="1">
+<li><strong>层次化方式实现复杂网络功能</strong>：本层协议实体相互交互执行本层的协议动作，目的是实现本层功能，通过接口为上层提供更好的服务，在实现本层协议的时候，直接利用了下层所提供的的服务</li>
+<li><strong>协议的目的是为了向上层提供更好的服务，协议通过层间接口访问下层所提供的服务来实现</strong></li>
+<li>服务和服务访问点：
+<ul>
+<li><strong>服务</strong>：低层实体向上层实体提供它们之间的通信的能力</li>
+<li><strong>原语</strong>：上层使用下层服务的形式，高层使用低层的服务，以及低层向高层提供服务都是通过服务访问原语来进行交互的</li>
+<li><strong>服务访问点（SAP）</strong>：上层使用下层提供的服务通过层间的接口—地点（可以用来区分不同的服务用户） 服务用户通过SAP告诉服务提供者访问什么服务；服务提供者通过原语告诉服务用户提供什么服务</li>
+</ul></li>
+<li>服务的类型：
+<ul>
+<li>面向连接的服务</li>
+<li>无连接的服务：两个应用进程在进行实质性通讯前不需要握手</li>
+</ul></li>
+<li>服务与协议：
+<ul>
+<li>关系：本层协议实现时需借助下层提供服务，实现本层协议的目的是为了向上层提供更好的服务</li>
+<li>区别：服务是低层实体向上层实体提供它们之间的通信的能力，是通过原语来操作的，垂直；协议是对等层实体之间在相互通信的过程中，需要遵循的规则的集合，水平</li>
+</ul></li>
+<li><strong>数据单元（DU）</strong>：<img src="https://img-blog.csdnimg.cn/20210202192330704.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3JhaW55X3VuaXZlcnNl,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></li>
+<li>Internet协议栈：
+<ul>
+<li>应用层：为人类用户或者其他应用进程提供网络应用服务</li>
+<li>传输层：提供进程到进程的数据传输，另外将不可靠的通信变成可靠的通信</li>
+<li>网络层：在链路层点到点的基础上提供端到端的数据传输</li>
+<li>链路层：在相邻两点间传输以帧为单位的数据</li>
+<li>物理层：在线路上传输bit</li>
+</ul></li>
+<li>ISO/OSI参考模型：在应用层和传输层中间新增了表示层和会话层</li>
+<li>封装和解封装</li>
+<li>各层次的协议数据单元： - 应用层：报文 - 传输层：报文段：TCP段，UDP数据报 - 网络层：分组（如果无连接方式：数据报） - 链路层：帧 - 物理层：位</li>
+</ol>
+<h2 id="历史">历史</h2>
+<ol type="1">
+<li>1960年以前采用线路交换网络</li>
+<li>1961-1972 早期的分组交换概念</li>
+<li>1972-1980 专用网络和网络互联</li>
+<li>1980-1990 体系结构变化，网络数量激增，应用丰富</li>
+<li>1990, 2000’s 商业化, Web, 新的应用</li>
+<li>2005-现在 移动互联时代</li>
+</ol>
+]]></content>
+      <categories>
+        <category>计算机网络</category>
+      </categories>
+      <tags>
+        <tag>计算机网络</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>《计算机网络：自顶向下方法》第六章笔记整理</title>
+    <url>/2021/03/12/%E3%80%8A%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C%EF%BC%9A%E8%87%AA%E9%A1%B6%E5%90%91%E4%B8%8B%E6%96%B9%E6%B3%95%E3%80%8B%E7%AC%AC%E5%85%AD%E7%AB%A0%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/</url>
+    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="\assets\css\APlayer.min.css"><script src="\assets\js\APlayer.min.js" class="aplayer-secondary-script-marker"></script><p>对大黑书《计算机网络：自顶向下方法》第六章进行笔记整理...... <span id="more"></span></p>
+<h2 id="引证和服务">引证和服务</h2>
+<h3 id="网络节点的连接方式">网络节点的连接方式</h3>
+<ol type="1">
+<li>点到点的网络（广域网采用）</li>
+<li>多点连接（局域网）</li>
+</ol>
+<h3 id="节点主机路由器">节点：主机/路由器</h3>
+<ol type="1">
+<li>链路：沿着通信路径、连接相邻节点通信信道的是链路，分为有线链路、无线链路、局域网和共享性链路。
+<ul>
+<li>链路层负责从一个节点通过链路将帧中的数据报发送到相邻物理节点（以帧为单位）。</li>
+<li>数据报在不同的链路上以不同的链路协议传送（例如第一跳是以太网，中间链路是帧中继链路，最后一跳是802.11）。</li>
+<li>不同的链路协议提供不同的服务。 ### 链路层提供服务 （一般化的链路层服务，不是所有的链路层都提供这些服务，一个特定的链路层只提供其中一部分的服务）</li>
+</ul></li>
+<li>成帧、链路接入：
+<ul>
+<li>将数据报封装在帧中，加上帧头部、帧尾部。</li>
+<li>如果采用的是共享性介质，信道接入获得信道访问权。</li>
+<li>在帧头部使用MAC地址来表示源和目的。</li>
+</ul></li>
+<li>在相邻两个节点完成可靠数据传输：
+<ul>
+<li>在低出错率的链路上（光纤和双绞线电缆）很少使用。</li>
+<li>在无线链路经常使用，出错率高（防止源端重发）。</li>
+</ul></li>
+<li>流量控制</li>
+<li>差错检测、纠正</li>
+<li>半双工和全双工
+<ul>
+<li>半双工：链路可以双向传输，但一次只有一个方向。</li>
+</ul></li>
+</ol>
+<h3 id="链路层功能实现">链路层功能实现</h3>
+<ol type="1">
+<li>在适配器（网卡）上实现或者在一个芯片组上，网卡可以同时发同时接。</li>
+</ol>
+<h2 id="差错检测和纠正">差错检测和纠正</h2>
+<h3 id="奇偶校验">奇偶校验</h3>
+<ol type="1">
+<li>单bit奇偶校验</li>
+<li>二维bit奇偶校验</li>
+</ol>
+<h3 id="internet校验和">Internet校验和</h3>
+<ol type="1">
+<li>加起来取反码</li>
+</ol>
+<h3 id="crc循环冗余检测">CRC（循环冗余检测）</h3>
+<ol type="1">
+<li>模二运算</li>
+<li>位串的两种表示（二进制和多项式）</li>
+<li>生成多项式</li>
+<li>发送方和接收方的发送接收校验过程</li>
+</ol>
+<h2 id="多点访问协议">多点访问协议</h2>
+<h3 id="两种类型的链路一个子网内部链路连接形式">两种类型的链路（一个子网内部链路连接形式）</h3>
+<ol type="1">
+<li>点对点
+<ul>
+<li>拨号访问的PPP</li>
+<li>以太网交换机和主机之间的点对点链路</li>
+</ul></li>
+<li>广播（共享链路或媒体）
+<ul>
+<li>传统以太网</li>
+<li>HFC上行链路</li>
+<li>802.11无线局域网</li>
+</ul></li>
+</ol>
+<h3 id="单个共享的广播型链路">单个共享的广播型链路</h3>
+<ol type="1">
+<li>2个或更多的站点同时传送产生冲突；</li>
+<li>分布式算法决定节点如何使用共享信道，即决定哪个节点什么时候可以发送；</li>
+<li>关于共享控制的通信必须借助信道本身传输。</li>
+</ol>
+<h3 id="理想的多路访问协议">理想的多路访问协议</h3>
+<ol type="1">
+<li>当一个节点要发送时，以最大速率发送；当M个节点要发送时，每个节点以M分之一的最大速率发送。</li>
+<li>完全分布，没有特殊节点协调发送，没有时钟和时隙的同步。</li>
+<li>简单。</li>
+</ol>
+<h3 id="mac协议分类">MAC协议分类</h3>
+<h4 id="信道划分协议tdmafdmacdma">信道划分协议：TDMA、FDMA、CDMA</h4>
+<h4 id="随机访问协议">随机访问协议</h4>
+<h5 id="时隙aloha">时隙ALOHA</h5>
+<ol type="1">
+<li>假设：所有帧是等长的；时间被划分为相等的时隙，每个时隙可发送一帧；节点只在时隙开始时发送帧；节点在时隙上是同步的；如果两个或多个节点在一个时隙传输，所有的站点都能检测到冲突。</li>
+<li>运行：当节点获取新的帧，在下一个时隙传输；
+<ul>
+<li>Re1:传输时没有检测到冲突，成功，节点能够在下一时隙发送新帧；</li>
+<li>Re2:传输时检测到冲突，失败，节点在每一个随后的时隙以概率P重传帧直至成功。</li>
+</ul></li>
+<li>优点：
+<ul>
+<li>节点可以以信道带宽全速连续传输；</li>
+<li>高度分布；</li>
+<li>简单</li>
+</ul></li>
+<li>缺点：
+<ul>
+<li>存在冲突，浪费时隙；</li>
+<li>即使有帧要发送，仍然有可能存在空闲的时隙；</li>
+<li>发现冲突也必须要传完；</li>
+<li>需要时钟上同步；</li>
+</ul></li>
+</ol>
+<h5 id="纯aloha非时隙">纯ALOHA（非时隙）</h5>
+<ol type="1">
+<li>简单，无需在时钟上同步。</li>
+<li>当有帧需要传输，马上传输。</li>
+<li>冲突的概率增加。</li>
+</ol>
+<h5 id="csma">CSMA</h5>
+<ol type="1">
+<li>CSMA/CD
+<ul>
+<li>发送前侦听信息，发送时侦听信息</li>
+<li>以太网CSMA/CD算法
+<ul>
+<li>（1）适配器获取数据报，创建帧；</li>
+<li>（2） 发送前，侦听信道CS，如果闲，则开始传送帧，如果忙，则一直等到闲再发送；</li>
+<li>（3）发送过程中，冲突检测CD，如果没有冲突，则成功，如果检测到冲突，则放弃，之后尝试重发；</li>
+<li>（4） 发送方适配器检测到冲突，除放弃外，还发送一个Jam信号，所有听到冲突的适配器也是如此；（强化冲突）</li>
+<li>（5） 如果放弃，适配器进入指数退避状态；（二进制指数退避算法）</li>
+</ul></li>
+</ul></li>
+<li>无线局域网中的MAC协议：CSMA/CA</li>
+</ol>
+<h4 id="轮流mac协议">轮流MAC协议</h4>
+<ol type="1">
+<li><p>信道划分MAC协议：共享信道在高负载时是有效的和公平的；在低负载时效率低下。</p></li>
+<li><p>随机访问协议：在低负载时效率高，单个节点可以完全利用信道全部带宽；高负载时，冲突开销较大，效率极低，时间很多浪费在冲突中。</p></li>
+<li><p>轮流协议在高负载和低负载时都很好，但太复杂。</p>
+<p>轮询：</p>
+<ul>
+<li>主节点邀请从节点依次传送</li>
+<li>缺点：
+<ul>
+<li>轮询开销：轮询本身消耗信道带宽；</li>
+<li>等待时间：每个节点需要等到主节点轮询后开始传输，即使只有一个节点，也需要等到轮询一周之后才能发送；</li>
+<li>单点故障：主节点失效时造成整个系统无法工作；</li>
+</ul></li>
+</ul>
+<p>令牌传递：</p>
+<ul>
+<li>控制令牌循环从一个节点到下一个节点传递</li>
+<li>令牌报文：特殊的帧</li>
+<li>传输数据时传输一圈，直到重新回到发送节点再将令牌传给下一个节点</li>
+<li>缺点：
+<ul>
+<li>令牌开销：本身消耗带宽</li>
+<li>延迟：只有等到抓住令牌，才可传输</li>
+<li>单点故障：令牌丢失系统级故障，整个系统无法传输（复杂机制重新生成令牌）</li>
+</ul></li>
+</ul></li>
+</ol>
+<h2 id="lans">LANS</h2>
+<h3 id="mac地址和arp">MAC地址和ARP</h3>
+<ol type="1">
+<li>32比特IP地址
+<ul>
+<li>网络层地址</li>
+<li>用于使数据报到达目的子网，前n-1跳</li>
+<li>从而到达子网中的目标节点，最后一跳</li>
+</ul></li>
+<li>LAN地址
+<ul>
+<li>用于使帧从一个网卡传递到与其物理连接的另一个网卡（在同一个物理网络中）</li>
+<li>48比特MAC地址固化在适配器的ROM，有时也可以通过软件设定</li>
+<li>理论上全球任何两个网卡的MAC地址都不相同</li>
+<li>MAC地址由IEEE管理和分配，制造商购入MAC地址空间 ### ARP： Address Resolution Protocol</li>
+</ul></li>
+<li>在LAN的每个IP节点都有一个ARP表，ARP表中包括一些LAN节点IP/MAC地址的映射</li>
+<li>运行过程</li>
+</ol>
+<h2 id="以太网">以太网</h2>
+<ol type="1">
+<li>以太网是目前最主流的LAN技术
+<ul>
+<li>总线：所有节点在一个碰撞域内，一次只允许一个节点发送；可靠性差，如果介质破损，截面形成信号的反射，发送节点误以为是冲突，总是冲突</li>
+<li>星形：
+<ul>
+<li>连接选择：hub或switch</li>
+<li>现在一般是交换机在中心</li>
+<li>每个节点以及相连的交换机端口使用（独立的）以太网协议，不会和其他节点的发送产生碰撞</li>
+</ul></li>
+</ul></li>
+<li>以太帧结构</li>
+</ol>
+<ul>
+<li>前导码：用来同步接收方和发送方的时钟速率，使得接收方将自己的时钟调到发送方的时钟，从而可以按照发送端的时钟来接收所发送的帧</li>
+</ul>
+<ol start="3" type="1">
+<li>无连接、不可靠的服务</li>
+<li>以太网使用CSMA/CD</li>
+<li>10BaseT和100BaseT
+<ul>
+<li>T代表双绞线</li>
+<li>节点连接到hub上</li>
+<li>节点和hub间的最大距离是100m</li>
+</ul></li>
+<li>HUB</li>
+</ol>
+<ul>
+<li>HUB本质上是物理层的中继器。
+<ul>
+<li>从一个端口收，转发到其他所有端口。</li>
+<li>速率一致。</li>
+<li>没有帧的缓存。</li>
+<li>提供网络管理功能。</li>
+</ul></li>
+</ul>
+<ol start="7" type="1">
+<li>Manchester编码（物理层）
+<ul>
+<li>在10BaseT中使用。</li>
+<li>每一个比特的位时中间有一个信号跳变。</li>
+<li>允许在接收方和发送方节点之间进行时钟同步，节点间不需要集中的和全局的时钟。 10Mbps，使用20M带宽，效率50%，可以采用4b5b编码。</li>
+</ul></li>
+<li>千兆以太网
+<ul>
+<li>采用标准的以太帧格式。</li>
+<li>允许点对点链路和共享广播信道。</li>
+<li>物理编码：8b10b编码。</li>
+<li>共享模式：继续使用CSMA/CD MAC技术，节点间需要较短距离以提高利用率。</li>
+<li>交换模式：全双工千兆可用于点对点链路。</li>
+</ul></li>
+</ol>
+<h2 id="集线器和交换机">集线器和交换机</h2>
+<ol type="1">
+<li>集线器：
+<ul>
+<li>网段：可以允许一个站点发送的网络范围。
+<ul>
+<li>在一个碰撞域，同时只允许一个站点在发送。</li>
+<li>如果有两个节点在发送，则会碰撞。</li>
+<li>通常拥有相同的前缀，让IP子网更详细的前缀。</li>
+</ul></li>
+<li>所有以hub连到一起的站点处在一个网段，处在一个碰撞域，骨干hub将所有的网段连到了一起。</li>
+<li>通过hub可扩展节点间的最大距离。</li>
+<li>通过hub，不能将10BaseT和100BaseT的网路连接到一起。</li>
+</ul></li>
+<li>交换机
+<ul>
+<li>链路层设备</li>
+<li>透明</li>
+<li>即插即用，自学习</li>
+</ul></li>
+</ol>
+]]></content>
+      <categories>
+        <category>计算机网络</category>
+      </categories>
+      <tags>
+        <tag>计算机网络</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>《计算机网络：自顶向下方法》第四章笔记整理</title>
+    <url>/2021/03/30/%E3%80%8A%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C%EF%BC%9A%E8%87%AA%E9%A1%B6%E5%90%91%E4%B8%8B%E7%BD%91%E7%BB%9C%E3%80%8B%E7%AC%AC%E5%9B%9B%E7%AB%A0%E7%AC%94%E8%AE%B0%E6%95%B4%E7%90%86/</url>
+    <content><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="\assets\css\APlayer.min.css"><script src="\assets\js\APlayer.min.js" class="aplayer-secondary-script-marker"></script><p>对大黑书《计算机网络：自顶向下方法》第四章进行笔记整理...... <span id="more"></span></p>
+<h2 id="导论">导论</h2>
+<h3 id="网络层服务">网络层服务</h3>
+<ol type="1">
+<li>在发送主机和接收主机之间传送段（segment）。<br></li>
+<li>在发送端将段封装到数据报中，在接收端将段上交给传输层实体。<br></li>
+<li>网络层协议存在于每一个主机和路由器。<br></li>
+<li>路由器检查每一个经过它的IP数据报的头部。</li>
+</ol>
+<h3 id="网络层的关键功能">网络层的关键功能</h3>
+<ol type="1">
+<li>转发：将分组从路由器的输入接口转发到合适的输出接口。<br></li>
+<li>路由：使用路由算法来决定分组从发送主机到目标接收主机的路径。</li>
+</ol>
+<h3 id="数据平面和控制平面">数据平面和控制平面</h3>
+<h4 id="数据平面">数据平面</h4>
+<ol type="1">
+<li>本地，每个路由器功能<br></li>
+<li>决定从路由器输入端口到达的分组如何转发到输出端口<br></li>
+<li>转发功能：传统方式是基于目标地址和转发表；SDN方式是基于多个字段和转发表</li>
+</ol>
+<h4 id="控制平面">控制平面</h4>
+<ol type="1">
+<li>网络范围内的逻辑<br></li>
+<li>决定数据报如何在路由器之间路由，决定数据报从源到目标主机之间的端到端路径<br></li>
+<li>两个控制平面方法：传统的路由算法在路由器中被实现；SDN在远程的服务器中实现</li>
+</ol>
+<h3 id="传统方式">传统方式</h3>
+<ol type="1">
+<li><p>在每一个路由器中的单独路由器算法元件，在控制平面进行交互<br></p></li>
+<li><p>路由和转发的相互作用：</p>
+<ul>
+<li>控制平面：路由算法决定端到端路径<br></li>
+<li>数据平面：IP协议根据转发表决定了IP数据报在此路由器上的局部转发</li>
+</ul></li>
+</ol>
+<h3 id="sdn方式逻辑集中的控制平面">SDN方式：逻辑集中的控制平面</h3>
+<ol type="1">
+<li>一个不同的（通常是远程的）控制器与本地控制代理（CAs）交互</li>
+</ol>
+<h3 id="网络服务模型">网络服务模型</h3>
+<p>从发送方主机到接收方主机传输数据报的通道，<br> 对于单个数据报的服务：可靠传送；延迟保证<br> 对于数据报流的服务：保序数据报传送；保证流的最小带宽；分组之间的延迟差</p>
+<h3 id="连接建立">连接建立</h3>
+<p>在分组传输之前，在两个主机之间，在通过一些路由器所构成的路径上建立一个网络层连接（涉及到路由器）</p>
+<h2 id="路由器组成">路由器组成</h2>
+<h3 id="路由器结构概况">路由器结构概况</h3>
+<p>高层面通用路由器体系架构<br> 1. 路由：运行路由选择算法/协议（RIP，OSPF，BGP）——生成路由表<br> 2. 转发：从输入到输出链路交换数据报——根据路由表进行分组的转发 <img src="https://img-blog.csdnimg.cn/20210330184838153.png" alt="在这里插入图片描述"></p>
+<h3 id="输入端口功能">输入端口功能</h3>
+<ol type="1">
+<li><p>物理层：Bit级的接收<br></p></li>
+<li><p>数据链路层：链路层协议动作、解封装<br></p></li>
+<li><p>网络层：分布式交换<br></p>
+<ul>
+<li>根据数据报头部的信息如：目的地址，在输入端口内存中的转发表中查找合适的输出端口</li>
+<li>基于目标的转发：仅仅依赖于IP数据报的目标IP地址（最长前缀匹配）</li>
+<li>通用转发：基于头部字段的任意集合进行转发</li>
+</ul></li>
+</ol>
+<h3 id="输入端口缓存">输入端口缓存</h3>
+<ol type="1">
+<li>当交换机构的速率小于输入端口的汇聚速率时，在输入端口可能要排队（排队延迟以及由于输入缓存溢出造成丢失）<br></li>
+<li>HOL blocking：排在队头的数据报阻止了队列中其他数据报向前移动 <img src="https://img-blog.csdnimg.cn/20210330185758172.png" alt="在这里插入图片描述"></li>
+</ol>
+<h3 id="交换结构">交换结构</h3>
+<ol type="1">
+<li>将分组从输入缓存区传输到合适的输出端口<br></li>
+<li>交换速率：分组可以按照该速率从输入传输到输出<br></li>
+<li>三种典型的交换机构</li>
+</ol>
+<h4 id="通过内存交换">通过内存交换</h4>
+<ol type="1">
+<li>在CPU直接控制下的交换，采用传统的计算机<br></li>
+<li>分组被拷贝到系统内存，CPU从分组头部提取出目标地址，查找转发表，找到对应的输出端口，拷贝到输出端口<br></li>
+<li>转发速率被内存的带宽限制（数据报通过BUS两遍）<br></li>
+<li>一次只能转发一个分组 <img src="https://img-blog.csdnimg.cn/20210330190501677.png" alt="在这里插入图片描述"></li>
+</ol>
+<h4 id="通过总线交换">通过总线交换</h4>
+<ol type="1">
+<li>数据报通过共享总线，从输入端口转发到输出端口<br></li>
+<li>总线竞争：交换速度受限于总线带宽<br></li>
+<li>一次处理一个分组 <img src="https://img-blog.csdnimg.cn/20210330191022409.png" alt="在这里插入图片描述"></li>
+</ol>
+<h4 id="通过互联网络crossbar等的交换">通过互联网络（crossbar等）的交换</h4>
+<ol type="1">
+<li>同时并发转发多个分组，克服总线带宽限制<br></li>
+<li>榕树网络，纵横网络和其他的互联网络被开发，将多个处理器连接成多处理器<br></li>
+<li>高级设计：将数据报分片为固定长度的信元，通过交换网络交换 <img src="https://img-blog.csdnimg.cn/20210330191343346.png" alt="在这里插入图片描述"></li>
+</ol>
+<h3 id="输出端口">输出端口</h3>
+<ol type="1">
+<li>当数据报从交换机构的到达速度比传输速率快，就需要输出端口缓存（数据报可能会被丢弃，由于拥塞，缓冲区没有空间）<br></li>
+<li>由调度规则选择排队的数据报进行传输（不一定先到先传）</li>
+</ol>
+<h4 id="调度机制">调度机制</h4>
+<ol type="1">
+<li>调度：选择下一个要通过链路传输的分组<br></li>
+<li>FIFO scheduling：按照分组到来的次序发送<br></li>
+<li>丢弃策略：丢弃刚到达的分组、根据优先权丢失/移除分组，随机地丢弃/移除<br></li>
+<li>调度策略</li>
+</ol>
+<h5 id="调度策略优先权">调度策略：优先权</h5>
+<p>发送最高优先权的分组</p>
+<h2 id="ipinternet协议">IP：Internet协议</h2>
+<h3 id="互联网的网络层">互联网的网络层</h3>
+<figure>
+<img src="https://img-blog.csdnimg.cn/20210330192430417.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3JhaW55X3VuaXZlcnNl,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><figcaption aria-hidden="true">在这里插入图片描述</figcaption>
+</figure>
+<h3 id="ip数据报格式">IP数据报格式</h3>
+<figure>
+<img src="https://img-blog.csdnimg.cn/20210330192548897.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3JhaW55X3VuaXZlcnNl,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><figcaption aria-hidden="true">在这里插入图片描述</figcaption>
+</figure>
+<h3 id="ip分片和重组">IP分片和重组</h3>
+<ol type="1">
+<li><p>网络链路有MTU（最大传输单元）——链路层帧所携带的最大数据长度（不同的链路类型有不同的MTU）<br></p></li>
+<li><p>大的IP数据报在网络上被分片</p>
+<ul>
+<li>一个数据报被分割成若干个小的数据报（有相同的ID，不同的偏移量，最后一个分片标记为0）</li>
+<li>重组分片只在最终的目标主机进行</li>
+<li>IP头部的信息被用于标识，排序相关分片</li>
+</ul></li>
+<li><p>例子 <img src="https://img-blog.csdnimg.cn/20210330195240725.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3JhaW55X3VuaXZlcnNl,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p></li>
+</ol>
+<h3 id="ip编址">IP编址</h3>
+<h4 id="引论">引论</h4>
+<ol type="1">
+<li><p>IP地址：32位标示，对主机或者路由器的接口编址<br></p></li>
+<li><p>接口：主机/路由器和物理链路的连接处</p>
+<ul>
+<li>路由器通常拥有多个接口</li>
+<li>主机也有可能有多个接口</li>
+<li>IP地址和每一个接口关联</li>
+</ul></li>
+</ol>
+<p><strong>3. 一个IP地址和一个接口相关联</strong></p>
+<h4 id="子网subnets">子网（subnets）</h4>
+<ol type="1">
+<li>IP地址：</li>
+</ol>
+<ul>
+<li>子网部分（高位bits）</li>
+<li>主机部分（低位bits）</li>
+</ul>
+<ol start="2" type="1">
+<li>一个子网内的节点（主机或者路由器）它们的IP地址的高位部分相同，这些节点构成的网络的一部分叫做子网<br></li>
+<li>无需路由器介入，子网内各主机可以在物理上相互直接到达<br></li>
+<li>判断子网的方法（将每一个接口从主机或者路由器上分开）</li>
+</ol>
+<h4 id="ip地址分类">IP地址分类</h4>
+<figure>
+<img src="https://img-blog.csdnimg.cn/20210330202049353.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3JhaW55X3VuaXZlcnNl,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><figcaption aria-hidden="true">在这里插入图片描述</figcaption>
+</figure>
+<ol type="1">
+<li><p>特殊IP地址：</p>
+<ul>
+<li>子网部分全为0，本网络</li>
+<li>主机部分全为0，本主机</li>
+<li>主机部分全为1，广播地址，这个网络的所有主机</li>
+</ul></li>
+<li><p>内网（专用）IP地址</p>
+<ul>
+<li>专用地址：地址空间的一部分供专用地址使用</li>
+<li>永远不会被当做公用地址来分配，不会与公用地址重复（只在局部网络中意义，区分不同的设备）</li>
+<li>路由器不对目标地址是专用地址的分组进行转发</li>
+</ul></li>
+</ol>
+<h4 id="cidr-无类域间路由">CIDR 无类域间路由</h4>
+<ol type="1">
+<li>子网部分可以在任意的位置<br></li>
+<li>地址格式：a.b.c.d/x，其中x是地址中子网号的长度，例如，200.23.16.0/23</li>
+</ol>
+<h4 id="子网掩码">子网掩码</h4>
+<ol type="1">
+<li>32bits，1代表子网部分，0代表主机部分</li>
+</ol>
+<h6 id="转发表和转发算法">转发表和转发算法</h6>
+<p>获取IP数据报的目标地址，对于转发表中的每一个表项，如果如 (IP Des addr) &amp; (mask)==destination, 则按照表项对应的接口转发该数据报；如果都没有找到，则使用默认表项转发数据报</p>
+<h4 id="获取ip地址的过程">获取IP地址的过程</h4>
+<ol type="1">
+<li><p>主机获得IP地址</p>
+<ul>
+<li><p>系统管理员将地址配置在一个文件中</p></li>
+<li><p><strong>DHCP</strong>：从服务器中动态获得一个IP地址（即插即用）</p>
+<ul>
+<li><p>允许主机在加入网络的时候，动态地从服务器那里获得IP地址</p></li>
+<li><p>DHCP工作概况：</p>
+<ul>
+<li>主机广播“DHCP discover”报文</li>
+<li>DHCP服务器用“DHCP offer”提供报文响应</li>
+<li>主机请求IP地址：发送“DHCP request”报文</li>
+<li>DHCP服务器发送地址：“DHCP ack”报文</li>
+</ul></li>
+</ul></li>
+</ul></li>
+<li><p>获取一个网络的子网部分</p>
+<ul>
+<li><p>从ISP获得地址块中分配一个小地址块</p></li>
+<li><p><strong>层次编址</strong> <img src="https://img-blog.csdnimg.cn/20210330212245799.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3JhaW55X3VuaXZlcnNl,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p></li>
+</ul></li>
+</ol>
+<h4 id="nat网络地址转换">NAT：网络地址转换</h4>
+<ol type="1">
+<li><p>所有离开本地网络的数据报具有一个相同的源地址NAT IP address，但是具有不同的端口号<br></p></li>
+<li><p>本地网络只有一个有效IP地址</p>
+<ul>
+<li>不需要从ISP分配一块地址，可用一个IP地址用于所有的（局域网）设备</li>
+<li>可以在局域网改变设备的地址情况下而无需通知外界</li>
+<li>可以改变ISP（地址变化）而不需改变内部的设备地址</li>
+<li>局域网内部的设备没有明确的地址，对外是不可见的</li>
+</ul></li>
+<li><p>实现</p>
+<ul>
+<li>外出数据包：替换源地址和端口号为NAT IP地址和新的端口号，目标IP和端口不变</li>
+<li>记住每个转换替换对（在NAT转换表中）</li>
+<li>进入数据包：替换目标IP地址和端口号，采用存储在NAT表中的mapping表项</li>
+</ul></li>
+</ol>
+<h4 id="ipv6">IPv6</h4>
+<ol type="1">
+<li>固定的40字节头部，数据报传输过程中，不允许分片<br></li>
+<li>IPv4到IPv6的平移</li>
+</ol>
+]]></content>
+      <categories>
+        <category>计算机网络</category>
+      </categories>
+      <tags>
+        <tag>计算机网络</tag>
       </tags>
   </entry>
   <entry>

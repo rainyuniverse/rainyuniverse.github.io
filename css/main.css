@@ -18,10 +18,10 @@
   --btn-default-hover-bg: #222;
   --btn-default-hover-color: #fff;
   --btn-default-hover-border-color: #222;
-  --highlight-background: #f0f0f0;
-  --highlight-foreground: #444;
-  --highlight-gutter-background: #dedede;
-  --highlight-gutter-foreground: #555;
+  --highlight-background: #eee;
+  --highlight-foreground: #000;
+  --highlight-gutter-background: #d6d6d6;
+  --highlight-gutter-foreground: #171717;
   color-scheme: light;
 }
 html {
@@ -184,7 +184,7 @@ body {
   background: var(--body-bg-color);
   box-sizing: border-box;
   color: var(--text-color);
-  font-family: Lato, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-family: Noto Sans Simplified Chinese, 'PingFang SC', 'Microsoft YaHei', sans-serif;
   font-size: 1em;
   line-height: 2;
   min-height: 100%;
@@ -197,7 +197,7 @@ h3,
 h4,
 h5,
 h6 {
-  font-family: Lato, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-family: Noto Sans Simplified Chinese, 'PingFang SC', 'Microsoft YaHei', sans-serif;
   font-weight: bold;
   line-height: 1.5;
   margin: 30px 0 15px;
@@ -363,103 +363,93 @@ td {
   transform: rotate(-45deg);
 }
 /*
-
-Original highlight.js style (c) Ivan Sagalaev <maniac@softwaremaniacs.org>
-
+Description: Foundation 4 docs style for highlight.js
+Author: Dan Allen <dan.j.allen@gmail.com>
+Website: http://foundation.zurb.com/docs/
+Version: 1.0
+Date: 2013-04-02
 */
 
 .hljs {
   display: block;
   overflow-x: auto;
   padding: 0.5em;
-  background: #F0F0F0;
+  background: #eee;
+  color: black;
 }
 
-
-/* Base color: saturation 0; */
-
-.hljs,
-.hljs-subst {
-  color: #444;
-}
-
-.hljs-comment {
-  color: #888888;
-}
-
-.hljs-keyword,
-.hljs-attribute,
-.hljs-selector-tag,
-.hljs-meta-keyword,
-.hljs-doctag,
-.hljs-name {
-  font-weight: bold;
-}
-
-
-/* User color: hue: 0 */
-
-.hljs-type,
-.hljs-string,
-.hljs-number,
-.hljs-selector-id,
-.hljs-selector-class,
-.hljs-quote,
-.hljs-template-tag,
-.hljs-deletion {
-  color: #880000;
-}
-
-.hljs-title,
-.hljs-section {
-  color: #880000;
-  font-weight: bold;
-}
-
-.hljs-regexp,
-.hljs-symbol,
-.hljs-variable,
-.hljs-template-variable,
 .hljs-link,
-.hljs-selector-attr,
-.hljs-selector-pseudo {
-  color: #BC6060;
-}
-
-
-/* Language color: hue: 90; */
-
-.hljs-literal {
-  color: #78A960;
-}
-
-.hljs-built_in,
-.hljs-bullet,
-.hljs-code,
+.hljs-emphasis,
+.hljs-attribute,
 .hljs-addition {
-  color: #397300;
+  color: #070;
 }
-
-
-/* Meta color: hue: 200 */
-
-.hljs-meta {
-  color: #1f7199;
-}
-
-.hljs-meta-string {
-  color: #4d99bf;
-}
-
-
-/* Misc effects */
 
 .hljs-emphasis {
   font-style: italic;
 }
 
+.hljs-strong,
+.hljs-string,
+.hljs-deletion {
+  color: #d14;
+}
+
 .hljs-strong {
   font-weight: bold;
+}
+
+.hljs-quote,
+.hljs-comment {
+  color: #998;
+  font-style: italic;
+}
+
+.hljs-section,
+.hljs-title {
+  color: #900;
+}
+
+.hljs-class .hljs-title,
+.hljs-type {
+  color: #458;
+}
+
+.hljs-variable,
+.hljs-template-variable {
+  color: #336699;
+}
+
+.hljs-bullet {
+  color: #997700;
+}
+
+.hljs-meta {
+  color: #3344bb;
+}
+
+.hljs-code,
+.hljs-number,
+.hljs-literal,
+.hljs-keyword,
+.hljs-selector-tag {
+  color: #099;
+}
+
+.hljs-regexp {
+  background-color: #fff0ff;
+  color: #880088;
+}
+
+.hljs-symbol {
+  color: #990073;
+}
+
+.hljs-tag,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class {
+  color: #007700;
 }
 
 code,
@@ -1204,7 +1194,7 @@ pre code {
   color: var(--brand-hover-color);
 }
 .site-title {
-  font-family: Lato, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-family: Noto Sans Simplified Chinese, 'PingFang SC', 'Microsoft YaHei', sans-serif;
   font-size: 1.375em;
   font-weight: normal;
   line-height: 1.5;
@@ -1212,7 +1202,7 @@ pre code {
 }
 .site-subtitle {
   color: #ddd;
-  font-size: 0.8125em;
+  font-size: 0.75em;
   margin: 10px 0;
 }
 .use-motion .site-title,
@@ -1281,7 +1271,7 @@ pre code {
 .menu-item a {
   border-bottom: 0;
   display: block;
-  font-size: 0.8125em;
+  font-size: 0.75em;
   transition: border-color 0.2s ease-in-out;
 }
 .menu-item a:hover,
@@ -1311,6 +1301,76 @@ pre code {
 }
 .use-motion .menu-item {
   visibility: hidden;
+}
+.github-corner :hover .octo-arm {
+  animation: octocat-wave 560ms ease-in-out;
+}
+.github-corner svg {
+  color: #fff;
+  fill: var(--theme-color);
+  position: absolute;
+  right: 0;
+  top: 0;
+  z-index: 5;
+}
+@media (max-width: 991px) {
+  .github-corner {
+    display: none;
+  }
+  .github-corner svg {
+    color: var(--theme-color);
+    fill: #fff;
+  }
+  .github-corner .github-corner:hover .octo-arm {
+    animation: none;
+  }
+  .github-corner .github-corner .octo-arm {
+    animation: octocat-wave 560ms ease-in-out;
+  }
+}
+@-moz-keyframes octocat-wave {
+  0%, 100% {
+    transform: rotate(0);
+  }
+  20%, 60% {
+    transform: rotate(-25deg);
+  }
+  40%, 80% {
+    transform: rotate(10deg);
+  }
+}
+@-webkit-keyframes octocat-wave {
+  0%, 100% {
+    transform: rotate(0);
+  }
+  20%, 60% {
+    transform: rotate(-25deg);
+  }
+  40%, 80% {
+    transform: rotate(10deg);
+  }
+}
+@-o-keyframes octocat-wave {
+  0%, 100% {
+    transform: rotate(0);
+  }
+  20%, 60% {
+    transform: rotate(-25deg);
+  }
+  40%, 80% {
+    transform: rotate(10deg);
+  }
+}
+@keyframes octocat-wave {
+  0%, 100% {
+    transform: rotate(0);
+  }
+  20%, 60% {
+    transform: rotate(-25deg);
+  }
+  40%, 80% {
+    transform: rotate(10deg);
+  }
 }
 .sidebar-inner {
   color: #999;
@@ -1351,11 +1411,11 @@ pre code {
 }
 .site-description {
   color: #999;
-  font-size: 0.8125em;
+  font-size: 0.75em;
   margin-top: 0;
 }
 .links-of-author a {
-  font-size: 0.8125em;
+  font-size: 0.75em;
 }
 .links-of-author .fa,
 .links-of-author .fab,
@@ -1386,7 +1446,7 @@ pre code {
   margin-right: 5px;
 }
 .links-of-blogroll {
-  font-size: 0.8125em;
+  font-size: 0.75em;
 }
 .links-of-blogroll-title {
   font-size: 0.875em;
@@ -1583,7 +1643,7 @@ pre code {
 }
 .site-state-item-name {
   color: #999;
-  font-size: 0.8125em;
+  font-size: 0.75em;
 }
 .footer {
   color: #999;
@@ -1620,7 +1680,7 @@ pre code {
 }
 .languages {
   display: inline-block;
-  font-size: 1.125em;
+  font-size: 1em;
   position: relative;
 }
 .languages .lang-select-label span {
@@ -1727,10 +1787,6 @@ pre code {
   position: fixed;
   z-index: 30;
   right: 30px;
-  width: 24px;
-}
-.back-to-top span {
-  display: none;
 }
 @media (max-width: 991px) {
   .back-to-top {
@@ -1750,6 +1806,16 @@ pre code {
 }
 .back-to-top.back-to-top-on {
   bottom: 30px;
+}
+.reading-progress-bar {
+  --progress: 0;
+  background: #37c6c0;
+  height: 3px;
+  position: fixed;
+  z-index: 50;
+  width: var(--progress);
+  left: 0;
+  top: 0;
 }
 .rtl.post-body p,
 .rtl.post-body a,
@@ -1798,7 +1864,7 @@ pre code {
   }
 }
 .posts-collapse .post-content .collection-title {
-  font-size: 1.125em;
+  font-size: 1em;
   position: relative;
 }
 .posts-collapse .post-content .collection-title::before {
@@ -1814,7 +1880,7 @@ pre code {
   width: 10px;
 }
 .posts-collapse .post-content .collection-year {
-  font-size: 1.5em;
+  font-size: 1.375em;
   font-weight: bold;
   margin: 60px 0;
   position: relative;
@@ -1850,7 +1916,7 @@ pre code {
   border: 1px solid #fff;
   left: -6px;
   position: absolute;
-  top: 0.75em;
+  top: 0.625em;
   transition: background 0.2s ease-in-out;
   border-radius: 50%;
   content: ' ';
@@ -1865,7 +1931,7 @@ pre code {
 }
 .posts-collapse .post-content .post-meta-container {
   display: inline;
-  font-size: 0.75em;
+  font-size: 0.625em;
   margin-right: 10px;
 }
 .posts-collapse .post-content .post-title {
@@ -1889,12 +1955,12 @@ pre code {
   width: 4px;
 }
 .post-body {
-  font-family: Lato, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-family: Noto Sans Simplified Chinese, 'PingFang SC', 'Microsoft YaHei', sans-serif;
   overflow-wrap: break-word;
 }
 @media (min-width: 1200px) {
   .post-body {
-    font-size: 1.125em;
+    font-size: 1em;
   }
 }
 @media (min-width: 992px) {
@@ -2035,12 +2101,12 @@ pre code {
   margin: 15px 0;
 }
 .posts-expand .post-header {
-  font-size: 1.125em;
+  font-size: 1em;
   margin-bottom: 60px;
   text-align: center;
 }
 .posts-expand .post-title {
-  font-size: 1.5em;
+  font-size: 1.375em;
   font-weight: normal;
   margin: initial;
   overflow-wrap: break-word;
@@ -2076,8 +2142,8 @@ pre code {
 }
 .posts-expand .post-meta-container {
   color: #999;
-  font-family: Lato, 'PingFang SC', 'Microsoft YaHei', sans-serif;
-  font-size: 0.75em;
+  font-family: Noto Sans Simplified Chinese, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-size: 0.625em;
   margin-top: 3px;
 }
 .posts-expand .post-meta-container .post-description {
@@ -2132,7 +2198,7 @@ pre code {
   top: 2px;
 }
 .post-nav-item .fa {
-  font-size: 0.75em;
+  font-size: 0.625em;
 }
 .post-nav-item:first-child .fa {
   margin-right: 5px;
@@ -2157,13 +2223,20 @@ pre code {
 .post-block:last-of-type .post-eof {
   display: none;
 }
+.post-copyright ul {
+  list-style: none;
+  padding: 0.5em 1em;
+  background: var(--card-bg-color);
+  border-left: 3px solid #ff2a2a;
+  margin: 1em 0 0;
+}
 .post-tags {
   margin-top: 40px;
   text-align: center;
 }
 .post-tags a {
   display: inline-block;
-  font-size: 0.8125em;
+  font-size: 0.75em;
 }
 .post-tags a:not(:last-child) {
   margin-right: 10px;
@@ -2408,7 +2481,7 @@ pre code {
   }
 }
 ul.breadcrumb {
-  font-size: 0.75em;
+  font-size: 0.625em;
   list-style: none;
   margin: 1em 0;
   padding: 0 2em;
@@ -2608,9 +2681,9 @@ mjx-container[display='true'] + br {
 }
 .header-inner {
   background: var(--content-bg-color);
-  border-radius: initial;
+  border-radius: 16px;
   box-shadow: initial;
-  width: 300px;
+  width: 240px;
 }
 @media (max-width: 991px) {
   .header-inner {
@@ -2642,9 +2715,9 @@ mjx-container[display='true'] + br {
   }
 }
 .main-inner {
-  border-radius: initial;
+  border-radius: 16px;
   box-sizing: border-box;
-  width: calc(100% - 312px);
+  width: calc(100% - 252px);
 }
 @media (max-width: 991px) {
   .main-inner {
@@ -2653,7 +2726,7 @@ mjx-container[display='true'] + br {
   }
 }
 .footer-inner {
-  padding-left: 312px;
+  padding-left: 252px;
 }
 @media (max-width: 991px) {
   .footer-inner {
@@ -2771,7 +2844,7 @@ mjx-container[display='true'] + br {
   position: -webkit-sticky;
   position: sticky;
   top: 12px;
-  width: 300px;
+  width: 240px;
   visibility: hidden;
 }
 @media (max-width: 991px) {
@@ -2784,7 +2857,7 @@ mjx-container[display='true'] + br {
 }
 .sidebar-inner {
   background: var(--content-bg-color);
-  border-radius: initial;
+  border-radius: 16px;
   box-shadow: initial;
   box-sizing: border-box;
   color: var(--text-color);
