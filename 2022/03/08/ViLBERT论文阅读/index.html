@@ -10,6 +10,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
   <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="xqiYRqml3gPDy5LwuV1tzwAogYc0t3WH_dKiKQP8jsU">
 
 <link rel="stylesheet" href="/css/main.css">
 
@@ -20,31 +21,31 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/themes/blue/pace-theme-minimal.css">
   <script src="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/pace.min.js" integrity="sha256-gqd7YTjg/BtfqWSwsJOvndl0Bxc8gFImLEkXQT8+qj0=" crossorigin="anonymous"></script>
 
-<script class="next-config" data-name="main" type="application/json">{"hostname":"rainyuniverse.github.io","root":"/","images":"/images","scheme":"Pisces","darkmode":false,"version":"8.9.0","exturl":false,"sidebar":{"position":"left","width":240,"display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<script class="next-config" data-name="main" type="application/json">{"hostname":"rainyuniverse.github.io","root":"/","images":"/images","scheme":"Pisces","darkmode":false,"version":"8.9.0","exturl":false,"sidebar":{"position":"left","width":240,"display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
 <meta name="description" content="BERT模型的提出使得大规模的预训练成为可能，与BERT模型仅仅处理文本模态不同，ViLBERT模型结合了图片和文本信息的特征，使用two-stream结构，基于大型的图像标题数据库训练与下游任务无关的通用模型，基于该模型通过少量调整即可实现通过标题检索图片、视觉问答等具体任务，最近在学习多模态特征有效的融合和对齐方法，于是对这篇文章进行了研读。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="ViLBERT论文阅读">
-<meta property="og:url" content="http://rainyuniverse.github.io/2022/03/08/ViLBERT%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/index.html">
+<meta property="og:url" content="https://rainyuniverse.github.io/2022/03/08/ViLBERT%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/index.html">
 <meta property="og:site_name" content="雨宙的个人博客">
 <meta property="og:description" content="BERT模型的提出使得大规模的预训练成为可能，与BERT模型仅仅处理文本模态不同，ViLBERT模型结合了图片和文本信息的特征，使用two-stream结构，基于大型的图像标题数据库训练与下游任务无关的通用模型，基于该模型通过少量调整即可实现通过标题检索图片、视觉问答等具体任务，最近在学习多模态特征有效的融合和对齐方法，于是对这篇文章进行了研读。">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="http://rainyuniverse.github.io/2022/03/08/ViLBERT%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/001.png">
-<meta property="og:image" content="http://rainyuniverse.github.io/2022/03/08/ViLBERT%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/002.png">
-<meta property="og:image" content="http://rainyuniverse.github.io/2022/03/08/ViLBERT%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/003.png">
-<meta property="og:image" content="http://rainyuniverse.github.io/2022/03/08/ViLBERT%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/004.png">
+<meta property="og:image" content="https://rainyuniverse.github.io/2022/03/08/ViLBERT%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/001.png">
+<meta property="og:image" content="https://rainyuniverse.github.io/2022/03/08/ViLBERT%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/002.png">
+<meta property="og:image" content="https://rainyuniverse.github.io/2022/03/08/ViLBERT%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/003.png">
+<meta property="og:image" content="https://rainyuniverse.github.io/2022/03/08/ViLBERT%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/004.png">
 <meta property="article:published_time" content="2022-03-08T06:07:47.000Z">
 <meta property="article:modified_time" content="2022-03-08T11:54:48.873Z">
 <meta property="article:author" content="Rainy Universe">
 <meta property="article:tag" content="多模态模型">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="http://rainyuniverse.github.io/2022/03/08/ViLBERT%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/001.png">
+<meta name="twitter:image" content="https://rainyuniverse.github.io/2022/03/08/ViLBERT%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/001.png">
 
 
-<link rel="canonical" href="http://rainyuniverse.github.io/2022/03/08/ViLBERT%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/">
+<link rel="canonical" href="https://rainyuniverse.github.io/2022/03/08/ViLBERT%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/">
 
 
 
-<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"http://rainyuniverse.github.io/2022/03/08/ViLBERT%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/","path":"2022/03/08/ViLBERT论文阅读/","title":"ViLBERT论文阅读"}</script>
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://rainyuniverse.github.io/2022/03/08/ViLBERT%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/","path":"2022/03/08/ViLBERT论文阅读/","title":"ViLBERT论文阅读"}</script>
 
 <script class="next-config" data-name="calendar" type="application/json">""</script>
 <title>ViLBERT论文阅读 | 雨宙的个人博客</title>
@@ -242,7 +243,7 @@
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://rainyuniverse.github.io/2022/03/08/ViLBERT%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/">
+    <link itemprop="mainEntityOfPage" href="https://rainyuniverse.github.io/2022/03/08/ViLBERT%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -411,7 +412,7 @@
   </li>
   <li class="post-copyright-link">
       <strong>本文链接：</strong>
-      <a href="http://rainyuniverse.github.io/2022/03/08/ViLBERT%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/" title="ViLBERT论文阅读">http://rainyuniverse.github.io/2022/03/08/ViLBERT论文阅读/</a>
+      <a href="https://rainyuniverse.github.io/2022/03/08/ViLBERT%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/" title="ViLBERT论文阅读">https://rainyuniverse.github.io/2022/03/08/ViLBERT论文阅读/</a>
   </li>
   <li class="post-copyright-license">
     <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/zh-CN" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！

@@ -10,6 +10,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
   <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="xqiYRqml3gPDy5LwuV1tzwAogYc0t3WH_dKiKQP8jsU">
 
 <link rel="stylesheet" href="/css/main.css">
 
@@ -20,11 +21,11 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/themes/blue/pace-theme-minimal.css">
   <script src="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/pace.min.js" integrity="sha256-gqd7YTjg/BtfqWSwsJOvndl0Bxc8gFImLEkXQT8+qj0=" crossorigin="anonymous"></script>
 
-<script class="next-config" data-name="main" type="application/json">{"hostname":"rainyuniverse.github.io","root":"/","images":"/images","scheme":"Pisces","darkmode":false,"version":"8.9.0","exturl":false,"sidebar":{"position":"left","width":240,"display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<script class="next-config" data-name="main" type="application/json">{"hostname":"rainyuniverse.github.io","root":"/","images":"/images","scheme":"Pisces","darkmode":false,"version":"8.9.0","exturl":false,"sidebar":{"position":"left","width":240,"display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
 <meta name="description" content="上一篇我们具体介绍了BiasedMF算法在LibRec库中的实现，实际上是为了本篇介绍SVD++算法实现做铺垫，在代码中我们也可以看到，SVDPlusPlusRecommender类继承了BiasedMFRecommender类，本篇主要也是从三个方面展开，分别是预测公式、损失函数公式和更新公式。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="LibRec学习笔记（二）：SVD++算法">
-<meta property="og:url" content="http://rainyuniverse.github.io/2022/04/04/LibRec%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%EF%BC%88%E4%BA%8C%EF%BC%89-SVD-%E7%AE%97%E6%B3%95/index.html">
+<meta property="og:url" content="https://rainyuniverse.github.io/2022/04/04/LibRec%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%EF%BC%88%E4%BA%8C%EF%BC%89-SVD-%E7%AE%97%E6%B3%95/index.html">
 <meta property="og:site_name" content="雨宙的个人博客">
 <meta property="og:description" content="上一篇我们具体介绍了BiasedMF算法在LibRec库中的实现，实际上是为了本篇介绍SVD++算法实现做铺垫，在代码中我们也可以看到，SVDPlusPlusRecommender类继承了BiasedMFRecommender类，本篇主要也是从三个方面展开，分别是预测公式、损失函数公式和更新公式。">
 <meta property="og:locale" content="zh_CN">
@@ -35,11 +36,11 @@
 <meta name="twitter:card" content="summary">
 
 
-<link rel="canonical" href="http://rainyuniverse.github.io/2022/04/04/LibRec%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%EF%BC%88%E4%BA%8C%EF%BC%89-SVD-%E7%AE%97%E6%B3%95/">
+<link rel="canonical" href="https://rainyuniverse.github.io/2022/04/04/LibRec%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%EF%BC%88%E4%BA%8C%EF%BC%89-SVD-%E7%AE%97%E6%B3%95/">
 
 
 
-<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"http://rainyuniverse.github.io/2022/04/04/LibRec%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%EF%BC%88%E4%BA%8C%EF%BC%89-SVD-%E7%AE%97%E6%B3%95/","path":"2022/04/04/LibRec学习笔记（二）-SVD-算法/","title":"LibRec学习笔记（二）：SVD++算法"}</script>
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://rainyuniverse.github.io/2022/04/04/LibRec%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%EF%BC%88%E4%BA%8C%EF%BC%89-SVD-%E7%AE%97%E6%B3%95/","path":"2022/04/04/LibRec学习笔记（二）-SVD-算法/","title":"LibRec学习笔记（二）：SVD++算法"}</script>
 
 <script class="next-config" data-name="calendar" type="application/json">""</script>
 <title>LibRec学习笔记（二）：SVD++算法 | 雨宙的个人博客</title>
@@ -237,7 +238,7 @@
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://rainyuniverse.github.io/2022/04/04/LibRec%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%EF%BC%88%E4%BA%8C%EF%BC%89-SVD-%E7%AE%97%E6%B3%95/">
+    <link itemprop="mainEntityOfPage" href="https://rainyuniverse.github.io/2022/04/04/LibRec%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%EF%BC%88%E4%BA%8C%EF%BC%89-SVD-%E7%AE%97%E6%B3%95/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -406,7 +407,7 @@
   </li>
   <li class="post-copyright-link">
       <strong>本文链接：</strong>
-      <a href="http://rainyuniverse.github.io/2022/04/04/LibRec%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%EF%BC%88%E4%BA%8C%EF%BC%89-SVD-%E7%AE%97%E6%B3%95/" title="LibRec学习笔记（二）：SVD++算法">http://rainyuniverse.github.io/2022/04/04/LibRec学习笔记（二）-SVD-算法/</a>
+      <a href="https://rainyuniverse.github.io/2022/04/04/LibRec%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%EF%BC%88%E4%BA%8C%EF%BC%89-SVD-%E7%AE%97%E6%B3%95/" title="LibRec学习笔记（二）：SVD++算法">https://rainyuniverse.github.io/2022/04/04/LibRec学习笔记（二）-SVD-算法/</a>
   </li>
   <li class="post-copyright-license">
     <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/zh-CN" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
