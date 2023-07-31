@@ -23,26 +23,30 @@
   <script src="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/pace.min.js" integrity="sha256-gqd7YTjg/BtfqWSwsJOvndl0Bxc8gFImLEkXQT8+qj0=" crossorigin="anonymous"></script>
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"rainyuniverse.github.io","root":"/","images":"/images","scheme":"Pisces","darkmode":false,"version":"8.9.0","exturl":false,"sidebar":{"position":"left","width":240,"display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<meta name="description" content="最近对于大模型的研究越来越多，笔者也对一些大模型的技术报告进行阅读，但是感觉对于大模型的认识仍然不够清晰，究其原因是没有自己亲手走一下训练大模型的流程，所以想要先对训练大模型的框架进行学习，然后等到有机会之后（有显卡）再上手训练一个大模型。经过调研之后，笔者打算首先从Megatron-LM框架开始学习，于是选择了这篇Megatron-LM: Training Multi-Billion Param">
 <meta property="og:type" content="article">
-<meta property="og:title" content="test">
-<meta property="og:url" content="https://rainyuniverse.github.io/2020/09/06/test/index.html">
+<meta property="og:title" content="Megatron-LM论文阅读">
+<meta property="og:url" content="https://rainyuniverse.github.io/2023/07/31/Megatron-LM%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/index.html">
 <meta property="og:site_name" content="雨宙的个人博客">
+<meta property="og:description" content="最近对于大模型的研究越来越多，笔者也对一些大模型的技术报告进行阅读，但是感觉对于大模型的认识仍然不够清晰，究其原因是没有自己亲手走一下训练大模型的流程，所以想要先对训练大模型的框架进行学习，然后等到有机会之后（有显卡）再上手训练一个大模型。经过调研之后，笔者打算首先从Megatron-LM框架开始学习，于是选择了这篇Megatron-LM: Training Multi-Billion Param">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2020-09-06T11:36:01.000Z">
-<meta property="article:modified_time" content="2023-07-31T05:41:21.653Z">
+<meta property="og:image" content="https://rainyuniverse.github.io/2023/07/31/Megatron-LM%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/001.jpg">
+<meta property="article:published_time" content="2023-07-31T05:39:06.000Z">
+<meta property="article:modified_time" content="2023-07-31T08:39:50.704Z">
 <meta property="article:author" content="Rainy Universe">
-<meta property="article:tag" content="test">
+<meta property="article:tag" content="大模型训练">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://rainyuniverse.github.io/2023/07/31/Megatron-LM%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/001.jpg">
 
 
-<link rel="canonical" href="https://rainyuniverse.github.io/2020/09/06/test/">
+<link rel="canonical" href="https://rainyuniverse.github.io/2023/07/31/Megatron-LM%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/">
 
 
 
-<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":"","permalink":"https://rainyuniverse.github.io/2020/09/06/test/","path":"2020/09/06/test/","title":"test"}</script>
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://rainyuniverse.github.io/2023/07/31/Megatron-LM%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/","path":"2023/07/31/Megatron-LM论文阅读/","title":"Megatron-LM论文阅读"}</script>
 
 <script class="next-config" data-name="calendar" type="application/json">""</script>
-<title>test | 雨宙的个人博客</title>
+<title>Megatron-LM论文阅读 | 雨宙的个人博客</title>
   
 
 
@@ -144,7 +148,7 @@
 
   <aside class="sidebar">
 
-    <div class="sidebar-inner sidebar-overview-active">
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
       <ul class="sidebar-nav">
         <li class="sidebar-nav-toc">
           文章目录
@@ -157,6 +161,7 @@
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%91%98%E8%A6%81"><span class="nav-number">1.</span> <span class="nav-text">摘要</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%8B%E7%BB%8D"><span class="nav-number">2.</span> <span class="nav-text">介绍</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%83%8C%E6%99%AF"><span class="nav-number">3.</span> <span class="nav-text">背景</span></a></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -236,7 +241,7 @@
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://rainyuniverse.github.io/2020/09/06/test/">
+    <link itemprop="mainEntityOfPage" href="https://rainyuniverse.github.io/2023/07/31/Megatron-LM%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -249,7 +254,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          test
+          Megatron-LM论文阅读
         </h1>
 
         <div class="post-meta-container">
@@ -259,15 +264,18 @@
         <i class="far fa-calendar"></i>
       </span>
       <span class="post-meta-item-text">发表于</span>
+      
 
-      <time title="创建时间：2020-09-06 19:36:01" itemprop="dateCreated datePublished" datetime="2020-09-06T19:36:01+08:00">2020-09-06</time>
+      <time title="创建时间：2023-07-31 13:39:06 / 修改时间：16:39:50" itemprop="dateCreated datePublished" datetime="2023-07-31T13:39:06+08:00">2023-07-31</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
+        <i class="far fa-folder"></i>
       </span>
-      <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2023-07-31 13:41:21" itemprop="dateModified" datetime="2023-07-31T13:41:21+08:00">2023-07-31</time>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E5%A4%A7%E6%A8%A1%E5%9E%8B/" itemprop="url" rel="index"><span itemprop="name">大模型</span></a>
+        </span>
     </span>
 
   
@@ -284,14 +292,14 @@
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">本文字数：</span>
-      <span>0</span>
+      <span>1.8k</span>
     </span>
     <span class="post-meta-item" title="阅读时长">
       <span class="post-meta-item-icon">
         <i class="far fa-clock"></i>
       </span>
       <span class="post-meta-item-text">阅读时长 &asymp;</span>
-      <span>1 分钟</span>
+      <span>3 分钟</span>
     </span>
 </div>
 
@@ -302,7 +310,38 @@
     
     
     <div class="post-body" itemprop="articleBody">
-        
+        <p>最近对于大模型的研究越来越多，笔者也对一些大模型的技术报告进行阅读，但是感觉对于大模型的认识仍然不够清晰，究其原因是没有自己亲手走一下训练大模型的流程，所以想要先对训练大模型的框架进行学习，然后等到有机会之后（有显卡）再上手训练一个大模型。经过调研之后，笔者打算首先从Megatron-LM框架开始学习，于是选择了这篇Megatron-LM: Training Multi-Billion Parameter Language Models Using Model Parallelism论文进行阅读。</p>
+<center>
+<img src="/2023/07/31/Megatron-LM%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/001.jpg" width="600px">
+</center>
+<span id="more"></span>
+<p>论文地址和相关源码链接如下：</p>
+<p><a href="https://arxiv.org/abs/1909.08053" target="_blank">论文地址：https://arxiv.org/abs/1909.08053</a> <br> <a href="https://github.com/NVIDIA/Megatron-LM" target="_blank">相关源码：https://github.com/NVIDIA/Megatron-LM</a></p>
+<h2 id="摘要">摘要</h2>
+<p>由于内存限制，大型Transformer模型可能难以训练，<strong>论文提出了训练超大型Transformer模型的技术，并实现了一种简单、有效的层内模型并行方法，使训练具有数十个亿参数的Transformer模型成为可能</strong>，论文提出的方法只需在原生pytorch中插入少量通信操作即可完全实现。论文使用512个GPU将基于变压器的模型收敛到 83 亿个参数，以此说明这种方法。 与可维持39<code>TeraFLOPs</code>（峰值FLOPs的30%）的强大单GPU基线相比，我们在整个应用中维持了15.1<code>PetaFLOPs</code>，扩展效率高达76%。</p>
+<blockquote>
+<p><span class="math display">\[ 512 \times  39 = 19,968 \ TFLOPS = 19.968 \ PFLOPS \]</span> <span class="math display">\[ 15.1 / 19.968 \approx 0.76 \]</span></p>
+</blockquote>
+<p><strong>另外，论文也证明了大型语言模型可以进一步提升SOTA。</strong>论文训练了一个类似于<code>GPT-2</code>的83亿参数变压器语言模型和一个类似于<code>BERT</code>的39亿参数模型，利用<code>GPT-2</code>模型在<code>WikiText103</code>和<code>LAMBADA</code>数据集上取得了SOTA结果，利用<code>BERT</code>模型在<code>RACE</code>数据集上取得了SOTA结果。</p>
+<h2 id="介绍">介绍</h2>
+<ol type="1">
+<li>可用计算能力的不断增加和数据的不断丰富使得人们能够通过无监督预训练来训练越来越大的语言模型，经验证据表明，更大的语言模型对于文章补全、问题解答和自然语言推理等NLP任务的作用更大，通过在下游自然语言任务中对预训练的语言模型进行微调，可以获得最先进的结果。</li>
+<li>随着模型变得越来越大，超出了现代处理器的内存限制。现有的模型并行化方法通过对模型进行分区，使权重及相关优化器状态无需同时驻留在处理器上，从而克服这一限制，例如，<code>GPipe</code>和<code>Mesh-Tensorflow</code>提供了不同类型的模型并行框架。 不过，它们需要重写模型，并依赖于仍在开发中的定制编译器和框架。</li>
+<li>论文利用层内模型并行性实现了一种简单高效的模型并行方法。利用基于Transformer的语言模型的固有结构，在PyTorch中高效地实现了简单的模型并行，无需定制C++代码或编译器。</li>
+<li>论文还对提出方法的可扩展性，以及模型大小对准确性的影响进行分析。</li>
+</ol>
+<p>论文的贡献可以总结如下：</p>
+<ul>
+<li>通过对现有的Pytorch Transformer实现一些有针对性的修改，实现了一种简单而有效的模型并行方法，然后对模型和数据并行技术进行了深入的实证分析，并使用512个gpu展示了高达76%的扩展效率。</li>
+<li>研究表明，在类似<code>BERT</code>的模型中，层归一化的位置对于随着模型的增长而提高准确度至关重要。另外，扩大模型规模可提高<code>GPT-2</code>（参数多达83亿）和<code>BERT</code>（参数多达39亿）模型的精确度，它们在测试集上达到了最先进的结果。</li>
+</ul>
+<h2 id="背景">背景</h2>
+<blockquote>
+<p>在这里只对几个特别需要注意的点进行强调：<br>
+<strong><code>GPT-2</code>和<code>BERT</code>的模型架构</strong>：<strong><code>GPT-2</code>使用<code>decoder-only</code>架构，而<code>BERT</code>使用<code>encoder-only</code>架构</strong>。另外，<code>GPT-2</code>和<code>BERT</code>都使用<code>GeLU</code>非线性和层归一化作为多级注意和前馈层的输入，而原始Transformer使用<code>ReLU</code>非线性并对输出进行层归一化。</p>
+<p><strong>数据并行和模型并行</strong>：<br>
+将深度神经网络训练扩展到众多硬件加速器有两个核心范式：<strong>数据并行，即在多个<code>worker</code>上分割训练小批量数据；模型并行，即在多个<code>worker</code>上分配模型的内存使用和计算。</strong> 通过按可用<code>worker</code>数量成比例增加<code>minibatch</code>的规模（即弱扩展<code>weak scaling</code>），可以观察到训练数据吞吐量接近线性扩展。然而，大批量训练会给优化过程带来复杂性，导致准确率降低或收敛时间延长，从而抵消了训练吞吐量增加带来的好处.</p>
+</blockquote>
 
     </div>
 
@@ -338,7 +377,7 @@
   </li>
   <li class="post-copyright-link">
       <strong>本文链接：</strong>
-      <a href="https://rainyuniverse.github.io/2020/09/06/test/" title="test">https://rainyuniverse.github.io/2020/09/06/test/</a>
+      <a href="https://rainyuniverse.github.io/2023/07/31/Megatron-LM%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/" title="Megatron-LM论文阅读">https://rainyuniverse.github.io/2023/07/31/Megatron-LM论文阅读/</a>
   </li>
   <li class="post-copyright-license">
     <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/zh-CN" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
@@ -347,18 +386,18 @@
 </div>
 
           <div class="post-tags">
-              <a href="/tags/test/" rel="tag"># test</a>
+              <a href="/tags/%E5%A4%A7%E6%A8%A1%E5%9E%8B%E8%AE%AD%E7%BB%83/" rel="tag"># 大模型训练</a>
           </div>
 
         
 
           <div class="post-nav">
             <div class="post-nav-item">
+                <a href="/2022/12/30/CHRF%E8%AF%84%E4%BC%B0%E6%8C%87%E6%A0%87/" rel="prev" title="CHRF评估指标">
+                  <i class="fa fa-chevron-left"></i> CHRF评估指标
+                </a>
             </div>
             <div class="post-nav-item">
-                <a href="/2020/09/06/hello-world/" rel="next" title="Hello World">
-                  Hello World <i class="fa fa-chevron-right"></i>
-                </a>
             </div>
           </div>
     </footer>
@@ -370,6 +409,7 @@
 
 
 
+    <div class="comments gitalk-container"></div>
 </div>
   </main>
 
@@ -472,7 +512,7 @@ darkmode.showWidget();
 </script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.css" integrity="sha256-AJnUHL7dBv6PGaeyPQJcgQPDjt/Hn/PvYZde1iqfp8U=" crossorigin="anonymous">
 
-<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"rainyuniverse","repo":"blog-comment","client_id":"dd3ab568cf554224b60c","client_secret":"d377ea691384ea1e236e98cb932bd8e090b2d863","admin_user":"rainyuniverse","distraction_free_mode":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token","language":"zh-CN","js":{"url":"https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.min.js","integrity":"sha256-Pmj85ojLaPOWwRtlMJwmezB/Qg8BzvJp5eTzvXaYAfA="},"path_md5":"aa6c9c5734555d53f9b9e158ba1eb260"}</script>
+<script class="next-config" data-name="gitalk" type="application/json">{"enable":true,"github_id":"rainyuniverse","repo":"blog-comment","client_id":"dd3ab568cf554224b60c","client_secret":"d377ea691384ea1e236e98cb932bd8e090b2d863","admin_user":"rainyuniverse","distraction_free_mode":true,"proxy":"https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token","language":"zh-CN","js":{"url":"https://cdn.jsdelivr.net/npm/gitalk@1.7.2/dist/gitalk.min.js","integrity":"sha256-Pmj85ojLaPOWwRtlMJwmezB/Qg8BzvJp5eTzvXaYAfA="},"path_md5":"ed20543ef51d75ce9c9fa021a9407ffb"}</script>
 <script src="/js/third-party/comments/gitalk.js"></script>
 
   
